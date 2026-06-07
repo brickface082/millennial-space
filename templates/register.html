@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head><title>Register - Millennial Space</title></head>
+<body>
+<h1>Join Millennial Space</h1>
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div>{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+<form method="POST">
+    <input type="text" name="username" placeholder="Username" required><br><br>
+    <input type="email" name="email" placeholder="Email" required><br><br>
+    <input type="password" name="password" placeholder="Password" required><br><br>
+    <button type="submit">Create Account</button>
+</form>
+</body>
+</html>
