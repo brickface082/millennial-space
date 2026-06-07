@@ -152,8 +152,9 @@ def create_post():
     db.session.commit()
     return redirect(url_for("profile", username=current_user.username))
 
+with app.app_context():
+    os.makedirs(os.path.join(basedir, "instance"), exist_ok=True)
+    db.create_all()
+
 if __name__ == "__main__":
-    with app.app_context():
-        os.makedirs(os.path.join(basedir, "instance"), exist_ok=True)
-        db.create_all()
     app.run(debug=True)
