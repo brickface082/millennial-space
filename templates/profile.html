@@ -247,6 +247,14 @@
         {% if post.image %}
             <img class="post-image" src="{{ url_for('static', filename='uploads/post_images/' + post.image) }}" alt="Post image">
         {% endif %}
+        {% if current_user.is_authenticated and current_user.id == post.user_id %}
+        <div style="margin-top:8px;">
+            <a href="{{ url_for('edit_post', post_id=post.id) }}" style="font-size:13px; margin-right:12px;">✏️ Edit</a>
+            <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" style="display:inline;" onsubmit="return confirm('Delete this post?');">
+                <button type="submit" style="background:none; border:none; color:#0000cc; font-family:inherit; font-size:13px; font-weight:bold; cursor:pointer; padding:0;">🗑️ Delete</button>
+            </form>
+        </div>
+        {% endif %}
     </div>
     {% else %}
     <p class="no-posts">No posts yet.</p>

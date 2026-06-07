@@ -136,6 +136,32 @@ def edit_profile():
         return redirect(url_for("profile", username=current_user.username))
     return render_template("edit_profile.html")
 
+@app.route("/post/<int:post_id>/delete", methods=["POST"])
+@login_required
+def delete_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if post.user_id != current_user.id:
+        return redirect(url_for("profile", username=current_user.username))
+    db.session.delete(post)
+    db.session.commit()
+    return redirect(url_for("profile", username=current_user.username))
+
+@app.route("/post/<int:post_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if post.user_id != current_user.id:
+        return redirect(url_for("profile", username=current_user.username))
+    if request.method == "POST":
+        body = request.form.get("body", "").strip()
+        if not body:
+            flash("Post cannot be empty.", "danger")
+            return redirect(url_for("edit_post", post_id=post_id))
+        post.body = body
+        db.session.commit()
+        return redirect(url_for("profile", username=current_user.username))
+    return render_template("edit_post.html", post=post)
+
 @app.route("/post/create", methods=["POST"])
 @login_required
 def create_post():
