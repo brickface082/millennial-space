@@ -12,160 +12,121 @@
                 radial-gradient(ellipse at 80% 70%, rgba(140,100,40,0.3) 0%, transparent 50%),
                 radial-gradient(ellipse at 50% 50%, rgba(200,160,80,0.2) 0%, transparent 70%);
             font-family: 'Comic Sans MS', cursive;
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-            overflow-x: hidden;
-            position: relative;
+            margin: 0; padding: 20px; min-height: 100vh; overflow-x: hidden; position: relative;
         }
-
-        .g {
-            position: fixed;
-            pointer-events: none;
-            user-select: none;
-            z-index: 0;
-        }
-
-        /* bubble letter style */
-        .bubble {
-            font-family: Impact, 'Arial Black', sans-serif;
-            -webkit-text-stroke: 2px currentColor;
-            paint-order: stroke fill;
-        }
-
-        /* scratched/carved style */
-        .carved {
-            font-family: 'Comic Sans MS', cursive;
-            color: #7a5c2a;
-            opacity: 0.6;
-            text-shadow: 1px 1px 0 rgba(255,255,255,0.3);
-        }
-
-        /* marker style */
-        .marker {
-            font-family: 'Comic Sans MS', cursive;
-            font-weight: bold;
-        }
-
+        .g { position: fixed; pointer-events: none; user-select: none; z-index: 0; }
+        .bubble { font-family: Impact, 'Arial Black', sans-serif; -webkit-text-stroke: 3px currentColor; paint-order: stroke fill; }
+        .carved { font-family: 'Comic Sans MS', cursive; color: #7a5c2a; opacity: 0.65; text-shadow: 1px 1px 0 rgba(255,255,255,0.3); }
+        .marker { font-family: 'Comic Sans MS', cursive; font-weight: bold; }
         .box {
-            background: rgba(255,255,255,0.93);
-            max-width: 400px;
-            margin: 40px auto 0 auto;
-            padding: 28px;
-            border: 2px solid #333;
-            box-shadow: 3px 3px 0px #555;
-            position: relative;
-            z-index: 10;
+            background: rgba(255,255,255,0.93); max-width: 400px; margin: 40px auto 0 auto;
+            padding: 28px; border: 2px solid #333; box-shadow: 3px 3px 0px #555; position: relative; z-index: 10;
         }
         h1 { color: #ff1493; text-shadow: 2px 2px #ffff00; margin-top: 0; font-size: 1.8em; }
         input[type="email"], input[type="password"] {
-            width: 100%; box-sizing: border-box; padding: 8px;
-            font-family: inherit; font-size: 15px; border: 2px solid #ff66b2;
-            margin-bottom: 14px; margin-top: 4px;
+            width: 100%; box-sizing: border-box; padding: 8px; font-family: inherit;
+            font-size: 15px; border: 2px solid #ff66b2; margin-bottom: 14px; margin-top: 4px;
         }
         label { font-size: 14px; color: #660066; font-weight: bold; }
         .btn { background: #ff1493; color: white; border: none; padding: 10px 28px; font-family: inherit; font-size: 16px; cursor: pointer; font-weight: bold; margin-top: 4px; }
         .btn:hover { background: #cc0077; }
         .flash { padding: 8px 12px; margin-bottom: 14px; background: #ffcccc; border: 2px solid #cc0000; color: #660000; }
         .flash.success { background: #ccffcc; border-color: #00cc00; color: #005500; }
-        p { margin-top: 16px; }
-        a { color: #0000cc; font-weight: bold; }
+        p { margin-top: 16px; } a { color: #0000cc; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<!-- THE HEXAGON S (SVG) -->
-<svg class="g" style="top:5%;left:3%;width:90px;height:120px;opacity:0.85;transform:rotate(-8deg);" viewBox="0 0 90 120">
-    <polygon points="45,2 78,20 78,20 62,20 62,20 78,20 78,38 45,58" fill="none" stroke="#2a2a2a" stroke-width="3"/>
-    <!-- top hexagon -->
-    <polygon points="22,5 68,5 80,25 68,45 22,45 10,25" fill="none" stroke="#2a2a2a" stroke-width="3"/>
-    <!-- bottom hexagon -->
-    <polygon points="22,55 68,55 80,75 68,95 22,95 10,75" fill="none" stroke="#2a2a2a" stroke-width="3"/>
-    <!-- connecting lines -->
-    <line x1="22" y1="45" x2="10" y2="55" stroke="#2a2a2a" stroke-width="3"/>
-    <line x1="68" y1="45" x2="80" y2="55" stroke="#2a2a2a" stroke-width="3"/>
+<!-- THE HEXAGON S (SVG) - top left, big -->
+<svg class="g" style="top:3%;left:1%;width:140px;height:180px;opacity:0.9;transform:rotate(-8deg);" viewBox="0 0 90 120">
+    <polygon points="22,5 68,5 80,25 68,45 22,45 10,25" fill="none" stroke="#2a2a2a" stroke-width="3.5"/>
+    <polygon points="22,55 68,55 80,75 68,95 22,95 10,75" fill="none" stroke="#2a2a2a" stroke-width="3.5"/>
+    <line x1="22" y1="45" x2="10" y2="55" stroke="#2a2a2a" stroke-width="3.5"/>
+    <line x1="68" y1="45" x2="80" y2="55" stroke="#2a2a2a" stroke-width="3.5"/>
 </svg>
 
-<!-- BUBBLE LETTERS -->
-<span class="g bubble" style="top:2%;left:22%;font-size:36px;color:#1a1a8c;transform:rotate(-10deg);display:inline-block;opacity:0.85;">Y2K</span>
-<span class="g bubble" style="top:15%;left:65%;font-size:28px;color:#8b0000;transform:rotate(7deg);display:inline-block;opacity:0.8;">TRL</span>
-<span class="g bubble" style="top:60%;left:5%;font-size:32px;color:#006400;transform:rotate(-12deg);display:inline-block;opacity:0.75;">NSYNC</span>
-<span class="g bubble" style="top:78%;left:60%;font-size:26px;color:#4b0082;transform:rotate(9deg);display:inline-block;opacity:0.8;">Eminem</span>
+<!-- BUBBLE LETTERS - bigger, spread out -->
+<span class="g bubble" style="top:1%;left:28%;font-size:56px;color:#1a1a8c;transform:rotate(-10deg);display:inline-block;opacity:0.85;">Y2K</span>
+<span class="g bubble" style="top:18%;left:68%;font-size:48px;color:#8b0000;transform:rotate(7deg);display:inline-block;opacity:0.8;">TRL</span>
+<span class="g bubble" style="top:55%;left:4%;font-size:52px;color:#006400;transform:rotate(-12deg);display:inline-block;opacity:0.75;">NSYNC</span>
+<span class="g bubble" style="top:73%;left:55%;font-size:44px;color:#4b0082;transform:rotate(9deg);display:inline-block;opacity:0.8;">Eminem</span>
+<span class="g bubble" style="top:38%;left:68%;font-size:38px;color:#cc0066;transform:rotate(-6deg);display:inline-block;opacity:0.75;">Napster</span>
+<span class="g bubble" style="top:85%;left:12%;font-size:40px;color:#8b4513;transform:rotate(11deg);display:inline-block;opacity:0.75;">Britney</span>
 
-<!-- SCRATCHED SMALL TEXT -->
-<span class="g carved" style="top:8%;left:20%;font-size:12px;transform:rotate(5deg);display:inline-block;">J.T. + B.S. 4ever</span>
-<span class="g carved" style="top:18%;left:5%;font-size:11px;transform:rotate(-7deg);display:inline-block;">class of '01</span>
-<span class="g carved" style="top:25%;left:45%;font-size:11px;transform:rotate(4deg);display:inline-block;">i hate this class</span>
-<span class="g carved" style="top:33%;left:70%;font-size:12px;transform:rotate(-9deg);display:inline-block;">call me 555-01</span>
-<span class="g carved" style="top:44%;left:30%;font-size:11px;transform:rotate(6deg);display:inline-block;">Mrs. Timberlake</span>
-<span class="g carved" style="top:52%;left:72%;font-size:12px;transform:rotate(-5deg);display:inline-block;">napster rulez</span>
-<span class="g carved" style="top:63%;left:38%;font-size:11px;transform:rotate(8deg);display:inline-block;">where u @? page me</span>
-<span class="g carved" style="top:72%;left:18%;font-size:12px;transform:rotate(-6deg);display:inline-block;">life's better in 3D</span>
-<span class="g carved" style="top:80%;left:50%;font-size:11px;transform:rotate(3deg);display:inline-block;">WWJD</span>
-<span class="g carved" style="top:88%;left:8%;font-size:12px;transform:rotate(-11deg);display:inline-block;">9/11 never forget</span>
-<span class="g carved" style="top:92%;left:40%;font-size:11px;transform:rotate(5deg);display:inline-block;">blockbuster > netflix</span>
+<!-- SCRATCHED TEXT - bigger -->
+<span class="g carved" style="top:10%;left:22%;font-size:16px;transform:rotate(5deg);display:inline-block;">J.T. + B.S. 4ever</span>
+<span class="g carved" style="top:20%;left:6%;font-size:15px;transform:rotate(-7deg);display:inline-block;">class of '01</span>
+<span class="g carved" style="top:27%;left:48%;font-size:15px;transform:rotate(4deg);display:inline-block;">i hate this class</span>
+<span class="g carved" style="top:35%;left:72%;font-size:16px;transform:rotate(-9deg);display:inline-block;">call me 555-4823</span>
+<span class="g carved" style="top:46%;left:32%;font-size:15px;transform:rotate(6deg);display:inline-block;">Mrs. Timberlake</span>
+<span class="g carved" style="top:53%;left:74%;font-size:16px;transform:rotate(-5deg);display:inline-block;">napster &gt; everything</span>
+<span class="g carved" style="top:64%;left:40%;font-size:15px;transform:rotate(8deg);display:inline-block;">where u @? page me</span>
+<span class="g carved" style="top:74%;left:20%;font-size:16px;transform:rotate(-6deg);display:inline-block;">life's better in 3D</span>
+<span class="g carved" style="top:82%;left:52%;font-size:15px;transform:rotate(3deg);display:inline-block;">WWJD ✝️</span>
+<span class="g carved" style="top:91%;left:38%;font-size:15px;transform:rotate(5deg);display:inline-block;">blockbuster &gt; netflix</span>
+<span class="g carved" style="top:15%;left:42%;font-size:14px;transform:rotate(-4deg);display:inline-block;">homework due tmrw :(</span>
+<span class="g carved" style="top:58%;left:58%;font-size:15px;transform:rotate(7deg);display:inline-block;">AIM me l8r</span>
 
-<!-- MARKER STYLE TEXT -->
-<span class="g marker" style="top:10%;left:60%;font-size:16px;color:#00008b;transform:rotate(-14deg);display:inline-block;opacity:0.8;">Blink-182 4ever</span>
-<span class="g marker" style="top:20%;left:30%;font-size:14px;color:#8b0000;transform:rotate(11deg);display:inline-block;opacity:0.75;">AIM: xXdarkangel99Xx</span>
-<span class="g marker" style="top:30%;left:8%;font-size:15px;color:#4b0082;transform:rotate(-8deg);display:inline-block;opacity:0.8;">Limp Bizkit RULZ</span>
-<span class="g marker" style="top:38%;left:55%;font-size:14px;color:#006400;transform:rotate(13deg);display:inline-block;opacity:0.75;">Tamagotchi RIP</span>
-<span class="g marker" style="top:48%;left:80%;font-size:13px;color:#cc6600;transform:rotate(-7deg);display:inline-block;opacity:0.8;">Dawson's Creek 😭</span>
-<span class="g marker" style="top:56%;left:25%;font-size:15px;color:#8b0000;transform:rotate(9deg);display:inline-block;opacity:0.75;">Britney Spears 4eva</span>
-<span class="g marker" style="top:68%;left:62%;font-size:14px;color:#1a1a8c;transform:rotate(-11deg);display:inline-block;opacity:0.8;">Destiny's Child 💅</span>
-<span class="g marker" style="top:76%;left:3%;font-size:13px;color:#4b0082;transform:rotate(7deg);display:inline-block;opacity:0.75;">MySpace Top 8 drama</span>
-<span class="g marker" style="top:85%;left:70%;font-size:14px;color:#006400;transform:rotate(-9deg);display:inline-block;opacity:0.8;">Saved by the Bell</span>
+<!-- MARKER TEXT - bigger -->
+<span class="g marker" style="top:11%;left:62%;font-size:22px;color:#00008b;transform:rotate(-14deg);display:inline-block;opacity:0.85;">Blink-182 4ever</span>
+<span class="g marker" style="top:22%;left:28%;font-size:20px;color:#8b0000;transform:rotate(11deg);display:inline-block;opacity:0.8;">AIM: xXdarkangel99Xx</span>
+<span class="g marker" style="top:31%;left:5%;font-size:22px;color:#4b0082;transform:rotate(-8deg);display:inline-block;opacity:0.85;">Limp Bizkit RULZ</span>
+<span class="g marker" style="top:40%;left:52%;font-size:20px;color:#006400;transform:rotate(13deg);display:inline-block;opacity:0.8;">Tamagotchi RIP 🪦</span>
+<span class="g marker" style="top:49%;left:78%;font-size:18px;color:#cc6600;transform:rotate(-7deg);display:inline-block;opacity:0.8;">Dawson's Creek 😭</span>
+<span class="g marker" style="top:67%;left:60%;font-size:20px;color:#1a1a8c;transform:rotate(-11deg);display:inline-block;opacity:0.85;">Destiny's Child 💅</span>
+<span class="g marker" style="top:77%;left:2%;font-size:18px;color:#4b0082;transform:rotate(7deg);display:inline-block;opacity:0.8;">MySpace Top 8 drama</span>
+<span class="g marker" style="top:87%;left:68%;font-size:20px;color:#006400;transform:rotate(-9deg);display:inline-block;opacity:0.8;">Saved by the Bell 📺</span>
+<span class="g marker" style="top:94%;left:5%;font-size:18px;color:#8b0000;transform:rotate(6deg);display:inline-block;opacity:0.8;">Laguna Beach &gt; The Hills</span>
 
-<!-- CJM '01 - proud and visible -->
-<span class="g marker" style="top:42%;left:3%;font-size:20px;color:#5a3e1b;transform:rotate(-16deg);display:inline-block;opacity:0.95;letter-spacing:2px;font-weight:bold;">CJM '01</span>
+<!-- CJM '01 -->
+<span class="g marker" style="top:43%;left:2%;font-size:26px;color:#5a3e1b;transform:rotate(-16deg);display:inline-block;opacity:0.95;letter-spacing:3px;font-weight:bold;">CJM '01</span>
 
-<!-- SVG DRAWINGS -->
+<!-- SVG DRAWINGS - bigger -->
 
-<!-- Star (like in the photo) -->
-<svg class="g" style="top:22%;left:78%;width:40px;height:40px;opacity:0.7;transform:rotate(15deg);" viewBox="0 0 40 40">
+<!-- Star -->
+<svg class="g" style="top:20%;left:76%;width:65px;height:65px;opacity:0.75;transform:rotate(15deg);" viewBox="0 0 40 40">
     <polygon points="20,2 24,14 38,14 27,22 31,36 20,28 9,36 13,22 2,14 16,14" fill="none" stroke="#1a1a8c" stroke-width="2"/>
 </svg>
 
 <!-- Heart -->
-<svg class="g" style="top:55%;left:85%;width:36px;height:36px;opacity:0.7;transform:rotate(-10deg);" viewBox="0 0 36 36">
-    <path d="M18 32 C18 32 4 22 4 13 C4 8 8 4 13 4 C15.5 4 17.5 5.5 18 7 C18.5 5.5 20.5 4 23 4 C28 4 32 8 32 13 C32 22 18 32 18 32Z" fill="none" stroke="#cc0000" stroke-width="2"/>
+<svg class="g" style="top:52%;left:84%;width:60px;height:60px;opacity:0.75;transform:rotate(-10deg);" viewBox="0 0 36 36">
+    <path d="M18 32 C18 32 4 22 4 13 C4 8 8 4 13 4 C15.5 4 17.5 5.5 18 7 C18.5 5.5 20.5 4 23 4 C28 4 32 8 32 13 C32 22 18 32 18 32Z" fill="none" stroke="#cc0000" stroke-width="2.5"/>
 </svg>
 
 <!-- Smiley face -->
-<svg class="g" style="top:70%;left:88%;width:38px;height:38px;opacity:0.65;transform:rotate(8deg);" viewBox="0 0 38 38">
-    <circle cx="19" cy="19" r="17" fill="none" stroke="#8b6914" stroke-width="2"/>
-    <circle cx="13" cy="15" r="2" fill="#8b6914"/>
-    <circle cx="25" cy="15" r="2" fill="#8b6914"/>
-    <path d="M12 24 Q19 30 26 24" fill="none" stroke="#8b6914" stroke-width="2"/>
+<svg class="g" style="top:68%;left:86%;width:65px;height:65px;opacity:0.7;transform:rotate(8deg);" viewBox="0 0 38 38">
+    <circle cx="19" cy="19" r="17" fill="none" stroke="#8b6914" stroke-width="2.5"/>
+    <circle cx="13" cy="15" r="2.5" fill="#8b6914"/>
+    <circle cx="25" cy="15" r="2.5" fill="#8b6914"/>
+    <path d="M12 24 Q19 30 26 24" fill="none" stroke="#8b6914" stroke-width="2.5"/>
 </svg>
 
 <!-- Lightning bolt -->
-<svg class="g" style="top:85%;left:82%;width:24px;height:40px;opacity:0.7;transform:rotate(-5deg);" viewBox="0 0 24 40">
-    <polyline points="16,2 6,22 13,22 8,38 22,16 14,16 20,2" fill="none" stroke="#cc6600" stroke-width="2"/>
+<svg class="g" style="top:83%;left:80%;width:40px;height:65px;opacity:0.75;transform:rotate(-5deg);" viewBox="0 0 24 40">
+    <polyline points="16,2 6,22 13,22 8,38 22,16 14,16 20,2" fill="none" stroke="#cc6600" stroke-width="2.5"/>
 </svg>
 
 <!-- Tic tac toe -->
-<svg class="g" style="top:12%;left:85%;width:50px;height:50px;opacity:0.6;transform:rotate(5deg);" viewBox="0 0 50 50">
+<svg class="g" style="top:10%;left:84%;width:80px;height:80px;opacity:0.65;transform:rotate(5deg);" viewBox="0 0 50 50">
     <line x1="17" y1="5" x2="17" y2="45" stroke="#555" stroke-width="2"/>
     <line x1="33" y1="5" x2="33" y2="45" stroke="#555" stroke-width="2"/>
     <line x1="5" y1="17" x2="45" y2="17" stroke="#555" stroke-width="2"/>
     <line x1="5" y1="33" x2="45" y2="33" stroke="#555" stroke-width="2"/>
-    <!-- X in top left -->
     <line x1="6" y1="6" x2="14" y2="14" stroke="#8b0000" stroke-width="2"/>
     <line x1="14" y1="6" x2="6" y2="14" stroke="#8b0000" stroke-width="2"/>
-    <!-- O in top middle -->
     <circle cx="25" cy="11" r="5" fill="none" stroke="#00008b" stroke-width="2"/>
-    <!-- X in middle left -->
     <line x1="6" y1="20" x2="14" y2="28" stroke="#8b0000" stroke-width="2"/>
     <line x1="14" y1="20" x2="6" y2="28" stroke="#8b0000" stroke-width="2"/>
 </svg>
 
-<!-- Random squiggle lines like real desk -->
-<svg class="g" style="top:35%;left:60%;width:80px;height:30px;opacity:0.4;transform:rotate(-3deg);" viewBox="0 0 80 30">
-    <path d="M5,15 Q20,5 35,15 Q50,25 65,15 Q75,8 80,15" fill="none" stroke="#555" stroke-width="1.5"/>
+<!-- Second heart bottom left -->
+<svg class="g" style="top:90%;left:48%;width:50px;height:50px;opacity:0.65;transform:rotate(12deg);" viewBox="0 0 36 36">
+    <path d="M18 32 C18 32 4 22 4 13 C4 8 8 4 13 4 C15.5 4 17.5 5.5 18 7 C18.5 5.5 20.5 4 23 4 C28 4 32 8 32 13 C32 22 18 32 18 32Z" fill="none" stroke="#880000" stroke-width="2.5"/>
 </svg>
-<svg class="g" style="top:65%;left:40%;width:60px;height:20px;opacity:0.35;transform:rotate(7deg);" viewBox="0 0 60 20">
-    <line x1="0" y1="10" x2="60" y2="10" stroke="#333" stroke-width="1.5"/>
+
+<!-- Squiggle -->
+<svg class="g" style="top:36%;left:58%;width:120px;height:40px;opacity:0.4;transform:rotate(-3deg);" viewBox="0 0 80 30">
+    <path d="M5,15 Q20,5 35,15 Q50,25 65,15 Q75,8 80,15" fill="none" stroke="#555" stroke-width="2"/>
 </svg>
 
 <div class="box">
