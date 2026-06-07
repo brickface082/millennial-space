@@ -11,7 +11,10 @@ from flask_login import LoginManager, UserMixin, login_user, current_user, logou
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key-change-me")
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(basedir, "instance", "site.db")
+database_url = os.environ.get("DATABASE_URL", "sqlite:///" + os.path.join(basedir, "instance", "site.db"))
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["UPLOAD_FOLDER"] = os.path.join(basedir, "static/uploads")
 
 db = SQLAlchemy(app)
