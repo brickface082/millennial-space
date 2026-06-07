@@ -6,26 +6,44 @@
     <title>Login - Millennial Space</title>
     <style>
         body {
-            background-color: #ff66b2;
+            background-color: #c8a96e;
+            background-image:
+                repeating-linear-gradient(90deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 40px),
+                repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 40px);
             font-family: 'Comic Sans MS', cursive;
             margin: 0;
             padding: 20px;
             min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
         }
+
+        .graffiti {
+            position: fixed;
+            font-family: 'Comic Sans MS', cursive;
+            pointer-events: none;
+            user-select: none;
+            z-index: 0;
+        }
+
         .box {
-            background: rgba(255,255,255,0.9);
-            max-width: 420px;
-            margin: 60px auto 0 auto;
+            background: rgba(255,255,255,0.93);
+            max-width: 400px;
+            margin: 40px auto 0 auto;
             padding: 28px;
-            border: 4px ridge #00ffff;
-            box-shadow: 4px 4px 0px #ff00ff;
+            border: 2px solid #333;
+            box-shadow: 3px 3px 0px #555;
+            position: relative;
+            z-index: 10;
         }
+
         h1 {
             color: #ff1493;
             text-shadow: 2px 2px #ffff00;
             margin-top: 0;
             font-size: 1.8em;
         }
+
         input[type="email"],
         input[type="password"] {
             width: 100%;
@@ -37,11 +55,9 @@
             margin-bottom: 14px;
             margin-top: 4px;
         }
-        label {
-            font-size: 14px;
-            color: #660066;
-            font-weight: bold;
-        }
+
+        label { font-size: 14px; color: #660066; font-weight: bold; }
+
         .btn {
             background: #ff1493;
             color: white;
@@ -54,6 +70,7 @@
             margin-top: 4px;
         }
         .btn:hover { background: #cc0077; }
+
         .flash {
             padding: 8px 12px;
             margin-bottom: 14px;
@@ -61,16 +78,45 @@
             border: 2px solid #cc0000;
             color: #660000;
         }
-        .flash.success {
-            background: #ccffcc;
-            border-color: #00cc00;
-            color: #005500;
-        }
+        .flash.success { background: #ccffcc; border-color: #00cc00; color: #005500; }
+
         p { margin-top: 16px; }
         a { color: #0000cc; font-weight: bold; }
     </style>
 </head>
 <body>
+
+<!-- DESK GRAFFITI -->
+<span class="graffiti" style="top:4%;left:2%;font-size:28px;color:#1a1a8c;transform:rotate(-15deg);display:inline-block;opacity:0.85;font-weight:bold;">NSYNC &gt; BSB</span>
+<span class="graffiti" style="top:8%;left:18%;font-size:14px;color:#8b0000;transform:rotate(8deg);display:inline-block;opacity:0.7;">Y2K IS COMING!!!</span>
+<span class="graffiti" style="top:2%;left:55%;font-size:20px;color:#4b0082;transform:rotate(-5deg);display:inline-block;opacity:0.8;font-weight:bold;">Blink-182 4ever</span>
+<span class="graffiti" style="top:12%;left:72%;font-size:13px;color:#006400;transform:rotate(12deg);display:inline-block;opacity:0.75;">AIM: xXdarkangel99Xx</span>
+<span class="graffiti" style="top:18%;left:5%;font-size:16px;color:#8b0000;transform:rotate(-8deg);display:inline-block;opacity:0.8;">Class of 2001 🤘</span>
+<span class="graffiti" style="top:22%;left:40%;font-size:13px;color:#333;transform:rotate(5deg);display:inline-block;opacity:0.7;">Napster &gt; everything</span>
+<span class="graffiti" style="top:28%;left:78%;font-size:22px;color:#cc0000;transform:rotate(-20deg);display:inline-block;opacity:0.85;font-weight:bold;">TRL #1</span>
+<span class="graffiti" style="top:32%;left:1%;font-size:15px;color:#00008b;transform:rotate(10deg);display:inline-block;opacity:0.75;">Mrs. Timberlake 💕</span>
+<span class="graffiti" style="top:35%;left:60%;font-size:12px;color:#555;transform:rotate(-6deg);display:inline-block;opacity:0.7;">&lt;marquee&gt; is life &lt;/marquee&gt;</span>
+<span class="graffiti" style="top:42%;left:12%;font-size:18px;color:#4b0082;transform:rotate(-12deg);display:inline-block;opacity:0.8;">Limp Bizkit RULZ</span>
+<span class="graffiti" style="top:45%;left:70%;font-size:14px;color:#8b4513;transform:rotate(7deg);display:inline-block;opacity:0.75;">Tamagotchi R.I.P. 🪦</span>
+<span class="graffiti" style="top:50%;left:30%;font-size:13px;color:#006400;transform:rotate(-3deg);display:inline-block;opacity:0.7;">call me @ 555-4</span>
+<span class="graffiti" style="top:55%;left:2%;font-size:16px;color:#cc6600;transform:rotate(15deg);display:inline-block;opacity:0.8;">9/11 Never Forget</span>
+<span class="graffiti" style="top:58%;left:55%;font-size:20px;color:#1a1a8c;transform:rotate(-9deg);display:inline-block;opacity:0.85;font-weight:bold;">Eminem is GOD</span>
+<span class="graffiti" style="top:62%;left:80%;font-size:13px;color:#8b0000;transform:rotate(18deg);display:inline-block;opacity:0.7;">Destiny's Child 💅</span>
+<span class="graffiti" style="top:67%;left:20%;font-size:15px;color:#333;transform:rotate(-7deg);display:inline-block;opacity:0.75;">Blockbuster &gt; Netflix</span>
+<span class="graffiti" style="top:70%;left:65%;font-size:14px;color:#4b0082;transform:rotate(11deg);display:inline-block;opacity:0.7;">Saved by the Bell reruns 📺</span>
+<span class="graffiti" style="top:75%;left:3%;font-size:18px;color:#006400;transform:rotate(-14deg);display:inline-block;opacity:0.8;">Britney Spears 4eva</span>
+<span class="graffiti" style="top:78%;left:45%;font-size:13px;color:#555;transform:rotate(6deg);display:inline-block;opacity:0.7;">where u @? hit my pager</span>
+<span class="graffiti" style="top:83%;left:75%;font-size:16px;color:#8b0000;transform:rotate(-10deg);display:inline-block;opacity:0.8;">Dawson's Creek 😭</span>
+<span class="graffiti" style="top:87%;left:10%;font-size:14px;color:#cc6600;transform:rotate(9deg);display:inline-block;opacity:0.75;">WWJD ✝️</span>
+<span class="graffiti" style="top:90%;left:38%;font-size:15px;color:#1a1a8c;transform:rotate(-5deg);display:inline-block;opacity:0.8;">Laguna Beach &gt; The Hills</span>
+<span class="graffiti" style="top:93%;left:68%;font-size:13px;color:#4b0082;transform:rotate(13deg);display:inline-block;opacity:0.7;">MySpace Top 8 drama 💀</span>
+
+<!-- THE S -->
+<span class="graffiti" style="top:38%;left:88%;font-size:48px;color:#222;transform:rotate(-5deg);display:inline-block;opacity:0.9;font-weight:900;letter-spacing:-4px;">S</span>
+
+<!-- EASTER EGG - CJM '01 small and carved looking -->
+<span class="graffiti" style="top:96%;left:91%;font-size:11px;color:#5a3e1b;transform:rotate(-22deg);display:inline-block;opacity:0.55;letter-spacing:2px;font-weight:bold;">CJM '01</span>
+
 <div class="box">
     <h1>✨ Millennial Space</h1>
 
@@ -90,5 +136,6 @@
     </form>
     <p>No account? <a href="/register">Register here</a></p>
 </div>
+
 </body>
 </html>
