@@ -52,6 +52,15 @@ class Post(db.Model):
     def __repr__(self):
         return f"Post({self.id}, {self.user_id})"
 
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    author_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    profile_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    author = db.relationship("User", foreign_keys=[author_id], backref=db.backref("comments_made", lazy=True))
+    profile_user = db.relationship("User", foreign_keys=[profile_id], backref=db.backref("comments_received", lazy=True))
+
 def extract_url(value):
     value = value.strip()
     match = re.search(r'src=["\']([^"\']+)["\']', value)
@@ -116,7 +125,8 @@ def logout():
 def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     posts = Post.query.filter_by(user_id=user.id).order_by(Post.timestamp.desc()).all()
-    return render_template("profile.html", user=user, posts=posts)
+    comments = Comment.query.filter_by(profile_id=user.id).order_by(Comment.timestamp.desc()).all()
+    return render_template("profile.html", user=user, posts=posts, comments=comments)
 
 @app.route("/edit", methods=["GET", "POST"])
 @login_required
@@ -180,6 +190,30 @@ def create_post():
     db.session.add(post)
     db.session.commit()
     return redirect(url_for("profile", username=current_user.username))
+
+@app.route("/profile/<username>/comment", methods=["POST"])
+@login_required
+def add_comment(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    body = request.form.get("body", "").strip()
+    if not body:
+        flash("Comment cannot be empty.", "danger")
+        return redirect(url_for("profile", username=username))
+    comment = Comment(body=body, author_id=current_user.id, profile_id=user.id)
+    db.session.add(comment)
+    db.session.commit()
+    return redirect(url_for("profile", username=username))
+
+@app.route("/comment/<int:comment_id>/delete", methods=["POST"])
+@login_required
+def delete_comment(comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    profile_username = comment.profile_user.username
+    if current_user.id != comment.profile_id and current_user.id != comment.author_id:
+        return redirect(url_for("profile", username=profile_username))
+    db.session.delete(comment)
+    db.session.commit()
+    return redirect(url_for("profile", username=profile_username))
 
 with app.app_context():
     os.makedirs(os.path.join(basedir, "instance"), exist_ok=True)
