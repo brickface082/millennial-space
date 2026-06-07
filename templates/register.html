@@ -1,20 +1,97 @@
 <!DOCTYPE html>
 <html>
-<head><title>Register - Millennial Space</title></head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Millennial Space</title>
+    <style>
+        body {
+            background-color: #ff66b2;
+            font-family: 'Comic Sans MS', cursive;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .box {
+            background: rgba(255,255,255,0.9);
+            max-width: 420px;
+            margin: 60px auto 0 auto;
+            padding: 28px;
+            border: 4px ridge #00ffff;
+            box-shadow: 4px 4px 0px #ff00ff;
+        }
+        h1 {
+            color: #ff1493;
+            text-shadow: 2px 2px #ffff00;
+            margin-top: 0;
+            font-size: 1.8em;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px;
+            font-family: inherit;
+            font-size: 15px;
+            border: 2px solid #ff66b2;
+            margin-bottom: 14px;
+            margin-top: 4px;
+        }
+        label {
+            font-size: 14px;
+            color: #660066;
+            font-weight: bold;
+        }
+        .btn {
+            background: #ff1493;
+            color: white;
+            border: none;
+            padding: 10px 28px;
+            font-family: inherit;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+        .btn:hover { background: #cc0077; }
+        .flash {
+            padding: 8px 12px;
+            margin-bottom: 14px;
+            background: #ffcccc;
+            border: 2px solid #cc0000;
+            color: #660000;
+        }
+        .flash.success {
+            background: #ccffcc;
+            border-color: #00cc00;
+            color: #005500;
+        }
+        p { margin-top: 16px; }
+        a { color: #0000cc; font-weight: bold; }
+    </style>
+</head>
 <body>
-<h1>Join Millennial Space</h1>
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
+<div class="box">
+    <h1>✨ Join Millennial Space</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
         {% for category, message in messages %}
-            <div>{{ message }}</div>
+            <div class="flash {{ category }}">{{ message }}</div>
         {% endfor %}
-    {% endif %}
-{% endwith %}
-<form method="POST">
-    <input type="text" name="username" placeholder="Username" required><br><br>
-    <input type="email" name="email" placeholder="Email" required><br><br>
-    <input type="password" name="password" placeholder="Password" required><br><br>
-    <button type="submit">Create Account</button>
-</form>
+    {% endwith %}
+
+    <form method="POST">
+        <label>Username</label>
+        <input type="text" name="username" placeholder="brickface082" required>
+        <label>Email</label>
+        <input type="email" name="email" placeholder="your@email.com" required>
+        <label>Password</label>
+        <input type="password" name="password" placeholder="••••••••" required>
+        <br>
+        <button class="btn" type="submit">Create Account</button>
+    </form>
+    <p>Already have an account? <a href="/login">Login here</a></p>
+</div>
 </body>
 </html>
