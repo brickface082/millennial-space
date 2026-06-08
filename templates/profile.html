@@ -221,7 +221,31 @@
     <div class="nav-links">
         {% if current_user.is_authenticated and current_user.username == user.username %}
             <a href="/edit">✏️ Edit My Space</a>
-            <a href="/logout">Logout</a>
+            <a href="/logout">Logout</a> |
+            <a href="{{ url_for('crew_requests') }}">👥 Crew Requests</a>
+        {% elif current_user.is_authenticated %}
+            {% if crew_status == "accepted" %}
+                <form method="POST" action="{{ url_for('crew_remove', user_id=user.id) }}" style="display:inline;">
+                    <button type="submit" style="background:none;border:none;color:#0000cc;font-family:inherit;font-size:15px;font-weight:bold;cursor:pointer;padding:0;">✅ In Your Crew — Remove</button>
+                </form> |
+                <form method="POST" action="{{ url_for('crew_block', user_id=user.id) }}" style="display:inline;" onsubmit="return confirm('Block this person?');">
+                    <button type="submit" style="background:none;border:none;color:#cc0000;font-family:inherit;font-size:15px;font-weight:bold;cursor:pointer;padding:0;">🚫 Block</button>
+                </form>
+            {% elif crew_status == "pending" %}
+                <span style="color:#888;font-size:15px;">⏳ Crew Request Pending</span> |
+                <form method="POST" action="{{ url_for('crew_remove', user_id=user.id) }}" style="display:inline;">
+                    <button type="submit" style="background:none;border:none;color:#cc0000;font-family:inherit;font-size:15px;font-weight:bold;cursor:pointer;padding:0;">Cancel</button>
+                </form>
+            {% elif crew_status == "blocked" %}
+                <span style="color:#cc0000;font-size:15px;">🚫 Blocked</span>
+            {% else %}
+                <form method="POST" action="{{ url_for('crew_add', user_id=user.id) }}" style="display:inline;">
+                    <button type="submit" style="background:#ff1493;color:white;border:none;padding:8px 18px;font-family:inherit;font-size:15px;font-weight:bold;cursor:pointer;">👊 Add to My Crew</button>
+                </form> |
+                <form method="POST" action="{{ url_for('crew_block', user_id=user.id) }}" style="display:inline;" onsubmit="return confirm('Block this person?');">
+                    <button type="submit" style="background:none;border:none;color:#cc0000;font-family:inherit;font-size:15px;font-weight:bold;cursor:pointer;padding:0;">🚫 Block</button>
+                </form>
+            {% endif %}
         {% endif %}
     </div>
 

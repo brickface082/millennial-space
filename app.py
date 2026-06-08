@@ -41,6 +41,15 @@ class User(db.Model, UserMixin):
     def __repr__(self):
         return f"User({self.username})"
 
+class CrewRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    from_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    to_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    status = db.Column(db.String(20), default="pending")  # pending, accepted, blocked
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    from_user = db.relationship("User", foreign_keys=[from_id], backref=db.backref("sent_requests", lazy=True))
+    to_user = db.relationship("User", foreign_keys=[to_id], backref=db.backref("received_requests", lazy=True))
+
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     body = db.Column(db.Text, nullable=False)
@@ -126,7 +135,14 @@ def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     posts = Post.query.filter_by(user_id=user.id).order_by(Post.timestamp.desc()).all()
     comments = Comment.query.filter_by(profile_id=user.id).order_by(Comment.timestamp.desc()).all()
-    return render_template("profile.html", user=user, posts=posts, comments=comments)
+    crew_status = None
+    crew_request_id = None
+    if current_user.is_authenticated and current_user.id != user.id:
+        req = get_crew_status(current_user.id, user.id)
+        if req:
+            crew_status = req.status
+            crew_request_id = req.id
+    return render_template("profile.html", user=user, posts=posts, comments=comments, crew_status=crew_status, crew_request_id=crew_request_id)
 
 @app.route("/edit", methods=["GET", "POST"])
 @login_required
@@ -148,6 +164,65 @@ def edit_profile():
         flash("Profile updated!", "success")
         return redirect(url_for("profile", username=current_user.username))
     return render_template("edit_profile.html")
+
+def get_crew_status(current_user_id, profile_user_id):
+    req = CrewRequest.query.filter(
+        ((CrewRequest.from_id == current_user_id) & (CrewRequest.to_id == profile_user_id)) |
+        ((CrewRequest.from_id == profile_user_id) & (CrewRequest.to_id == current_user_id))
+    ).first()
+    return req
+
+@app.route("/crew/add/<int:user_id>", methods=["POST"])
+@login_required
+def crew_add(user_id):
+    target = User.query.get_or_404(user_id)
+    existing = get_crew_status(current_user.id, user_id)
+    if not existing:
+        req = CrewRequest(from_id=current_user.id, to_id=user_id, status="pending")
+        db.session.add(req)
+        db.session.commit()
+    return redirect(url_for("profile", username=target.username))
+
+@app.route("/crew/accept/<int:request_id>", methods=["POST"])
+@login_required
+def crew_accept(request_id):
+    req = CrewRequest.query.get_or_404(request_id)
+    if req.to_id != current_user.id:
+        return redirect(url_for("profile", username=current_user.username))
+    req.status = "accepted"
+    db.session.commit()
+    return redirect(url_for("profile", username=current_user.username))
+
+@app.route("/crew/remove/<int:user_id>", methods=["POST"])
+@login_required
+def crew_remove(user_id):
+    target = User.query.get_or_404(user_id)
+    req = get_crew_status(current_user.id, user_id)
+    if req:
+        db.session.delete(req)
+        db.session.commit()
+    return redirect(url_for("profile", username=target.username))
+
+@app.route("/crew/block/<int:user_id>", methods=["POST"])
+@login_required
+def crew_block(user_id):
+    target = User.query.get_or_404(user_id)
+    req = get_crew_status(current_user.id, user_id)
+    if req:
+        req.status = "blocked"
+        req.from_id = current_user.id
+        req.to_id = user_id
+    else:
+        req = CrewRequest(from_id=current_user.id, to_id=user_id, status="blocked")
+        db.session.add(req)
+    db.session.commit()
+    return redirect(url_for("profile", username=target.username))
+
+@app.route("/crew/requests")
+@login_required
+def crew_requests():
+    pending = CrewRequest.query.filter_by(to_id=current_user.id, status="pending").all()
+    return render_template("crew_requests.html", pending=pending)
 
 @app.route("/post/<int:post_id>/delete", methods=["POST"])
 @login_required
