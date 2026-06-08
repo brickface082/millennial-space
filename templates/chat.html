@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Chat with {{ other.username }} - Millennial Space{% endblock %}
+
+{% block extra_style %}
+<style>
+    .chat-box {
+        background: rgba(255,255,255,0.93);
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 4px ridge #00ffff;
+        box-shadow: 4px 4px 0px #ff00ff;
+    }
+    h1 { color: #ff1493; text-shadow: 2px 2px #ffff00; margin-top: 0; font-size: 1.4em; }
+    .thread {
+        height: 380px;
+        overflow-y: auto;
+        border: 2px solid #ff66b2;
+        padding: 10px;
+        background: #fff9fe;
+        margin-bottom: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .msg {
+        max-width: 75%;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 14px;
+        line-height: 1.4;
+        word-break: break-word;
+    }
+    .msg.mine {
+        align-self: flex-end;
+        background: #ff66b2;
+        color: white;
+        border: 2px solid #ff1493;
+    }
+    .msg.theirs {
+        align-self: flex-start;
+        background: #e8f8ff;
+        border: 2px solid #00cccc;
+        color: #222;
+    }
+    .msg-meta {
+        font-size: 11px;
+        opacity: 0.7;
+        margin-bottom: 2px;
+    }
+    .send-form {
+        display: flex;
+        gap: 8px;
+    }
+    .send-form input[type="text"] {
+        flex: 1;
+        font-family: inherit;
+        font-size: 14px;
+        padding: 8px;
+        border: 2px solid #ff66b2;
+    }
+    .send-form button {
+        background: #ff1493;
+        color: white;
+        border: none;
+        padding: 8px 18px;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    .send-form button:hover { background: #cc0077; }
+    .status-badge { font-size: 13px; margin-left: 8px; }
+    a.back { color: #0000cc; font-weight: bold; font-size: 13px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-box">
+    <h1>
+        💬 Chat with
+        <a href="{{ url_for('profile', username=other.username) }}" style="color:#ff1493;text-decoration:none;">{{ other.username }}</a>
+        <span class="status-badge">
+            {% if other.status == 'away' %}🌙 Away
+            {% elif other.status == 'dnd' %}🔴 DND
+            {% else %}🟢 Online
+            {% endif %}
+        </span>
+    </h1>
+
+    <div class="thread" id="thread">
+        {% for msg in messages %}
+        <div class="msg {% if msg.from_id == current_user.id %}mine{% else %}theirs{% endif %}" data-id="{{ msg.id }}">
+            <div class="msg-meta">
+                {% if msg.from_id != current_user.id %}{{ msg.sender.username }} · {% endif %}{{ msg.timestamp.strftime('%b %d at %I:%M %p') }}
+            </div>
+            {{ msg.body }}
+        </div>
+        {% endfor %}
+    </div>
+
+    <form class="send-form" method="POST" action="{{ url_for('chat_send', username=other.username) }}" id="send-form">
+        <input type="text" name="body" id="msg-input" placeholder="Say something..." autocomplete="off" maxlength="1000">
+        <button type="submit">Send</button>
+    </form>
+
+    <br>
+    <a class="back" href="{{ url_for('profile', username=other.username) }}">← Back to {{ other.username }}'s Space</a>
+</div>
+
+<script>
+    const thread = document.getElementById('thread');
+    const pollUrl = "{{ url_for('chat_messages', username=other.username) }}";
+
+    function lastId() {
+        const msgs = thread.querySelectorAll('[data-id]');
+        if (!msgs.length) return 0;
+        return parseInt(msgs[msgs.length - 1].getAttribute('data-id'));
+    }
+
+    function scrollBottom() {
+        thread.scrollTop = thread.scrollHeight;
+    }
+
+    function appendMsg(m) {
+        const mine = m.from === "{{ current_user.username }}";
+        const div = document.createElement('div');
+        div.className = 'msg ' + (mine ? 'mine' : 'theirs');
+        div.setAttribute('data-id', m.id);
+        const meta = document.createElement('div');
+        meta.className = 'msg-meta';
+        meta.textContent = mine ? m.time : m.from + ' · ' + m.time;
+        div.appendChild(meta);
+        div.appendChild(document.createTextNode(m.body));
+        thread.appendChild(div);
+    }
+
+    function poll() {
+        fetch(pollUrl + '?after=' + lastId())
+            .then(r => r.json())
+            .then(msgs => {
+                if (msgs.length) {
+                    msgs.forEach(appendMsg);
+                    scrollBottom();
+                }
+            })
+            .catch(() => {});
+    }
+
+    scrollBottom();
+    setInterval(poll, 5000);
+
+    document.getElementById('send-form').addEventListener('submit', function() {
+        setTimeout(scrollBottom, 300);
+    });
+</script>
+{% endblock %}

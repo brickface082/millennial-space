@@ -153,6 +153,9 @@
                     <button type="submit" style="background:none;border:none;color:#cc0000;font-family:inherit;font-size:15px;font-weight:bold;cursor:pointer;padding:0;">🚫 Block</button>
                 </form>
             {% endif %}
+            {% if crew_status != 'blocked' %}
+             | <a href="{{ url_for('chat', username=user.username) }}" style="color:#0000cc;font-weight:bold;text-decoration:none;">💬 Message</a>
+            {% endif %}
         {% endif %}
     </div>
 

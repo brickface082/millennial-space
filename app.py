@@ -3,7 +3,7 @@ import re
 import secrets
 from PIL import Image
 from datetime import datetime
-from flask import Flask, render_template, redirect, url_for, request, flash
+from flask import Flask, render_template, redirect, url_for, request, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, current_user, logout_user, login_required
@@ -38,6 +38,8 @@ class User(db.Model, UserMixin):
     youtube_url = db.Column(db.String(200), default="")
     spotify_url = db.Column(db.String(200), default="")
     top8 = db.Column(db.String(200), default="")
+    status = db.Column(db.String(10), default="online")
+    last_seen = db.Column(db.DateTime, nullable=True)
 
     def __repr__(self):
         return f"User({self.username})"
@@ -61,6 +63,15 @@ class Post(db.Model):
 
     def __repr__(self):
         return f"Post({self.id}, {self.user_id})"
+
+class DirectMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    from_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    to_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    sender = db.relationship("User", foreign_keys=[from_id], backref=db.backref("sent_messages", lazy=True))
+    recipient = db.relationship("User", foreign_keys=[to_id], backref=db.backref("received_messages", lazy=True))
 
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -308,6 +319,12 @@ def add_comment(username):
     db.session.commit()
     return redirect(url_for("profile", username=username))
 
+@app.before_request
+def update_last_seen():
+    if current_user.is_authenticated:
+        current_user.last_seen = datetime.utcnow()
+        db.session.commit()
+
 @app.route("/search")
 @login_required
 def search():
@@ -316,6 +333,57 @@ def search():
     if q:
         results = User.query.filter(User.username.ilike(f"%{q}%")).limit(20).all()
     return render_template("search.html", q=q, results=results)
+
+@app.route("/chat/<username>")
+@login_required
+def chat(username):
+    other = User.query.filter_by(username=username).first_or_404()
+    if other.id == current_user.id:
+        return redirect(url_for("profile", username=current_user.username))
+    messages = DirectMessage.query.filter(
+        ((DirectMessage.from_id == current_user.id) & (DirectMessage.to_id == other.id)) |
+        ((DirectMessage.from_id == other.id) & (DirectMessage.to_id == current_user.id))
+    ).order_by(DirectMessage.timestamp.asc()).all()
+    return render_template("chat.html", other=other, messages=messages)
+
+@app.route("/chat/<username>/send", methods=["POST"])
+@login_required
+def chat_send(username):
+    other = User.query.filter_by(username=username).first_or_404()
+    if other.id == current_user.id:
+        return redirect(url_for("profile", username=current_user.username))
+    body = request.form.get("body", "").strip()
+    if body:
+        msg = DirectMessage(from_id=current_user.id, to_id=other.id, body=body)
+        db.session.add(msg)
+        db.session.commit()
+    return redirect(url_for("chat", username=username))
+
+@app.route("/chat/<username>/messages")
+@login_required
+def chat_messages(username):
+    other = User.query.filter_by(username=username).first_or_404()
+    after_id = request.args.get("after", 0, type=int)
+    messages = DirectMessage.query.filter(
+        ((DirectMessage.from_id == current_user.id) & (DirectMessage.to_id == other.id)) |
+        ((DirectMessage.from_id == other.id) & (DirectMessage.to_id == current_user.id)),
+        DirectMessage.id > after_id
+    ).order_by(DirectMessage.timestamp.asc()).all()
+    return jsonify([{
+        "id": m.id,
+        "from": m.sender.username,
+        "body": m.body,
+        "time": m.timestamp.strftime("%b %d at %I:%M %p")
+    } for m in messages])
+
+@app.route("/status", methods=["POST"])
+@login_required
+def set_status():
+    s = request.form.get("status", "online")
+    if s in ("online", "away", "dnd"):
+        current_user.status = s
+        db.session.commit()
+    return redirect(request.referrer or url_for("profile", username=current_user.username))
 
 @app.route("/comment/<int:comment_id>/delete", methods=["POST"])
 @login_required
@@ -332,7 +400,11 @@ with app.app_context():
     os.makedirs(os.path.join(basedir, "instance"), exist_ok=True)
     db.create_all()
     with db.engine.connect() as conn:
-        for col, definition in [("top8", "VARCHAR(200) DEFAULT ''")]:
+        for col, definition in [
+            ("top8", "VARCHAR(200) DEFAULT ''"),
+            ("status", "VARCHAR(10) DEFAULT 'online'"),
+            ("last_seen", "DATETIME"),
+        ]:
             try:
                 conn.execute(db.text(f'ALTER TABLE "user" ADD COLUMN {col} {definition}'))
                 conn.commit()
