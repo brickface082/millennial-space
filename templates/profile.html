@@ -194,6 +194,24 @@
 
     <p class="bio">{{ user.bio or "No bio yet." }}</p>
 
+    {% if top8_users %}
+    <div style="margin: 12px 0;">
+        <p class="section-label">⭐ Top 8</p>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;">
+            {% for member in top8_users %}
+            <a href="{{ url_for('profile', username=member.username) }}" style="text-align:center;text-decoration:none;">
+                {% if member.profile_pic and member.profile_pic != 'default.jpg' %}
+                    <img src="{{ url_for('static', filename='uploads/profile_pics/' + member.profile_pic) }}" style="width:60px;height:60px;border-radius:50%;border:3px solid #ff00ff;object-fit:cover;display:block;">
+                {% else %}
+                    <div style="width:60px;height:60px;border-radius:50%;border:3px solid #ff00ff;background:#ffccee;"></div>
+                {% endif %}
+                <span style="font-size:12px;color:#0000cc;font-weight:bold;">{{ member.username }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     {% if user.youtube_url or user.spotify_url %}
     <div class="media-section">
         {% if user.youtube_url %}
@@ -220,9 +238,10 @@
 
     <div class="nav-links">
         {% if current_user.is_authenticated and current_user.username == user.username %}
-            <a href="/edit">✏️ Edit My Space</a>
-            <a href="/logout">Logout</a> |
-            <a href="{{ url_for('crew_requests') }}">👥 Crew Requests</a>
+            <a href="/edit">✏️ Edit My Space</a> |
+            <a href="{{ url_for('top8') }}">⭐ Edit Top 8</a> |
+            <a href="{{ url_for('crew_requests') }}">👥 Crew Requests</a> |
+            <a href="/logout">Logout</a>
         {% elif current_user.is_authenticated %}
             {% if crew_status == "accepted" %}
                 <form method="POST" action="{{ url_for('crew_remove', user_id=user.id) }}" style="display:inline;">

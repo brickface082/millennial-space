@@ -37,6 +37,7 @@ class User(db.Model, UserMixin):
     bg_image = db.Column(db.String(120), default="")
     youtube_url = db.Column(db.String(200), default="")
     spotify_url = db.Column(db.String(200), default="")
+    top8 = db.Column(db.String(200), default="")
 
     def __repr__(self):
         return f"User({self.username})"
@@ -142,7 +143,14 @@ def profile(username):
         if req:
             crew_status = req.status
             crew_request_id = req.id
-    return render_template("profile.html", user=user, posts=posts, comments=comments, crew_status=crew_status, crew_request_id=crew_request_id)
+    top8_users = []
+    if user.top8:
+        for uid in user.top8.split(","):
+            if uid:
+                m = User.query.get(int(uid))
+                if m:
+                    top8_users.append(m)
+    return render_template("profile.html", user=user, posts=posts, comments=comments, crew_status=crew_status, crew_request_id=crew_request_id, top8_users=top8_users)
 
 @app.route("/edit", methods=["GET", "POST"])
 @login_required
@@ -223,6 +231,27 @@ def crew_block(user_id):
 def crew_requests():
     pending = CrewRequest.query.filter_by(to_id=current_user.id, status="pending").all()
     return render_template("crew_requests.html", pending=pending)
+
+@app.route("/top8", methods=["GET", "POST"])
+@login_required
+def top8():
+    crew = CrewRequest.query.filter(
+        ((CrewRequest.from_id == current_user.id) | (CrewRequest.to_id == current_user.id)),
+        CrewRequest.status == "accepted"
+    ).all()
+    crew_members = []
+    for r in crew:
+        member = r.to_user if r.from_id == current_user.id else r.from_user
+        crew_members.append(member)
+
+    if request.method == "POST":
+        selected = request.form.getlist("top8")[:8]
+        current_user.top8 = ",".join(selected)
+        db.session.commit()
+        flash("Top 8 updated!", "success")
+        return redirect(url_for("profile", username=current_user.username))
+    current_top8 = current_user.top8.split(",") if current_user.top8 else []
+    return render_template("top8.html", crew_members=crew_members, current_top8=current_top8)
 
 @app.route("/post/<int:post_id>/delete", methods=["POST"])
 @login_required
