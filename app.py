@@ -308,6 +308,15 @@ def add_comment(username):
     db.session.commit()
     return redirect(url_for("profile", username=username))
 
+@app.route("/search")
+@login_required
+def search():
+    q = request.args.get("q", "").strip()[:20]
+    results = []
+    if q:
+        results = User.query.filter(User.username.ilike(f"%{q}%")).limit(20).all()
+    return render_template("search.html", q=q, results=results)
+
 @app.route("/comment/<int:comment_id>/delete", methods=["POST"])
 @login_required
 def delete_comment(comment_id):

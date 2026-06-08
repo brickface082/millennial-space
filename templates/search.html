@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Search - Millennial Space{% endblock %}
+
+{% block content %}
+<div style="background:rgba(255,255,255,0.9); max-width:600px; margin:0 auto; padding:24px; border:4px ridge #00ffff; box-shadow:4px 4px 0px #ff00ff;">
+    <h1 style="color:#ff1493; text-shadow:2px 2px #ffff00; margin-top:0;">🔍 Search Results</h1>
+
+    {% if q %}
+        <p style="color:#660066;">Results for: <strong>{{ q }}</strong></p>
+        {% if results %}
+            {% for user in results %}
+            <div style="border:2px solid #ff66b2; padding:12px; margin-bottom:10px; background:rgba(255,255,240,0.75); display:flex; align-items:center; gap:14px;">
+                {% if user.profile_pic and user.profile_pic != 'default.jpg' %}
+                    <img src="{{ url_for('static', filename='uploads/profile_pics/' + user.profile_pic) }}"
+                         style="width:50px;height:50px;border-radius:50%;border:3px solid #ff00ff;object-fit:cover;flex-shrink:0;">
+                {% else %}
+                    <div style="width:50px;height:50px;border-radius:50%;border:3px solid #ff00ff;background:#ffccee;flex-shrink:0;"></div>
+                {% endif %}
+                <a href="{{ url_for('profile', username=user.username) }}"
+                   style="color:#0000cc; font-weight:bold; font-size:16px; text-decoration:none;">
+                    {{ user.username }}
+                </a>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color:#aaa; font-style:italic;">No users found matching "{{ q }}".</p>
+        {% endif %}
+    {% else %}
+        <p style="color:#aaa; font-style:italic;">Enter a username in the search bar above.</p>
+    {% endif %}
+</div>
+{% endblock %}

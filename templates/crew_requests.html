@@ -1,22 +1,21 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crew Requests - Millennial Space</title>
-    <style>
-        body { background-color: #ff66b2; font-family: 'Comic Sans MS', cursive; margin: 0; padding: 20px; min-height: 100vh; }
-        .box { background: rgba(255,255,255,0.9); max-width: 600px; margin: 0 auto; padding: 24px; border: 4px ridge #00ffff; box-shadow: 4px 4px 0px #ff00ff; }
-        h1 { color: #ff1493; text-shadow: 2px 2px #ffff00; margin-top: 0; }
-        .request-card { border: 2px solid #ff66b2; padding: 12px; margin-bottom: 12px; background: rgba(255,255,240,0.75); }
-        .request-card a { color: #0000cc; font-weight: bold; }
-        .btn-accept { background: #ff1493; color: white; border: none; padding: 8px 18px; font-family: inherit; font-size: 14px; cursor: pointer; font-weight: bold; margin-right: 8px; }
-        .btn-decline { background: none; border: none; color: #cc0000; font-family: inherit; font-size: 14px; cursor: pointer; font-weight: bold; }
-        .no-requests { color: #aaa; font-style: italic; text-align: center; padding: 20px 0; }
-        a.back { color: #0000cc; font-weight: bold; }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}Crew Requests - Millennial Space{% endblock %}
+
+{% block extra_style %}
+<style>
+    .box { background: rgba(255,255,255,0.9); max-width: 600px; margin: 0 auto; padding: 24px; border: 4px ridge #00ffff; box-shadow: 4px 4px 0px #ff00ff; }
+    h1 { color: #ff1493; text-shadow: 2px 2px #ffff00; margin-top: 0; }
+    .request-card { border: 2px solid #ff66b2; padding: 12px; margin-bottom: 12px; background: rgba(255,255,240,0.75); }
+    .request-card a { color: #0000cc; font-weight: bold; }
+    .btn-accept { background: #ff1493; color: white; border: none; padding: 8px 18px; font-family: inherit; font-size: 14px; cursor: pointer; font-weight: bold; margin-right: 8px; }
+    .btn-decline { background: none; border: none; color: #cc0000; font-family: inherit; font-size: 14px; cursor: pointer; font-weight: bold; }
+    .no-requests { color: #aaa; font-style: italic; text-align: center; padding: 20px 0; }
+    a.back { color: #0000cc; font-weight: bold; }
+</style>
+{% endblock %}
+
+{% block content %}
 <div class="box">
     <h1>👥 Crew Requests</h1>
 
@@ -39,5 +38,4 @@
     <br>
     <a class="back" href="{{ url_for('profile', username=current_user.username) }}">← Back to My Space</a>
 </div>
-</body>
-</html>
+{% endblock %}

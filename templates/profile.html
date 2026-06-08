@@ -1,186 +1,76 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ user.username }} - Millennial Space</title>
-    <style>
-        body {
-            background-color: {{ user.bg_color }};
-            {% if user.bg_image %}
-            background-image: url("{{ url_for('static', filename='uploads/backgrounds/' + user.bg_image) }}");
-            background-size: cover;
-            background-attachment: fixed;
-            {% endif %}
-            font-family: 'Comic Sans MS', cursive;
-            margin: 0;
-            padding: 12px;
-            min-height: 100vh;
-        }
+{% extends "base.html" %}
 
-        .profile-box {
-            background: rgba(255, 255, 255, 0.88);
-            max-width: 680px;
-            margin: 0 auto;
-            padding: 20px;
-            border: 4px ridge #00ffff;
-            box-shadow: 4px 4px 0px #ff00ff;
-        }
+{% block title %}{{ user.username }} - Millennial Space{% endblock %}
 
-        .profile-header {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-        }
+{% block body_style %}
+    background-color: {{ user.bg_color }};
+    {% if user.bg_image %}
+    background-image: url("{{ url_for('static', filename='uploads/backgrounds/' + user.bg_image) }}");
+    background-size: cover;
+    background-attachment: fixed;
+    {% endif %}
+{% endblock %}
 
-        .profile-pic {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            border: 4px solid #ff00ff;
-            object-fit: cover;
-            flex-shrink: 0;
-        }
+{% block extra_style %}
+<style>
+    .profile-box {
+        background: rgba(255, 255, 255, 0.88);
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 4px ridge #00ffff;
+        box-shadow: 4px 4px 0px #ff00ff;
+    }
+    .profile-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+    }
+    .profile-pic {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 4px solid #ff00ff;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+    .profile-pic-placeholder {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 4px solid #ff00ff;
+        background: #ffccee;
+        flex-shrink: 0;
+    }
+    h1 { color: #ff1493; text-shadow: 2px 2px #ffff00; margin: 0; font-size: 1.6em; }
+    .bio { margin: 10px 0 14px 0; font-size: 15px; border-left: 4px solid #ff66b2; padding-left: 10px; }
+    .media-section { margin: 14px 0; }
+    .media-section iframe { max-width: 100%; display: block; margin-bottom: 10px; }
+    .nav-links { margin: 12px 0 6px 0; font-size: 15px; }
+    .nav-links a { color: #0000cc; font-weight: bold; text-decoration: none; margin-right: 8px; }
+    .nav-links a:hover { text-decoration: underline; }
+    .divider { border: none; border-top: 3px dashed #ff66b2; margin: 16px 0; }
+    .divider-cyan { border: none; border-top: 3px dashed #00cccc; margin: 16px 0; }
+    .post-form textarea { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 14px; border: 2px solid #ff66b2; padding: 8px; height: 70px; resize: vertical; }
+    .post-form input[type="submit"] { margin-top: 8px; background: #ff1493; color: white; border: none; padding: 8px 20px; font-family: inherit; font-size: 14px; cursor: pointer; font-weight: bold; }
+    .post-form input[type="submit"]:hover { background: #cc0077; }
+    .post-card { margin-bottom: 14px; padding: 12px; border: 2px solid #ff66b2; background: rgba(255, 255, 240, 0.75); box-shadow: 2px 2px 0px #ffccee; }
+    .post-timestamp { font-size: 12px; color: #999; margin: 0 0 6px 0; }
+    .post-body { margin: 0 0 8px 0; font-size: 15px; line-height: 1.5; }
+    .post-image { max-width: 100%; border: 2px solid #ff00ff; display: block; margin-top: 8px; }
+    .no-posts { color: #aaa; font-style: italic; text-align: center; padding: 20px 0; }
+    .section-label { color: #ff1493; font-size: 1.1em; margin: 0 0 10px 0; text-shadow: 1px 1px #ffff99; }
+    @media (max-width: 500px) {
+        h1 { font-size: 1.3em; }
+        .profile-pic, .profile-pic-placeholder { width: 72px; height: 72px; }
+        .profile-box { padding: 14px; }
+    }
+</style>
+{% endblock %}
 
-        .profile-pic-placeholder {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            border: 4px solid #ff00ff;
-            background: #ffccee;
-            flex-shrink: 0;
-        }
-
-        h1 {
-            color: #ff1493;
-            text-shadow: 2px 2px #ffff00;
-            margin: 0;
-            font-size: 1.6em;
-        }
-
-        .bio {
-            margin: 10px 0 14px 0;
-            font-size: 15px;
-            border-left: 4px solid #ff66b2;
-            padding-left: 10px;
-        }
-
-        .media-section {
-            margin: 14px 0;
-        }
-
-        .media-section iframe {
-            max-width: 100%;
-            display: block;
-            margin-bottom: 10px;
-        }
-
-        .nav-links {
-            margin: 12px 0 6px 0;
-            font-size: 15px;
-        }
-
-        .nav-links a {
-            color: #0000cc;
-            font-weight: bold;
-            text-decoration: none;
-            margin-right: 8px;
-        }
-
-        .nav-links a:hover {
-            text-decoration: underline;
-        }
-
-        .divider {
-            border: none;
-            border-top: 3px dashed #ff66b2;
-            margin: 16px 0;
-        }
-
-        .divider-cyan {
-            border: none;
-            border-top: 3px dashed #00cccc;
-            margin: 16px 0;
-        }
-
-        .post-form textarea {
-            width: 100%;
-            box-sizing: border-box;
-            font-family: inherit;
-            font-size: 14px;
-            border: 2px solid #ff66b2;
-            padding: 8px;
-            height: 70px;
-            resize: vertical;
-        }
-
-        .post-form input[type="submit"] {
-            margin-top: 8px;
-            background: #ff1493;
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            font-family: inherit;
-            font-size: 14px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .post-form input[type="submit"]:hover {
-            background: #cc0077;
-        }
-
-        .post-card {
-            margin-bottom: 14px;
-            padding: 12px;
-            border: 2px solid #ff66b2;
-            background: rgba(255, 255, 240, 0.75);
-            box-shadow: 2px 2px 0px #ffccee;
-        }
-
-        .post-timestamp {
-            font-size: 12px;
-            color: #999;
-            margin: 0 0 6px 0;
-        }
-
-        .post-body {
-            margin: 0 0 8px 0;
-            font-size: 15px;
-            line-height: 1.5;
-        }
-
-        .post-image {
-            max-width: 100%;
-            border: 2px solid #ff00ff;
-            display: block;
-            margin-top: 8px;
-        }
-
-        .no-posts {
-            color: #aaa;
-            font-style: italic;
-            text-align: center;
-            padding: 20px 0;
-        }
-
-        .section-label {
-            color: #ff1493;
-            font-size: 1.1em;
-            margin: 0 0 10px 0;
-            text-shadow: 1px 1px #ffff99;
-        }
-
-        @media (max-width: 500px) {
-            h1 { font-size: 1.3em; }
-            .profile-pic, .profile-pic-placeholder { width: 72px; height: 72px; }
-            .profile-box { padding: 14px; }
-        }
-    </style>
-</head>
-<body>
+{% block content %}
 <div class="profile-box">
 
     <div class="profile-header">
@@ -222,7 +112,6 @@
             {% endif %}
             <iframe width="100%" height="225" src="https://www.youtube.com/embed/{{ yt_id }}" frameborder="0" allowfullscreen></iframe>
         {% endif %}
-
         {% if user.spotify_url %}
             {% if '/embed/' in user.spotify_url %}
                 {% set spotify_embed = user.spotify_url %}
@@ -240,8 +129,7 @@
         {% if current_user.is_authenticated and current_user.username == user.username %}
             <a href="/edit">✏️ Edit My Space</a> |
             <a href="{{ url_for('top8') }}">⭐ Edit Top 8</a> |
-            <a href="{{ url_for('crew_requests') }}">👥 Crew Requests</a> |
-            <a href="/logout">Logout</a>
+            <a href="{{ url_for('crew_requests') }}">👥 Crew Requests</a>
         {% elif current_user.is_authenticated %}
             {% if crew_status == "accepted" %}
                 <form method="POST" action="{{ url_for('crew_remove', user_id=user.id) }}" style="display:inline;">
@@ -331,5 +219,4 @@
     {% endfor %}
 
 </div>
-</body>
-</html>
+{% endblock %}

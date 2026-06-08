@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Millennial Space{% endblock %}</title>
+    <style>
+        body {
+            {% block body_style %}background-color: #ff66b2;{% endblock %}
+            font-family: 'Comic Sans MS', cursive;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .site-nav {
+            background: rgba(0, 0, 0, 0.75);
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .site-nav .site-title {
+            color: #ff66b2;
+            font-weight: bold;
+            font-size: 16px;
+            text-decoration: none;
+            text-shadow: 1px 1px #ff00ff;
+            margin-right: 8px;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 4px;
+        }
+
+        .search-form input[type="text"] {
+            font-family: 'Comic Sans MS', cursive;
+            font-size: 13px;
+            padding: 4px 8px;
+            border: 2px solid #ff66b2;
+            background: #fff;
+            width: 150px;
+        }
+
+        .search-form button {
+            font-family: 'Comic Sans MS', cursive;
+            font-size: 13px;
+            padding: 4px 10px;
+            background: #ff1493;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .search-form button:hover {
+            background: #cc0077;
+        }
+
+        .nav-right {
+            margin-left: auto;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .nav-right a {
+            color: #ffccee;
+            font-size: 13px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .nav-right a:hover {
+            color: #ffffff;
+            text-decoration: underline;
+        }
+
+        .page-wrap {
+            padding: 12px;
+        }
+
+        .flash-success {
+            background: #ccffcc;
+            border: 2px solid #00cc00;
+            color: #005500;
+            padding: 8px 12px;
+            margin: 8px 16px;
+        }
+
+        .flash-danger {
+            background: #ffcccc;
+            border: 2px solid #cc0000;
+            color: #550000;
+            padding: 8px 12px;
+            margin: 8px 16px;
+        }
+
+        .flash-info {
+            background: #cceeff;
+            border: 2px solid #0099cc;
+            color: #003355;
+            padding: 8px 12px;
+            margin: 8px 16px;
+        }
+    </style>
+    {% block extra_style %}{% endblock %}
+</head>
+<body>
+
+<nav class="site-nav">
+    {% if current_user.is_authenticated %}
+        <a class="site-title" href="{{ url_for('profile', username=current_user.username) }}">★ Millennial Space</a>
+        <form class="search-form" method="GET" action="{{ url_for('search') }}">
+            <input type="text" name="q" placeholder="Find someone..." maxlength="20" value="{{ request.args.get('q', '') }}">
+            <button type="submit">Go!</button>
+        </form>
+        <div class="nav-right">
+            <a href="{{ url_for('profile', username=current_user.username) }}">My Space</a>
+            <a href="{{ url_for('crew_requests') }}">Crew</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    {% else %}
+        <a class="site-title" href="{{ url_for('login') }}">★ Millennial Space</a>
+        <div class="nav-right">
+            <a href="{{ url_for('login') }}">Login</a>
+            <a href="{{ url_for('register') }}">Register</a>
+        </div>
+    {% endif %}
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+        <div class="flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+{% endwith %}
+
+<div class="page-wrap">
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

@@ -1,93 +1,37 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Edit My Space - Millennial Space</title>
-    <style>
-        body {
-            background-color: #ff66b2;
-            font-family: 'Comic Sans MS', cursive;
-            margin: 0;
-            padding: 20px;
-        }
-        .edit-box {
-            background: rgba(255,255,255,0.9);
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 24px;
-            border: 4px ridge #00ffff;
-        }
-        h1 {
-            color: #ff1493;
-            text-shadow: 2px 2px #ffff00;
-            margin-top: 0;
-        }
-        label {
-            display: block;
-            margin-top: 14px;
-            font-weight: bold;
-            color: #660066;
-        }
-        input[type="text"],
-        input[type="color"],
-        textarea {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 6px;
-            font-family: inherit;
-            font-size: 14px;
-            border: 2px solid #ff66b2;
-            margin-top: 4px;
-        }
-        textarea {
-            height: 80px;
-            resize: vertical;
-        }
-        input[type="color"] {
-            height: 40px;
-            padding: 2px;
-            cursor: pointer;
-        }
-        input[type="submit"] {
-            margin-top: 20px;
-            background: #ff1493;
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            font-family: inherit;
-            font-size: 16px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        input[type="submit"]:hover {
-            background: #cc0077;
-        }
-        .flash {
-            padding: 8px 12px;
-            margin-bottom: 12px;
-            background: #ccffcc;
-            border: 2px solid #00cc00;
-            color: #005500;
-        }
-        a {
-            color: #0000ff;
-            font-weight: bold;
-        }
-        .section-note {
-            font-size: 12px;
-            color: #888;
-            margin-top: 2px;
-        }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}Edit My Space - Millennial Space{% endblock %}
+
+{% block extra_style %}
+<style>
+    .edit-box {
+        background: rgba(255,255,255,0.9);
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 24px;
+        border: 4px ridge #00ffff;
+    }
+    h1 { color: #ff1493; text-shadow: 2px 2px #ffff00; margin-top: 0; }
+    label { display: block; margin-top: 14px; font-weight: bold; color: #660066; }
+    input[type="text"], input[type="color"], textarea {
+        width: 100%; box-sizing: border-box; padding: 6px;
+        font-family: inherit; font-size: 14px; border: 2px solid #ff66b2; margin-top: 4px;
+    }
+    textarea { height: 80px; resize: vertical; }
+    input[type="color"] { height: 40px; padding: 2px; cursor: pointer; }
+    input[type="submit"] {
+        margin-top: 20px; background: #ff1493; color: white; border: none;
+        padding: 10px 24px; font-family: inherit; font-size: 16px; cursor: pointer; font-weight: bold;
+    }
+    input[type="submit"]:hover { background: #cc0077; }
+    a { color: #0000ff; font-weight: bold; }
+    .section-note { font-size: 12px; color: #888; margin-top: 2px; }
+</style>
+{% endblock %}
+
+{% block content %}
 <div class="edit-box">
     <h1>Edit My Space ✏️</h1>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% for category, message in messages %}
-            <div class="flash">{{ message }}</div>
-        {% endfor %}
-    {% endwith %}
 
     <form method="POST" enctype="multipart/form-data">
         <label>Bio</label>
@@ -116,5 +60,4 @@
     <br>
     <a href="{{ url_for('profile', username=current_user.username) }}">← Back to My Profile</a>
 </div>
-</body>
-</html>
+{% endblock %}
