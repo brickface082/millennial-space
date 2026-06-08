@@ -399,11 +399,13 @@ def delete_comment(comment_id):
 with app.app_context():
     os.makedirs(os.path.join(basedir, "instance"), exist_ok=True)
     db.create_all()
+    is_pg = database_url.startswith("postgresql")
+    dt_type = "TIMESTAMP" if is_pg else "DATETIME"
     with db.engine.connect() as conn:
         for col, definition in [
             ("top8", "VARCHAR(200) DEFAULT ''"),
             ("status", "VARCHAR(10) DEFAULT 'online'"),
-            ("last_seen", "DATETIME"),
+            ("last_seen", dt_type),
         ]:
             try:
                 conn.execute(db.text(f'ALTER TABLE "user" ADD COLUMN {col} {definition}'))
