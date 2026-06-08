@@ -261,13 +261,13 @@
     {% endfor %}
 
     <hr class="divider-cyan">
-    <p class="section-label">💬 Comments</p>
+    <p class="section-label">📣 Shoutouts</p>
 
     {% if current_user.is_authenticated %}
     <form method="POST" action="{{ url_for('add_comment', username=user.username) }}" style="margin-bottom:16px;">
-        <textarea name="body" placeholder="Leave a comment..." style="width:100%; box-sizing:border-box; font-family:inherit; font-size:14px; border:2px solid #ff66b2; padding:8px; height:60px; resize:vertical;"></textarea>
+        <textarea name="body" placeholder="Leave a shoutout..." style="width:100%; box-sizing:border-box; font-family:inherit; font-size:14px; border:2px solid #ff66b2; padding:8px; height:60px; resize:vertical;"></textarea>
         <br>
-        <input type="submit" value="Post Comment" style="margin-top:6px; background:#ff1493; color:white; border:none; padding:8px 20px; font-family:inherit; font-size:14px; cursor:pointer; font-weight:bold;">
+        <input type="submit" value="Shout it Out!" style="margin-top:6px; background:#ff1493; color:white; border:none; padding:8px 20px; font-family:inherit; font-size:14px; cursor:pointer; font-weight:bold;">
     </form>
     {% endif %}
 
