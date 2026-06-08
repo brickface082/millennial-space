@@ -322,6 +322,13 @@ def delete_comment(comment_id):
 with app.app_context():
     os.makedirs(os.path.join(basedir, "instance"), exist_ok=True)
     db.create_all()
+    with db.engine.connect() as conn:
+        for col, definition in [("top8", "VARCHAR(200) DEFAULT ''")]:
+            try:
+                conn.execute(db.text(f'ALTER TABLE "user" ADD COLUMN {col} {definition}'))
+                conn.commit()
+            except Exception:
+                pass
 
 if __name__ == "__main__":
     app.run(debug=True)
