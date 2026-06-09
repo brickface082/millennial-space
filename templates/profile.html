@@ -198,6 +198,51 @@
         {% endif %}
     </div>
 
+    {# T023 — Writing section. Owner sees BOTH links, clearly separated.
+       Visitor sees ONLY the public blog. Diary link is never rendered for non-owners. #}
+    <hr class="divider">
+    <div style="margin-bottom: 4px;">
+        <span class="section-label" style="font-size:13px;margin:0 0 10px 0;display:block;">✍️ Writing</span>
+
+        {% if current_user.is_authenticated and current_user.username == user.username %}
+        {# ── PRIVATE DIARY ── deep red, lock icon, "only you" label #}
+        <div style="margin-bottom: 14px;">
+            <a href="{{ url_for('diary_index') }}"
+               style="display:inline-block;background:#8b0000;color:#fff3e0;border:3px solid #5c0000;
+                      padding:9px 18px;font-family:'Comic Sans MS',cursive;font-size:14px;
+                      font-weight:bold;text-decoration:none;letter-spacing:0.5px;">
+                🔒 My Private Diary
+            </a>
+            <div style="font-size:11px;color:#8b0000;margin-top:4px;font-style:italic;">
+                Only you can ever see this
+            </div>
+        </div>
+
+        {# ── PUBLIC BLOG ── dark green, globe icon, "anyone can read" label
+           Note: separate div, distinct color — impossible to accidentally click the wrong one #}
+        <div>
+            <a href="{{ url_for('blog_index', username=user.username) }}"
+               style="display:inline-block;background:#006633;color:#e8ffe8;border:3px solid #004422;
+                      padding:9px 18px;font-family:'Comic Sans MS',cursive;font-size:14px;
+                      font-weight:bold;text-decoration:none;letter-spacing:0.5px;">
+                🌐 My Public Blog
+            </a>
+            <div style="font-size:11px;color:#006633;margin-top:4px;font-style:italic;">
+                Anyone on the internet can read this
+            </div>
+        </div>
+
+        {% else %}
+        {# Visitor: only the public blog link — diary is not shown at all #}
+        <a href="{{ url_for('blog_index', username=user.username) }}"
+           style="display:inline-block;background:#006633;color:#e8ffe8;border:3px solid #004422;
+                  padding:9px 18px;font-family:'Comic Sans MS',cursive;font-size:14px;
+                  font-weight:bold;text-decoration:none;">
+            📓 {{ user.username }}'s Blog
+        </a>
+        {% endif %}
+    </div>
+
     {% if recent_photos or user.albums %}
     <hr class="divider">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">

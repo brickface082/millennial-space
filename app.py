@@ -110,6 +110,33 @@ class Comment(db.Model):
     author = db.relationship("User", foreign_keys=[author_id], backref=db.backref("comments_made", lazy=True))
     profile_user = db.relationship("User", foreign_keys=[profile_id], backref=db.backref("comments_received", lazy=True))
 
+class JournalEntry(db.Model):
+    """T023 — private diary entries and public blog posts.
+    entry_type is 'diary' (owner-only) or 'blog' (public).
+    entry_type is immutable after creation — never expose an edit UI for it."""
+    __tablename__ = "journal_entry"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    entry_type = db.Column(db.String(10), nullable=False)  # 'diary' | 'blog'
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    author = db.relationship("User", backref=db.backref("journal_entries", lazy=True))
+    photos = db.relationship("EntryPhoto", backref="entry", lazy=True,
+                             cascade="all, delete-orphan",
+                             order_by="EntryPhoto.position.asc()")
+
+class EntryPhoto(db.Model):
+    """Photos attached to a JournalEntry. Stored in Cloudinary."""
+    __tablename__ = "entry_photo"
+    id = db.Column(db.Integer, primary_key=True)
+    entry_id = db.Column(db.Integer, db.ForeignKey("journal_entry.id"), nullable=False)
+    url = db.Column(db.Text, nullable=False)
+    public_id = db.Column(db.String(300), nullable=False)
+    caption = db.Column(db.String(300), default="")
+    position = db.Column(db.Integer, default=0)
+
 class PhotoAlbum(db.Model):
     __tablename__ = "photo_album"
     id = db.Column(db.Integer, primary_key=True)
@@ -719,6 +746,189 @@ def photo_delete(photo_id):
     db.session.delete(photo)
     db.session.commit()
     return redirect(url_for("album_view", album_id=album.id))
+
+# ── T023: Diary (private) & Blog (public) ────────────────────────────────────
+
+def _save_entry_photos(entry, files, max_total=5):
+    """Upload up to (max_total - existing) photos for an entry. Helper for diary + blog routes."""
+    slots = max_total - len(entry.photos)
+    for i, f in enumerate(files[:slots]):
+        if f and f.filename:
+            try:
+                url, public_id = upload_to_cloudinary(f, f"journal/{entry.user_id}")
+                ep = EntryPhoto(entry_id=entry.id, url=url, public_id=public_id,
+                                position=len(entry.photos) + i)
+                db.session.add(ep)
+            except Exception:
+                flash("One photo failed to upload — skipped.", "danger")
+
+@app.route("/diary")
+@login_required
+def diary_index():
+    entries = JournalEntry.query.filter_by(
+        user_id=current_user.id, entry_type="diary"
+    ).order_by(JournalEntry.created_at.desc()).all()
+    return render_template("diary_index.html", entries=entries)
+
+@app.route("/diary/new", methods=["GET", "POST"])
+@login_required
+def diary_new():
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()[:200]
+        body  = request.form.get("body", "").strip()
+        if not title or not body:
+            flash("Title and body are required.", "danger")
+            return redirect(url_for("diary_new"))
+        entry = JournalEntry(user_id=current_user.id, title=title,
+                             body=body, entry_type="diary")
+        db.session.add(entry)
+        db.session.flush()  # need entry.id for photos
+        _save_entry_photos(entry, request.files.getlist("photos"))
+        db.session.commit()
+        flash("Diary entry saved!", "success")
+        return redirect(url_for("diary_view", entry_id=entry.id))
+    return render_template("diary_write.html", entry=None, mode="new")
+
+@app.route("/diary/<int:entry_id>")
+@login_required
+def diary_view(entry_id):
+    entry = JournalEntry.query.get_or_404(entry_id)
+    if entry.entry_type != "diary" or entry.user_id != current_user.id:
+        return "Access denied — diary entries are private.", 403
+    return render_template("diary_entry.html", entry=entry)
+
+@app.route("/diary/<int:entry_id>/edit", methods=["GET", "POST"])
+@login_required
+def diary_edit(entry_id):
+    entry = JournalEntry.query.get_or_404(entry_id)
+    if entry.entry_type != "diary" or entry.user_id != current_user.id:
+        return "Access denied.", 403
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()[:200]
+        body  = request.form.get("body", "").strip()
+        if not title or not body:
+            flash("Title and body are required.", "danger")
+            return redirect(url_for("diary_edit", entry_id=entry_id))
+        entry.title = title
+        entry.body  = body
+        entry.updated_at = datetime.utcnow()
+        _save_entry_photos(entry, request.files.getlist("photos"))
+        db.session.commit()
+        flash("Entry updated!", "success")
+        return redirect(url_for("diary_view", entry_id=entry_id))
+    return render_template("diary_write.html", entry=entry, mode="edit")
+
+@app.route("/diary/<int:entry_id>/delete", methods=["POST"])
+@login_required
+def diary_delete(entry_id):
+    entry = JournalEntry.query.get_or_404(entry_id)
+    if entry.entry_type != "diary" or entry.user_id != current_user.id:
+        return "Access denied.", 403
+    for ep in entry.photos:
+        try:
+            cloudinary.uploader.destroy(ep.public_id)
+        except Exception:
+            pass
+    db.session.delete(entry)
+    db.session.commit()
+    flash("Entry deleted.", "success")
+    return redirect(url_for("diary_index"))
+
+@app.route("/blog/<username>")
+def blog_index(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    entries = JournalEntry.query.filter_by(
+        user_id=user.id, entry_type="blog"
+    ).order_by(JournalEntry.created_at.desc()).all()
+    is_owner = current_user.is_authenticated and current_user.id == user.id
+    return render_template("blog_index.html", user=user, entries=entries, is_owner=is_owner)
+
+@app.route("/blog/<username>/new", methods=["GET", "POST"])
+@login_required
+def blog_new(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    if user.id != current_user.id:
+        return "Access denied.", 403
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()[:200]
+        body  = request.form.get("body", "").strip()
+        if not title or not body:
+            flash("Title and body are required.", "danger")
+            return redirect(url_for("blog_new", username=username))
+        entry = JournalEntry(user_id=current_user.id, title=title,
+                             body=body, entry_type="blog")
+        db.session.add(entry)
+        db.session.flush()
+        _save_entry_photos(entry, request.files.getlist("photos"))
+        db.session.commit()
+        flash("Blog post published!", "success")
+        return redirect(url_for("blog_view", username=username, entry_id=entry.id))
+    return render_template("blog_write.html", user=user, entry=None, mode="new")
+
+@app.route("/blog/<username>/<int:entry_id>")
+def blog_view(username, entry_id):
+    user  = User.query.filter_by(username=username).first_or_404()
+    entry = JournalEntry.query.get_or_404(entry_id)
+    if entry.entry_type != "blog" or entry.user_id != user.id:
+        return "Not found.", 404
+    is_owner = current_user.is_authenticated and current_user.id == user.id
+    return render_template("blog_post.html", user=user, entry=entry, is_owner=is_owner)
+
+@app.route("/blog/<username>/<int:entry_id>/edit", methods=["GET", "POST"])
+@login_required
+def blog_edit(username, entry_id):
+    user  = User.query.filter_by(username=username).first_or_404()
+    entry = JournalEntry.query.get_or_404(entry_id)
+    if entry.entry_type != "blog" or entry.user_id != current_user.id:
+        return "Access denied.", 403
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()[:200]
+        body  = request.form.get("body", "").strip()
+        if not title or not body:
+            flash("Title and body are required.", "danger")
+            return redirect(url_for("blog_edit", username=username, entry_id=entry_id))
+        entry.title = title
+        entry.body  = body
+        entry.updated_at = datetime.utcnow()
+        _save_entry_photos(entry, request.files.getlist("photos"))
+        db.session.commit()
+        flash("Post updated!", "success")
+        return redirect(url_for("blog_view", username=username, entry_id=entry_id))
+    return render_template("blog_write.html", user=user, entry=entry, mode="edit")
+
+@app.route("/blog/<username>/<int:entry_id>/delete", methods=["POST"])
+@login_required
+def blog_delete(username, entry_id):
+    user  = User.query.filter_by(username=username).first_or_404()
+    entry = JournalEntry.query.get_or_404(entry_id)
+    if entry.entry_type != "blog" or entry.user_id != current_user.id:
+        return "Access denied.", 403
+    for ep in entry.photos:
+        try:
+            cloudinary.uploader.destroy(ep.public_id)
+        except Exception:
+            pass
+    db.session.delete(entry)
+    db.session.commit()
+    flash("Post deleted.", "success")
+    return redirect(url_for("blog_index", username=username))
+
+@app.route("/entry_photo/<int:photo_id>/delete", methods=["POST"])
+@login_required
+def entry_photo_delete(photo_id):
+    ep    = EntryPhoto.query.get_or_404(photo_id)
+    entry = JournalEntry.query.get_or_404(ep.entry_id)
+    if entry.user_id != current_user.id:
+        return "Access denied.", 403
+    try:
+        cloudinary.uploader.destroy(ep.public_id)
+    except Exception:
+        pass
+    db.session.delete(ep)
+    db.session.commit()
+    if entry.entry_type == "diary":
+        return redirect(url_for("diary_edit", entry_id=entry.id))
+    return redirect(url_for("blog_edit", username=entry.author.username, entry_id=entry.id))
 
 @app.route("/comment/<int:comment_id>/delete", methods=["POST"])
 @login_required

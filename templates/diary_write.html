@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}{% if mode == 'edit' %}Edit Entry{% else %}New Diary Entry{% endif %} — My Diary{% endblock %}
+
+{% block extra_style %}
+<style>
+    .diary-box {
+        background: #fdf6e3;
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 24px;
+        border: 4px solid #8b0000;
+        box-shadow: 4px 4px 0px #5c0000;
+    }
+    .private-banner {
+        background: #8b0000;
+        color: #fff3e0;
+        padding: 10px 16px;
+        font-size: 14px;
+        font-weight: bold;
+        margin: -24px -24px 20px -24px;
+        letter-spacing: 0.5px;
+    }
+    .form-label { font-size: 13px; font-weight: bold; color: #5c0000; margin-bottom: 4px; display: block; }
+    .form-input, .form-textarea {
+        width: 100%; box-sizing: border-box;
+        font-family: 'Comic Sans MS', cursive; font-size: 14px;
+        border: 2px solid #c0956a; padding: 8px 10px;
+        background: #fffdf5; color: #3a2010;
+        margin-bottom: 14px;
+    }
+    .form-textarea { height: 280px; resize: vertical; line-height: 1.6; }
+    .btn-save {
+        background: #8b0000; color: #fff3e0; border: 2px solid #5c0000;
+        padding: 9px 22px; font-family: 'Comic Sans MS', cursive;
+        font-size: 14px; font-weight: bold; cursor: pointer;
+    }
+    .btn-save:hover { background: #5c0000; }
+    .divider { border: none; border-top: 3px dashed #c0956a; margin: 18px 0; }
+    .existing-photos { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+    .photo-thumb { position: relative; border: 2px solid #c0956a; }
+    .photo-thumb img { width: 100px; height: 75px; object-fit: cover; display: block; }
+    .photo-delete-btn {
+        position: absolute; top: 2px; right: 2px;
+        background: rgba(0,0,0,0.55); color: #fff; border: none;
+        font-size: 11px; cursor: pointer; padding: 1px 5px; border-radius: 2px;
+    }
+    .page-title { color: #5c0000; text-shadow: 1px 1px #f0d9c0; margin: 0 0 16px 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="diary-box">
+
+    <div class="private-banner">
+        🔒 PRIVATE DIARY — Only you can ever see this
+    </div>
+
+    <h2 class="page-title">
+        {% if mode == 'edit' %}✏️ Edit Entry{% else %}📔 New Diary Entry{% endif %}
+    </h2>
+
+    <form method="POST"
+          action="{% if mode == 'edit' %}{{ url_for('diary_edit', entry_id=entry.id) }}{% else %}{{ url_for('diary_new') }}{% endif %}"
+          enctype="multipart/form-data">
+
+        <label class="form-label" for="title">Title</label>
+        <input class="form-input" type="text" id="title" name="title"
+               maxlength="200" required
+               value="{% if entry %}{{ entry.title }}{% endif %}"
+               placeholder="Give this entry a title...">
+
+        <label class="form-label" for="body">Your entry</label>
+        <textarea class="form-textarea" id="body" name="body"
+                  required placeholder="Write your thoughts here...">{% if entry %}{{ entry.body }}{% endif %}</textarea>
+
+        {% if mode == 'edit' and entry.photos %}
+        <div>
+            <div class="form-label" style="margin-bottom:8px;">Current photos — click ✕ to remove</div>
+            <div class="existing-photos">
+                {% for photo in entry.photos %}
+                <div class="photo-thumb">
+                    <img src="{{ photo.url }}" alt="{{ photo.caption or 'photo' }}">
+                    <form method="POST" action="{{ url_for('entry_photo_delete', photo_id=photo.id) }}"
+                          onsubmit="return confirm('Remove this photo?');" style="display:inline;">
+                        <button class="photo-delete-btn" type="submit">✕</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% set slots = 5 if not entry else (5 - entry.photos|length) %}
+        {% if slots > 0 %}
+        <label class="form-label">
+            Add photos (up to {{ slots }} more, optional)
+        </label>
+        <input type="file" name="photos" accept="image/*" multiple
+               style="font-family:'Comic Sans MS',cursive;font-size:13px;margin-bottom:14px;display:block;">
+        {% endif %}
+
+        <input type="submit" class="btn-save"
+               value="{% if mode == 'edit' %}Save Changes{% else %}Save Entry{% endif %}">
+    </form>
+
+    <hr class="divider">
+    <a href="{% if mode == 'edit' %}{{ url_for('diary_view', entry_id=entry.id) }}{% else %}{{ url_for('diary_index') }}{% endif %}"
+       style="color:#5c0000;font-size:13px;font-weight:bold;text-decoration:none;">
+        ← Cancel
+    </a>
+
+</div>
+{% endblock %}

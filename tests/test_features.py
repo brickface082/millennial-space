@@ -6,7 +6,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import app as application
-from app import app, db, User, CrewRequest, DirectMessage, bcrypt
+from app import app, db, User, CrewRequest, DirectMessage, bcrypt, JournalEntry
 
 app.config["TESTING"] = True
 app.config["WTF_CSRF_ENABLED"] = False
@@ -451,6 +451,100 @@ def test_script_rendering():
 
         logout(client)
 
+def test_journal():
+    """T023 — Diary/Blog access control. Core security: diary entries are strictly
+    owner-only. Blog entries are public. entry_type cannot be changed after creation."""
+    print("\n-- Journal / Diary / Blog (T023) --")
+
+    # --- Setup: create a diary entry and a blog entry for testbot ---
+    with app.app_context():
+        # Clean up any leftovers from previous runs
+        JournalEntry.query.filter_by(user_id=3).delete()
+        db.session.commit()
+
+        testbot = User.query.filter_by(username="testbot").first()
+        diary_entry = JournalEntry(user_id=testbot.id, title="Secret Thoughts",
+                                   body="Very private.", entry_type="diary")
+        blog_entry  = JournalEntry(user_id=testbot.id, title="Hello World",
+                                   body="Public post.", entry_type="blog")
+        db.session.add_all([diary_entry, blog_entry])
+        db.session.commit()
+        diary_id = diary_entry.id
+        blog_id  = blog_entry.id
+
+    # 1. Owner can access /diary
+    with app.test_client() as c:
+        login(c, "testbot@millennial-space.com", "testpass123")
+        r = c.get("/diary")
+        check("Diary index: owner can access /diary", r.status_code == 200)
+        check("Diary index: shows PRIVATE DIARY banner",
+              "PRIVATE DIARY" in r.data.decode("utf-8", errors="replace"))
+
+        r = c.get(f"/diary/{diary_id}")
+        check("Diary view: owner can view own entry", r.status_code == 200)
+        check("Diary view: shows PRIVATE DIARY banner",
+              "PRIVATE DIARY" in r.data.decode("utf-8", errors="replace"))
+
+    # 2. Another logged-in user gets 403 on a diary entry
+    with app.test_client() as c:
+        login(c, "testreceiver@millennial-space.com", "testpass123")
+        r = c.get(f"/diary/{diary_id}")
+        check("Diary view: non-owner gets 403", r.status_code == 403)
+
+    # 3. Unauthenticated user is redirected away from /diary
+    with app.test_client() as c:
+        r = c.get("/diary", follow_redirects=False)
+        check("Diary index: unauthenticated redirected (not 200)",
+              r.status_code in (301, 302))
+
+        r = c.get(f"/diary/{diary_id}", follow_redirects=False)
+        check("Diary view: unauthenticated redirected (not 200)",
+              r.status_code in (301, 302))
+
+    # 4. Blog post is publicly readable (no login needed)
+    with app.test_client() as c:
+        r = c.get("/blog/testbot")
+        check("Blog index: publicly accessible (no login)",
+              r.status_code == 200)
+        check("Blog index: shows PUBLIC BLOG banner",
+              "PUBLIC BLOG" in r.data.decode("utf-8", errors="replace"))
+
+        r = c.get(f"/blog/testbot/{blog_id}")
+        check("Blog view: publicly accessible (no login)", r.status_code == 200)
+        check("Blog view: shows PUBLIC BLOG banner",
+              "PUBLIC BLOG" in r.data.decode("utf-8", errors="replace"))
+        check("Blog view: shows post title", b"Hello World" in r.data)
+
+    # 5. Non-owner cannot POST to create a blog entry for someone else
+    with app.test_client() as c:
+        login(c, "testreceiver@millennial-space.com", "testpass123")
+        r = c.post("/blog/testbot/new",
+                   data={"title": "Hack", "body": "Injected post"},
+                   follow_redirects=False)
+        check("Blog new: non-owner gets 403", r.status_code == 403)
+
+    # 6. Profile page shows diary link to owner, hides it from visitor
+    with app.test_client() as c:
+        login(c, "testbot@millennial-space.com", "testpass123")
+        r = c.get("/profile/testbot")
+        html = r.data.decode("utf-8", errors="replace")
+        check("Profile: owner sees Private Diary link", "Private Diary" in html)
+        check("Profile: owner sees Public Blog link", "Public Blog" in html)
+
+    with app.test_client() as c:
+        r = c.get("/profile/testbot")
+        html = r.data.decode("utf-8", errors="replace")
+        check("Profile: visitor does NOT see Private Diary link",
+              "Private Diary" not in html)
+        check("Profile: visitor DOES see public blog link",
+              "Blog" in html)
+
+    # Cleanup
+    with app.app_context():
+        JournalEntry.query.filter_by(user_id=3).delete()
+        db.session.commit()
+
+
 # ── run all ──────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -467,6 +561,7 @@ if __name__ == "__main__":
     test_profile_views()
     test_mood()
     test_script_rendering()
+    test_journal()
 
     print("\n-- Summary --")
     passed = sum(1 for r in results if r[0] == PASS)

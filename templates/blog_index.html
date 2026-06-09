@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}{{ user.username }}'s Blog — Millennial Space{% endblock %}
+
+{% block extra_style %}
+<style>
+    .blog-box {
+        background: rgba(255, 255, 255, 0.92);
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 24px;
+        border: 4px ridge #00ffff;
+        box-shadow: 4px 4px 0px #ff00ff;
+    }
+    .public-banner {
+        background: #006633;
+        color: #e8ffe8;
+        padding: 10px 16px;
+        font-size: 14px;
+        font-weight: bold;
+        margin: -24px -24px 20px -24px;
+        letter-spacing: 0.5px;
+    }
+    .blog-title { color: #ff1493; text-shadow: 2px 2px #ffff00; margin: 0 0 4px 0; font-size: 1.5em; }
+    .divider { border: none; border-top: 3px dashed #ff66b2; margin: 18px 0; }
+    .entry-card {
+        padding: 14px;
+        border: 2px solid #ff66b2;
+        background: rgba(255, 255, 240, 0.75);
+        margin-bottom: 14px;
+        box-shadow: 2px 2px 0px #ffccee;
+    }
+    .entry-card h3 { margin: 0 0 6px 0; color: #cc0066; font-size: 1.05em; }
+    .entry-card h3 a { color: #cc0066; text-decoration: none; }
+    .entry-card h3 a:hover { text-decoration: underline; }
+    .entry-meta { font-size: 12px; color: #999; margin-bottom: 6px; }
+    .entry-preview { font-size: 14px; color: #333; line-height: 1.5;
+                     white-space: pre-wrap; overflow: hidden;
+                     display: -webkit-box; -webkit-line-clamp: 3;
+                     -webkit-box-orient: vertical; }
+    .btn-new {
+        display: inline-block;
+        background: #ff1493; color: white;
+        border: 2px solid #cc0077;
+        padding: 8px 18px;
+        font-family: 'Comic Sans MS', cursive;
+        font-size: 14px; font-weight: bold;
+        text-decoration: none; cursor: pointer;
+        margin-bottom: 16px;
+    }
+    .btn-new:hover { background: #cc0077; }
+    .no-entries { color: #aaa; font-style: italic; text-align: center; padding: 24px 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="blog-box">
+
+    <div class="public-banner">
+        🌐 PUBLIC BLOG — Anyone on the internet can read this
+    </div>
+
+    <h1 class="blog-title">📓 {{ user.username }}'s Blog</h1>
+    <p style="font-size:13px;color:#888;margin-bottom:16px;">
+        Thoughts, stories, and scrapbook memories shared with the world.
+    </p>
+
+    {% if is_owner %}
+    <a href="{{ url_for('blog_new', username=user.username) }}" class="btn-new">
+        ✏️ New Blog Post
+    </a>
+    {% endif %}
+
+    <hr class="divider">
+
+    {% for entry in entries %}
+    <div class="entry-card">
+        <h3><a href="{{ url_for('blog_view', username=user.username, entry_id=entry.id) }}">{{ entry.title }}</a></h3>
+        <div class="entry-meta">
+            {{ entry.created_at.strftime('%B %d, %Y') }}
+            {% if entry.updated_at != entry.created_at %}
+                · edited {{ entry.updated_at.strftime('%b %d, %Y') }}
+            {% endif %}
+            {% if entry.photos %}
+                · 📷 {{ entry.photos|length }} photo(s)
+            {% endif %}
+        </div>
+        <div class="entry-preview">{{ entry.body }}</div>
+        <div style="margin-top:10px;font-size:13px;">
+            <a href="{{ url_for('blog_view', username=user.username, entry_id=entry.id) }}"
+               style="color:#0000cc;font-weight:bold;margin-right:12px;">Read →</a>
+            {% if is_owner %}
+            <a href="{{ url_for('blog_edit', username=user.username, entry_id=entry.id) }}"
+               style="color:#0000cc;margin-right:12px;">✏️ Edit</a>
+            <form method="POST"
+                  action="{{ url_for('blog_delete', username=user.username, entry_id=entry.id) }}"
+                  style="display:inline;"
+                  onsubmit="return confirm('Delete this blog post?');">
+                <button type="submit"
+                        style="background:none;border:none;color:#cc0000;font-family:inherit;
+                               font-size:13px;font-weight:bold;cursor:pointer;padding:0;">
+                    🗑️ Delete
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <p class="no-entries">No posts yet.{% if is_owner %} Write your first post! ✍️{% endif %}</p>
+    {% endfor %}
+
+    <hr class="divider">
+    <a href="{{ url_for('profile', username=user.username) }}"
+       style="color:#0000cc;font-size:13px;font-weight:bold;text-decoration:none;">
+        ← {{ user.username }}'s Space
+    </a>
+
+</div>
+{% endblock %}
