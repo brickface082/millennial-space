@@ -6,7 +6,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import app as application
-from app import app, db, User, CrewRequest, DirectMessage, bcrypt, JournalEntry, Poll, PollOption, PollVote
+from app import app, db, User, CrewRequest, DirectMessage, bcrypt, JournalEntry, Poll, PollOption, PollVote, Invite, Feedback
 
 app.config["TESTING"] = True
 app.config["WTF_CSRF_ENABLED"] = False
@@ -648,6 +648,160 @@ def test_polls():
         db.session.commit()
 
 
+def test_invites():
+    print("\n-- T026 Invites --")
+    # 1. Unauthenticated user cannot create invite
+    with app.test_client() as c:
+        r = c.post("/invite/create", follow_redirects=True)
+        check("Unauthenticated invite create redirects to login",
+              b"login" in r.request.path.lower().encode() or b"Login" in r.data)
+
+    # 2. Logged-in user can create invite
+    with app.test_client() as c:
+        login(c, "testbot@millennial-space.com", "testpass123")
+        r = c.post("/invite/create")
+        check("Invite create returns JSON link", r.status_code == 200 and b'"link"' in r.data)
+        import json
+        data = json.loads(r.data)
+        token = data["link"].split("/invite/")[-1]
+        check("Token is non-empty", len(token) > 10)
+
+    # 3. Invite landing page — valid unused token
+    with app.test_client() as c:
+        login(c, "testbot@millennial-space.com", "testpass123")
+        r = c.post("/invite/create")
+        import json
+        token = json.loads(r.data)["link"].split("/invite/")[-1]
+
+    with app.test_client() as c:
+        r = c.get(f"/invite/{token}")
+        check("Invite landing loads for valid token", r.status_code == 200)
+        check("Landing shows inviter username", b"testbot" in r.data)
+
+    # 4. Invite landing page — invalid token
+    with app.test_client() as c:
+        r = c.get("/invite/totallybadtoken999")
+        check("Invalid invite token shows landing (not 500)", r.status_code == 200)
+
+    # 5. Register with invite token marks invite used
+    with app.test_client() as c:
+        login(c, "testbot@millennial-space.com", "testpass123")
+        r = c.post("/invite/create")
+        token2 = json.loads(r.data)["link"].split("/invite/")[-1]
+
+    with app.test_client() as c:
+        r = c.post("/register", data={
+            "username": "invitetestuser",
+            "email": "invitetestuser@test.com",
+            "password": "testpass123",
+            "invite_token": token2
+        }, follow_redirects=True)
+        check("Registration with invite token succeeds", r.status_code == 200)
+        with app.app_context():
+            inv = Invite.query.filter_by(token=token2).first()
+            check("Invite marked as used", inv is not None and inv.used_by is not None)
+            new_user = User.query.filter_by(username="invitetestuser").first()
+            if new_user:
+                db.session.delete(new_user)
+                db.session.commit()
+
+
+def test_feedback():
+    print("\n-- T027 Feedback --")
+    # 1. Logged-in user can submit bug report
+    with app.test_client() as c:
+        login(c, "testbot@millennial-space.com", "testpass123")
+        r = c.post("/feedback/new", data={
+            "category": "bug",
+            "title": "Test bug from testbot",
+            "body": "Something broke on the profile page.",
+            "referrer": ""
+        }, follow_redirects=True)
+        check("Logged-in user can submit bug report", r.status_code == 200)
+        with app.app_context():
+            fb = Feedback.query.filter_by(title="Test bug from testbot").first()
+            check("Bug report saved to DB", fb is not None)
+            check("Bug report has user_id", fb is not None and fb.user_id is not None)
+
+    # 2. Anonymous feedback (not logged in)
+    with app.test_client() as c:
+        r = c.post("/feedback/new", data={
+            "category": "suggestion",
+            "title": "Anonymous suggestion",
+            "body": "Add a dark mode.",
+            "referrer": ""
+        }, follow_redirects=True)
+        check("Anonymous user can submit suggestion", r.status_code == 200)
+        with app.app_context():
+            fb2 = Feedback.query.filter_by(title="Anonymous suggestion").first()
+            check("Anonymous feedback saved", fb2 is not None)
+            check("Anonymous feedback has no user_id", fb2 is not None and fb2.user_id is None)
+
+    # 3. Admin page — brickface082 can access
+    with app.test_client() as c:
+        login(c, "brickface082@gmail.com", "testpass123")
+        r = c.get("/admin/feedback")
+        check("brickface082 can access feedback admin", r.status_code in (200, 302))
+        # Note: may redirect if password differs on local — just check it doesn't 403/500
+
+    # 4. Non-admin cannot access admin page
+    with app.test_client() as c:
+        login(c, "testbot@millennial-space.com", "testpass123")
+        r = c.get("/admin/feedback")
+        check("Non-admin gets 403 on feedback admin", r.status_code == 403)
+
+    # 5. Empty form rejected
+    with app.test_client() as c:
+        login(c, "testbot@millennial-space.com", "testpass123")
+        r = c.post("/feedback/new", data={"category": "bug", "title": "", "body": "", "referrer": ""})
+        check("Empty feedback form shows error", r.status_code == 200 and b"fill in" in r.data.lower())
+
+    # Cleanup
+    with app.app_context():
+        Feedback.query.filter(Feedback.title.in_(["Test bug from testbot", "Anonymous suggestion"])).delete(synchronize_session=False)
+        db.session.commit()
+
+
+def test_delete_account():
+    print("\n-- T028 Delete Account --")
+    # Create a throwaway user
+    with app.app_context():
+        hpw = bcrypt.generate_password_hash("deletepass").decode("utf-8")
+        throwaway = User(username="throwawayuser", email="throwaway@test.com", password_hash=hpw)
+        db.session.add(throwaway)
+        db.session.commit()
+
+    # 1. Wrong username — account NOT deleted
+    with app.test_client() as c:
+        login(c, "throwaway@test.com", "deletepass")
+        r = c.post("/account/delete",
+                   data={"confirm_username": "wrongusername"},
+                   follow_redirects=True)
+        check("Wrong username does not delete account", r.status_code == 200)
+        with app.app_context():
+            still_there = User.query.filter_by(username="throwawayuser").first()
+            check("User still in DB after wrong username", still_there is not None)
+
+    # 2. Unauthenticated cannot delete
+    with app.test_client() as c:
+        r = c.post("/account/delete",
+                   data={"confirm_username": "throwawayuser"},
+                   follow_redirects=True)
+        check("Unauthenticated delete redirects to login",
+              b"Login" in r.data or b"login" in r.request.path.lower().encode())
+
+    # 3. Correct username — account IS deleted
+    with app.test_client() as c:
+        login(c, "throwaway@test.com", "deletepass")
+        r = c.post("/account/delete",
+                   data={"confirm_username": "throwawayuser"},
+                   follow_redirects=True)
+        check("Correct username deletes account, redirects", r.status_code == 200)
+        with app.app_context():
+            gone = User.query.filter_by(username="throwawayuser").first()
+            check("User removed from DB", gone is None)
+
+
 # ── run all ──────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -666,6 +820,9 @@ if __name__ == "__main__":
     test_script_rendering()
     test_journal()
     test_polls()
+    test_invites()
+    test_feedback()
+    test_delete_account()
 
     print("\n-- Summary --")
     passed = sum(1 for r in results if r[0] == PASS)

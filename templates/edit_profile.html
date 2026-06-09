@@ -93,5 +93,139 @@
 
     <br>
     <a href="{{ url_for('profile', username=current_user.username) }}">← Back to My Profile</a>
+
+    <!-- T026 — Invite Links -->
+    <hr style="border:none;border-top:2px dashed #cc99cc;margin:24px 0;">
+    <h2 style="color:#660066;font-size:16px;margin-bottom:8px;">📨 Invite Someone</h2>
+    <p class="section-note" style="margin-bottom:10px;">Generate a link to share — when they click it they'll land on a page that explains the site, then go to register. Each link is single-use.</p>
+    <button id="gen-invite-btn" onclick="generateInvite()"
+            style="background:#000080;color:#ffff00;border:2px outset #c0c0c0;font-family:'Comic Sans MS',cursive;font-size:13px;padding:6px 16px;cursor:pointer;font-weight:bold;">
+        ✉ Generate Invite Link
+    </button>
+    <div id="invite-result" style="display:none;margin-top:10px;">
+        <input id="invite-link-box" type="text" readonly
+               style="width:100%;box-sizing:border-box;padding:6px;font-family:monospace;font-size:12px;border:2px solid #000080;background:#ffffcc;cursor:pointer;"
+               onclick="this.select()">
+        <button onclick="copyInviteLink()"
+                style="margin-top:6px;background:#000080;color:#ffff00;border:2px outset #c0c0c0;font-family:'Comic Sans MS',cursive;font-size:12px;padding:4px 14px;cursor:pointer;font-weight:bold;">
+            📋 Copy Link
+        </button>
+        <span id="copy-confirm" style="display:none;color:#006600;font-size:12px;margin-left:8px;font-weight:bold;">✓ Copied!</span>
+    </div>
+
+    {% if invites %}
+    <div style="margin-top:14px;">
+        <p style="font-size:13px;color:#660066;font-weight:bold;margin-bottom:6px;">Your invites:</p>
+        {% for inv in invites %}
+        <div style="font-size:12px;color:#444;padding:4px 0;border-bottom:1px solid #ddd;">
+            {% if inv.used_by %}
+                ✅ Used by <strong>{{ inv.used_by_user.username if inv.used_by_user else '(deleted user)' }}</strong>
+                on {{ inv.used_at.strftime('%b %d, %Y') if inv.used_at else '' }}
+            {% else %}
+                ⏳ Pending —
+                <span style="font-family:monospace;font-size:11px;color:#000080;">
+                    {{ request.host_url }}invite/{{ inv.token }}
+                </span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <script>
+    function generateInvite() {
+        var btn = document.getElementById('gen-invite-btn');
+        btn.disabled = true;
+        btn.textContent = 'Generating…';
+        fetch('/invite/create', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('invite-link-box').value = data.link;
+                document.getElementById('invite-result').style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = '✉ Generate Another';
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.textContent = '✉ Generate Invite Link';
+                alert('Could not generate invite. Try again.');
+            });
+    }
+    function copyInviteLink() {
+        var box = document.getElementById('invite-link-box');
+        var confirm = document.getElementById('copy-confirm');
+        navigator.clipboard.writeText(box.value).then(function() {
+            confirm.style.display = 'inline';
+            setTimeout(function(){ confirm.style.display = 'none'; }, 2000);
+        }).catch(function() {
+            box.select();
+            document.execCommand('copy');
+            confirm.style.display = 'inline';
+            setTimeout(function(){ confirm.style.display = 'none'; }, 2000);
+        });
+    }
+    </script>
+
+    <!-- T028 — Danger Zone: Delete Account -->
+    <hr style="border:none;border-top:3px solid #cc0000;margin:32px 0 16px 0;">
+    <div style="border:2px solid #cc0000;padding:16px;background:#fff5f5;">
+        <h2 style="color:#cc0000;font-size:16px;margin-top:0;">⚠️ Danger Zone</h2>
+        <p style="font-size:13px;color:#550000;margin-bottom:12px;">
+            Permanently deletes your account, all your posts, photos, diary entries, messages, and polls.
+            <strong>This cannot be undone.</strong>
+        </p>
+        <button onclick="document.getElementById('delete-modal').style.display='flex'"
+                style="background:#cc0000;color:white;border:none;padding:8px 20px;font-family:'Comic Sans MS',cursive;font-size:14px;cursor:pointer;font-weight:bold;">
+            🗑 Delete My Account
+        </button>
+    </div>
 </div>
+
+<!-- T028 Delete confirmation modal -->
+<div id="delete-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:10000;align-items:center;justify-content:center;">
+    <div style="background:#fff;border:4px solid #cc0000;padding:28px;max-width:420px;width:90%;font-family:'Comic Sans MS',cursive;">
+        <h2 style="color:#cc0000;margin-top:0;font-size:18px;">⚠️ Delete Account</h2>
+        <p style="font-size:13px;color:#333;margin-bottom:8px;">
+            This will permanently delete:
+        </p>
+        <ul style="font-size:13px;color:#550000;margin:0 0 14px 0;padding-left:20px;">
+            <li>Your profile and bio</li>
+            <li>All posts and photos</li>
+            <li>All diary and blog entries</li>
+            <li>All messages you sent or received</li>
+            <li>All polls you created</li>
+        </ul>
+        <p style="font-size:13px;font-weight:bold;color:#cc0000;margin-bottom:6px;">
+            Type your username to confirm:
+        </p>
+        <input type="text" id="del-confirm-input" placeholder="{{ current_user.username }}"
+               oninput="checkDeleteConfirm()"
+               style="width:100%;box-sizing:border-box;padding:8px;font-family:inherit;font-size:14px;border:2px solid #cc0000;margin-bottom:14px;">
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button onclick="document.getElementById('delete-modal').style.display='none';document.getElementById('del-confirm-input').value='';checkDeleteConfirm();"
+                    style="background:#888;color:white;border:none;padding:8px 18px;font-family:inherit;font-size:14px;cursor:pointer;font-weight:bold;">
+                Cancel
+            </button>
+            <form method="POST" action="{{ url_for('account_delete') }}" id="delete-form">
+                <input type="hidden" name="confirm_username" id="del-hidden-username" value="">
+                <button type="submit" id="del-confirm-btn" disabled
+                        style="background:#cc0000;color:white;border:none;padding:8px 18px;font-family:inherit;font-size:14px;font-weight:bold;opacity:0.4;cursor:not-allowed;">
+                    Permanently Delete My Account
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+var _expectedUsername = {{ current_user.username | tojson }};
+function checkDeleteConfirm() {
+    var typed = document.getElementById('del-confirm-input').value;
+    var btn   = document.getElementById('del-confirm-btn');
+    var matches = (typed === _expectedUsername);
+    btn.disabled  = !matches;
+    btn.style.opacity = matches ? '1' : '0.4';
+    btn.style.cursor  = matches ? 'pointer' : 'not-allowed';
+    document.getElementById('del-hidden-username').value = typed;
+}
+</script>
 {% endblock %}

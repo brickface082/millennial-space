@@ -189,6 +189,32 @@ class Photo(db.Model):
     caption = db.Column(db.String(200), default="")
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
+class Invite(db.Model):
+    """T026 — single-use invite tokens. Any user can generate one to bring someone new."""
+    __tablename__ = "invite"
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(64), unique=True, nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    used_by = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    used_at = db.Column(db.DateTime, nullable=True)
+    creator = db.relationship("User", foreign_keys=[created_by],
+                              backref=db.backref("invites_sent", lazy=True))
+    used_by_user = db.relationship("User", foreign_keys=[used_by],
+                                   backref=db.backref("invite_used", uselist=False, lazy=True))
+
+class Feedback(db.Model):
+    """T027 — bug reports and suggestions. user_id is nullable so anonymous submissions work."""
+    __tablename__ = "feedback"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    category = db.Column(db.String(20), nullable=False)   # 'bug' | 'suggestion'
+    title = db.Column(db.String(200), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default="open")  # 'open' | 'reviewed'
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    submitter = db.relationship("User", backref=db.backref("feedback_submitted", lazy=True))
+
 def extract_url(value):
     value = value.strip()
     match = re.search(r'src=["\']([^"\']+)["\']', value)
@@ -219,17 +245,28 @@ def home():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    # T026 — accept invite token from query param or form hidden field
+    invite_token = request.args.get("invite", "").strip()
+    invite = Invite.query.filter_by(token=invite_token).first() if invite_token else None
+    invited_by = invite.creator.username if invite else None
     if request.method == "POST":
         username = request.form["username"]
         email = request.form["email"]
         password = request.form["password"]
+        token = request.form.get("invite_token", "").strip()
         hashed_pw = bcrypt.generate_password_hash(password).decode("utf-8")
         user = User(username=username, email=email, password_hash=hashed_pw)
         db.session.add(user)
+        db.session.flush()  # get user.id before commit
+        if token:
+            inv = Invite.query.filter_by(token=token).first()
+            if inv and inv.used_by is None:
+                inv.used_by = user.id
+                inv.used_at = datetime.utcnow()
         db.session.commit()
         flash("Account created! You can now log in.", "success")
         return redirect(url_for("login"))
-    return render_template("register.html")
+    return render_template("register.html", invited_by=invited_by, invite_token=invite_token)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -323,7 +360,8 @@ def edit_profile():
         db.session.commit()
         flash("Profile updated!", "success")
         return redirect(url_for("profile", username=current_user.username))
-    return render_template("edit_profile.html", mood_options=MOOD_OPTIONS)
+    invites = Invite.query.filter_by(created_by=current_user.id).order_by(Invite.created_at.desc()).all()
+    return render_template("edit_profile.html", mood_options=MOOD_OPTIONS, invites=invites)
 
 def get_crew_status(current_user_id, profile_user_id):
     req = CrewRequest.query.filter(
@@ -1076,6 +1114,127 @@ def delete_comment(comment_id):
     db.session.delete(comment)
     db.session.commit()
     return redirect(url_for("profile", username=profile_username))
+
+# ── T026 — Invite routes ──────────────────────────────────────────────────────
+
+@app.route("/invite/create", methods=["POST"])
+@login_required
+def invite_create():
+    token = secrets.token_urlsafe(32)
+    invite = Invite(token=token, created_by=current_user.id)
+    db.session.add(invite)
+    db.session.commit()
+    link = url_for("invite_landing", token=token, _external=True)
+    return jsonify({"link": link})
+
+@app.route("/invite/<token>")
+def invite_landing(token):
+    invite = Invite.query.filter_by(token=token).first()
+    return render_template("invite_landing.html", invite=invite, token=token)
+
+# ── T027 — Feedback routes ────────────────────────────────────────────────────
+
+@app.route("/feedback/new", methods=["GET", "POST"])
+def feedback_new():
+    if request.method == "POST":
+        category = request.form.get("category", "bug")
+        if category not in ("bug", "suggestion"):
+            category = "bug"
+        title = request.form.get("title", "").strip()[:200]
+        body = request.form.get("body", "").strip()
+        if not title or not body:
+            flash("Please fill in all fields.", "danger")
+            return render_template("feedback_form.html")
+        user_id = current_user.id if current_user.is_authenticated else None
+        fb = Feedback(user_id=user_id, category=category, title=title, body=body)
+        db.session.add(fb)
+        db.session.commit()
+        flash("Thanks! Your feedback was submitted.", "success")
+        referrer = request.form.get("referrer", "") or url_for("login")
+        return redirect(referrer)
+    return render_template("feedback_form.html",
+                           referrer=request.referrer or "")
+
+@app.route("/admin/feedback")
+@login_required
+def feedback_admin():
+    if current_user.username != "brickface082":
+        return "Access denied.", 403
+    bugs = Feedback.query.filter_by(category="bug").order_by(Feedback.created_at.desc()).all()
+    suggestions = Feedback.query.filter_by(category="suggestion").order_by(Feedback.created_at.desc()).all()
+    return render_template("feedback_admin.html", bugs=bugs, suggestions=suggestions)
+
+@app.route("/admin/feedback/<int:fb_id>/review", methods=["POST"])
+@login_required
+def feedback_review(fb_id):
+    if current_user.username != "brickface082":
+        return "Access denied.", 403
+    fb = Feedback.query.get_or_404(fb_id)
+    fb.status = "reviewed" if fb.status == "open" else "open"
+    db.session.commit()
+    return redirect(url_for("feedback_admin"))
+
+# ── T028 — Delete account ─────────────────────────────────────────────────────
+
+@app.route("/account/delete", methods=["POST"])
+@login_required
+def account_delete():
+    """Multi-step account deletion. Backend verifies username match even if JS is disabled."""
+    confirm_username = request.form.get("confirm_username", "").strip()
+    if confirm_username != current_user.username:
+        flash("Username didn't match. Account was NOT deleted.", "danger")
+        return redirect(url_for("edit_profile"))
+
+    uid = current_user.id
+
+    # Delete in FK-safe order — no cascades, explicit SQL (W003: FK constraint prevention)
+    # 1. PollVotes cast by this user on other people's polls
+    PollVote.query.filter_by(user_id=uid).delete(synchronize_session=False)
+    # 2. PollVotes + PollOptions on polls created by this user
+    poll_ids = [p.id for p in Poll.query.filter_by(creator_id=uid).with_entities(Poll.id).all()]
+    if poll_ids:
+        PollVote.query.filter(PollVote.poll_id.in_(poll_ids)).delete(synchronize_session=False)
+        PollOption.query.filter(PollOption.poll_id.in_(poll_ids)).delete(synchronize_session=False)
+    Poll.query.filter_by(creator_id=uid).delete(synchronize_session=False)
+    # 3. EntryPhotos + JournalEntries
+    entry_ids = [e.id for e in JournalEntry.query.filter_by(user_id=uid).with_entities(JournalEntry.id).all()]
+    if entry_ids:
+        EntryPhoto.query.filter(EntryPhoto.entry_id.in_(entry_ids)).delete(synchronize_session=False)
+    JournalEntry.query.filter_by(user_id=uid).delete(synchronize_session=False)
+    # 4. Photos + PhotoAlbums
+    album_ids = [a.id for a in PhotoAlbum.query.filter_by(user_id=uid).with_entities(PhotoAlbum.id).all()]
+    if album_ids:
+        Photo.query.filter(Photo.album_id.in_(album_ids)).delete(synchronize_session=False)
+    PhotoAlbum.query.filter_by(user_id=uid).delete(synchronize_session=False)
+    # 5. Comments (authored or on their profile)
+    Comment.query.filter(
+        (Comment.author_id == uid) | (Comment.profile_id == uid)
+    ).delete(synchronize_session=False)
+    # 6. Direct messages (sent or received)
+    DirectMessage.query.filter(
+        (DirectMessage.from_id == uid) | (DirectMessage.to_id == uid)
+    ).delete(synchronize_session=False)
+    # 7. Crew requests
+    CrewRequest.query.filter(
+        (CrewRequest.from_id == uid) | (CrewRequest.to_id == uid)
+    ).delete(synchronize_session=False)
+    # 8. Posts
+    Post.query.filter_by(user_id=uid).delete(synchronize_session=False)
+    # 9. Invites created by user (delete), used by user (nullify FK)
+    Invite.query.filter_by(created_by=uid).delete(synchronize_session=False)
+    for inv in Invite.query.filter_by(used_by=uid).all():
+        inv.used_by = None
+        inv.used_at = None
+    # 10. Anonymize feedback (keep the report, lose the attribution)
+    Feedback.query.filter_by(user_id=uid).update({"user_id": None}, synchronize_session=False)
+    # 11. Flush all FK children, then delete the user row
+    db.session.flush()
+    user_obj = db.session.get(User, uid)
+    db.session.delete(user_obj)
+    db.session.commit()
+    logout_user()
+    flash("Your account has been permanently deleted.", "info")
+    return redirect(url_for("login"))
 
 with app.app_context():
     os.makedirs(os.path.join(basedir, "instance"), exist_ok=True)

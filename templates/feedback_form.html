@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Feedback — Millennial Space{% endblock %}
+
+{% block extra_style %}
+<style>
+    .fb-box {
+        background: rgba(255,255,255,0.93);
+        max-width: 540px;
+        margin: 0 auto;
+        padding: 28px;
+        border: 4px ridge #00ffff;
+    }
+    h1 { color: #ff1493; text-shadow: 2px 2px #ffff00; margin-top: 0; }
+    label { display: block; margin-bottom: 4px; font-weight: bold; color: #660066; }
+    input[type="text"], textarea, select {
+        width: 100%; box-sizing: border-box; padding: 8px;
+        font-family: inherit; font-size: 14px;
+        border: 2px solid #ff66b2; margin-bottom: 14px; margin-top: 4px;
+    }
+    textarea { height: 120px; resize: vertical; }
+    .submit-btn {
+        background: #ff1493; color: white; border: none;
+        padding: 10px 24px; font-family: inherit; font-size: 16px;
+        cursor: pointer; font-weight: bold;
+    }
+    .submit-btn:hover { background: #cc0077; }
+    a { color: #0000cc; font-weight: bold; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fb-box">
+    <h1>🐛 Bug Report / 💡 Idea</h1>
+    <p style="font-size:13px;color:#555;margin-top:-8px;margin-bottom:16px;">
+        Found something broken? Have a cool idea? Let us know — we read everything.
+    </p>
+
+    <form method="POST">
+        <input type="hidden" name="referrer" value="{{ referrer }}">
+
+        <label>Type</label>
+        <select name="category">
+            <option value="bug">🐛 Bug Report — something broke or isn't working right</option>
+            <option value="suggestion">💡 Suggestion — an idea or feature request</option>
+        </select>
+
+        <label>Title</label>
+        <input type="text" name="title" maxlength="200" required placeholder="Short description...">
+
+        <label>Details</label>
+        <textarea name="body" required
+                  placeholder="Tell us what happened, what page you were on, what you expected..."></textarea>
+
+        {% if current_user.is_authenticated %}
+        <p style="font-size:12px;color:#888;margin:0 0 14px 0;">
+            Submitting as <strong>{{ current_user.username }}</strong>
+        </p>
+        {% else %}
+        <p style="font-size:12px;color:#888;margin:0 0 14px 0;">
+            Submitting anonymously — <a href="{{ url_for('login') }}">login</a> to attach your name
+        </p>
+        {% endif %}
+
+        <button type="submit" class="submit-btn">Send Feedback</button>
+    </form>
+
+    <br>
+    <a href="javascript:history.back()">← Go back</a>
+</div>
+{% endblock %}

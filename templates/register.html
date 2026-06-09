@@ -40,7 +40,21 @@
 {% block content %}
 <div class="box">
     <h1>✨ Join Millennial Space</h1>
+
+    {% if invited_by %}
+    <div style="background:#fff8e1;border:2px solid #ffaa00;padding:10px 14px;margin-bottom:16px;font-size:14px;color:#664400;">
+        🎉 <strong>{{ invited_by }}</strong> invited you!
+    </div>
+    {% endif %}
+
+    <div style="background:#f5f5f5;border:1px solid #ccc;padding:8px 12px;margin-bottom:16px;font-size:12px;color:#555;">
+        🚧 <strong>Heads up:</strong> Millennial Space is a work in progress — things may change while we build, but your account is <strong>permanent</strong>.
+    </div>
+
     <form method="POST">
+        {% if invite_token %}
+        <input type="hidden" name="invite_token" value="{{ invite_token }}">
+        {% endif %}
         <label>Username</label>
         <input type="text" name="username" placeholder="brickface082" required>
         <label>Email</label>

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Feedback Admin — Millennial Space{% endblock %}
+
+{% block extra_style %}
+<style>
+    .admin-wrap { max-width: 860px; margin: 0 auto; }
+    h1 { color: #ff1493; text-shadow: 2px 2px #ffff00; margin-top: 0; }
+    h2 { border-bottom: 2px solid; padding-bottom: 4px; margin-top: 28px; }
+    .fb-card {
+        background: rgba(255,255,255,0.92);
+        padding: 14px;
+        margin-bottom: 10px;
+        border: 2px solid #aaa;
+    }
+    .fb-card.open-bug      { border-color: #cc0000; }
+    .fb-card.reviewed-bug  { border-color: #00aa00; }
+    .fb-card.open-sug      { border-color: #0055cc; }
+    .fb-card.reviewed-sug  { border-color: #00aa00; }
+    .fb-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+    .fb-meta { font-size: 11px; color: #777; margin-top: 3px; }
+    .status-tag {
+        display: inline-block; padding: 2px 7px; font-size: 11px;
+        font-weight: bold; border-radius: 3px; margin-top: 4px;
+    }
+    .tag-open     { background: #ffcccc; color: #550000; }
+    .tag-open-sug { background: #cce0ff; color: #003388; }
+    .tag-reviewed { background: #ccffcc; color: #005500; }
+    .review-btn {
+        font-family: inherit; font-size: 12px; cursor: pointer;
+        color: white; border: none; padding: 5px 12px;
+    }
+    .fb-body { margin: 10px 0 0 0; font-size: 13px; color: #333; white-space: pre-wrap; }
+    .empty { color: #999; font-style: italic; padding: 10px 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrap">
+    <h1>📋 Feedback Admin</h1>
+    <p style="font-size:13px;color:#666;">Only visible to brickface082.</p>
+
+    <!-- Bug Reports -->
+    <h2 style="color:#cc0000;border-color:#cc0000;">🐛 Bug Reports ({{ bugs|length }})</h2>
+    {% if not bugs %}
+        <p class="empty">No bug reports yet.</p>
+    {% endif %}
+    {% for fb in bugs %}
+    <div class="fb-card {{ 'reviewed-bug' if fb.status == 'reviewed' else 'open-bug' }}">
+        <div class="fb-header">
+            <div>
+                <strong style="font-size:15px;">{{ fb.title }}</strong>
+                <div class="fb-meta">
+                    by {{ fb.submitter.username if fb.submitter else 'anonymous' }}
+                    &middot; {{ fb.created_at.strftime('%Y-%m-%d %H:%M UTC') }}
+                </div>
+                <span class="status-tag {{ 'tag-reviewed' if fb.status == 'reviewed' else 'tag-open' }}">
+                    {{ fb.status }}
+                </span>
+            </div>
+            <form method="POST" action="{{ url_for('feedback_review', fb_id=fb.id) }}">
+                <button type="submit" class="review-btn"
+                        style="background:{{ '#888' if fb.status == 'reviewed' else '#00aa00' }};">
+                    {{ 'Mark Open' if fb.status == 'reviewed' else 'Mark Reviewed' }}
+                </button>
+            </form>
+        </div>
+        <p class="fb-body">{{ fb.body }}</p>
+    </div>
+    {% endfor %}
+
+    <!-- Suggestions -->
+    <h2 style="color:#0055cc;border-color:#0055cc;">💡 Suggestions ({{ suggestions|length }})</h2>
+    {% if not suggestions %}
+        <p class="empty">No suggestions yet.</p>
+    {% endif %}
+    {% for fb in suggestions %}
+    <div class="fb-card {{ 'reviewed-sug' if fb.status == 'reviewed' else 'open-sug' }}">
+        <div class="fb-header">
+            <div>
+                <strong style="font-size:15px;">{{ fb.title }}</strong>
+                <div class="fb-meta">
+                    by {{ fb.submitter.username if fb.submitter else 'anonymous' }}
+                    &middot; {{ fb.created_at.strftime('%Y-%m-%d %H:%M UTC') }}
+                </div>
+                <span class="status-tag {{ 'tag-reviewed' if fb.status == 'reviewed' else 'tag-open-sug' }}">
+                    {{ fb.status }}
+                </span>
+            </div>
+            <form method="POST" action="{{ url_for('feedback_review', fb_id=fb.id) }}">
+                <button type="submit" class="review-btn"
+                        style="background:{{ '#888' if fb.status == 'reviewed' else '#00aa00' }};">
+                    {{ 'Mark Open' if fb.status == 'reviewed' else 'Mark Reviewed' }}
+                </button>
+            </form>
+        </div>
+        <p class="fb-body">{{ fb.body }}</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

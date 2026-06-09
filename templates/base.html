@@ -111,6 +111,14 @@
 </head>
 <body>
 
+<!-- T026 WIP Banner — dismissible, sessionStorage keeps it gone for the session -->
+<div id="wip-banner" style="background:#1a1000;color:#ffcc66;font-size:12px;text-align:center;padding:5px 44px 5px 12px;position:relative;border-bottom:2px solid #7a4f00;line-height:1.4;">
+    🚧 Millennial Space is under active development — things may go down or change, but your account and everything on it is <strong>permanent</strong>.
+    <button onclick="document.getElementById('wip-banner').style.display='none';sessionStorage.setItem('wip_gone','1');"
+            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#ffcc66;font-size:16px;cursor:pointer;font-weight:bold;line-height:1;">✕</button>
+</div>
+<script>if(sessionStorage.getItem('wip_gone')==='1'){document.getElementById('wip-banner').style.display='none';}</script>
+
 <nav class="site-nav">
     {% if current_user.is_authenticated %}
         <a class="site-title" href="{{ url_for('profile', username=current_user.username) }}">★ Millennial Space</a>
@@ -129,6 +137,7 @@
             <span id="msg-alert-btn" onclick="icqToggle()" title="Messages" style="cursor:pointer;position:relative;font-size:15px;font-weight:bold;color:#ffccee;user-select:none;display:inline-block;">
                 ✉ <span id="msg-badge" style="display:none;position:absolute;top:-6px;right:-10px;background:#ff0000;color:#fff;font-size:10px;font-weight:bold;padding:1px 4px;border-radius:8px;min-width:14px;text-align:center;"></span>
             </span>
+            <a href="{{ url_for('feedback_new') }}" title="Bug report or suggestion" style="color:#ffccee;font-size:13px;font-weight:bold;text-decoration:none;">🐛</a>
             <a href="{{ url_for('logout') }}">Logout</a>
         </div>
     {% else %}
@@ -136,6 +145,7 @@
         <div class="nav-right">
             <a href="{{ url_for('login') }}">Login</a>
             <a href="{{ url_for('register') }}">Register</a>
+            <a href="{{ url_for('feedback_new') }}" title="Bug report or suggestion" style="color:#ffccee;font-size:13px;font-weight:bold;text-decoration:none;">🐛</a>
         </div>
     {% endif %}
 </nav>
