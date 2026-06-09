@@ -404,17 +404,17 @@ with app.app_context():
     db.create_all()
     is_pg = database_url.startswith("postgresql")
     dt_type = "TIMESTAMP" if is_pg else "DATETIME"
-    with db.engine.connect() as conn:
-        for col, definition in [
-            ("top8", "VARCHAR(200) DEFAULT ''"),
-            ("status", "VARCHAR(10) DEFAULT 'online'"),
-            ("last_seen", dt_type),
-        ]:
-            try:
+    for col, definition in [
+        ("top8", "VARCHAR(200) DEFAULT ''"),
+        ("status", "VARCHAR(10) DEFAULT 'online'"),
+        ("last_seen", dt_type),
+    ]:
+        try:
+            with db.engine.connect() as conn:
                 conn.execute(db.text(f'ALTER TABLE "user" ADD COLUMN {col} {definition}'))
                 conn.commit()
-            except Exception:
-                pass
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     app.run(debug=True)
