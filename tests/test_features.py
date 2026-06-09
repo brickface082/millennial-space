@@ -424,6 +424,33 @@ def test_mood():
             u.mood = ""
             db.session.commit()
 
+def test_script_rendering():
+    """
+    SOP T005 / M014 regression: verify no HTML entities appear inside <script> blocks
+    in rendered pages. Jinja2 auto-escape turns quotes into &#34; inside script tags,
+    causing a JS SyntaxError that silently kills all window.* function definitions.
+    """
+    import re
+    with app.test_client() as client:
+        login(client, "testbot@millennial-space.com", "testpass123")
+        resp = client.get("/profile/testbot", follow_redirects=True)
+        html = resp.data.decode("utf-8")
+
+        # Extract all <script>...</script> blocks
+        script_blocks = re.findall(r'<script[^>]*>(.*?)</script>', html, re.DOTALL)
+        our_scripts = [s for s in script_blocks if 'icqToggle' in s or 'pollInbox' in s]
+
+        check("Script blocks found in rendered page", len(our_scripts) > 0,
+              f"found {len(our_scripts)} ICQ script block(s)")
+
+        for i, block in enumerate(our_scripts):
+            has_entities = bool(re.search(r'&#\d+;', block))
+            check(f"Script block {i+1} contains no HTML entities (&#NNN;)",
+                  not has_entities,
+                  "FAIL: Jinja2 is HTML-escaping values inside <script> — use | tojson" if has_entities else "")
+
+        logout(client)
+
 # ── run all ──────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -439,6 +466,7 @@ if __name__ == "__main__":
     test_icq_inbox()
     test_profile_views()
     test_mood()
+    test_script_rendering()
 
     print("\n-- Summary --")
     passed = sum(1 for r in results if r[0] == PASS)
