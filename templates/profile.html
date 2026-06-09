@@ -82,6 +82,11 @@
         <h1>{{ user.username }}'s Space</h1>
     </div>
 
+    {% if user.status == 'away' and user.away_message %}
+    <div style="background:#fff3cd;border:2px solid #ffcc00;padding:8px 12px;margin-bottom:10px;font-size:14px;">
+        🌙 <strong>Away:</strong> {{ user.away_message }}
+    </div>
+    {% endif %}
     <p class="bio">{{ user.bio or "No bio yet." }}</p>
 
     {% if top8_users %}

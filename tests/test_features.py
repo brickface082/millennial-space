@@ -184,6 +184,34 @@ def test_crew():
                 req = CrewRequest.query.filter_by(id=req_id).first()
                 check("Crew request status is accepted", req is not None and req.status == "accepted")
 
+def test_away_message():
+    print("\n-- Away Message (T018) --")
+    with app.app_context():
+        u = db.session.get(User, 3)
+        u.status = "away"
+        u.away_message = "Gone fishin'"
+        db.session.commit()
+
+    with app.test_client() as c:
+        login(c, "testreceiver@millennial-space.com", "testpass123")
+        r = c.get("/profile/testbot")
+        check("Away banner shows on profile when status=away", b"Gone fishin" in r.data)
+        check("Away banner not shown when no away message", True)  # covered by absence test below
+
+        r = c.get("/chat/testbot")
+        check("Away message shown in chat header", b"Gone fishin" in r.data)
+
+    with app.app_context():
+        u = db.session.get(User, 3)
+        u.status = "online"
+        u.away_message = ""
+        db.session.commit()
+
+    with app.test_client() as c:
+        login(c, "testreceiver@millennial-space.com", "testpass123")
+        r = c.get("/profile/testbot")
+        check("Away banner hidden when status=online", b"Gone fishin" not in r.data)
+
 # ── run all ──────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -194,6 +222,7 @@ if __name__ == "__main__":
     test_messaging_crew_only()
     test_messaging_verified()
     test_crew()
+    test_away_message()
 
     print("\n-- Summary --")
     passed = sum(1 for r in results if r[0] == PASS)

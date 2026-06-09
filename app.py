@@ -42,6 +42,7 @@ class User(db.Model, UserMixin):
     status = db.Column(db.String(10), default="online")
     last_seen = db.Column(db.DateTime, nullable=True)
     msg_filter = db.Column(db.String(10), default="open")
+    away_message = db.Column(db.Text, default="")
 
     def __repr__(self):
         return f"User({self.username})"
@@ -175,6 +176,7 @@ def edit_profile():
         current_user.spotify_url = extract_url(request.form.get("spotify_url", ""))
         mf = request.form.get("msg_filter", "open")
         current_user.msg_filter = mf if mf in ("open", "verified", "crew") else "open"
+        current_user.away_message = request.form.get("away_message", "")[:200]
         if request.files.get("profile_pic"):
             pic = request.files["profile_pic"]
             if pic.filename != "":
@@ -464,6 +466,7 @@ with app.app_context():
             ("status", "VARCHAR(10) DEFAULT 'online'"),
             ("last_seen", dt_type),
             ("msg_filter", "VARCHAR(10) DEFAULT 'open'"),
+            ("away_message", "TEXT DEFAULT ''"),
         ]:
             if col not in existing:
                 conn.execute(db.text(f'ALTER TABLE "user" ADD COLUMN {col} {definition}'))

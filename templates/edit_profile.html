@@ -54,6 +54,10 @@
         <label>Spotify URL</label>
         <input type="text" name="spotify_url" value="{{ current_user.spotify_url or '' }}" placeholder="https://open.spotify.com/track/...">
 
+        <label>Away Message</label>
+        <input type="text" name="away_message" value="{{ current_user.away_message or '' }}" placeholder="I'm away right now..." maxlength="200">
+        <p class="section-note">Only shown when your status is set to Away.</p>
+
         <label>Who can message me?</label>
         <select name="msg_filter" style="font-family:inherit;font-size:14px;border:2px solid #ff66b2;padding:6px;margin-top:4px;width:100%;">
             <option value="open"     {% if (current_user.msg_filter or 'open') == 'open'     %}selected{% endif %}>🌐 Open — anyone can message me</option>

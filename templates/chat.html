@@ -88,6 +88,11 @@
             {% endif %}
         </span>
     </h1>
+    {% if other.status == 'away' and other.away_message %}
+    <div style="background:#fff3cd;border:2px solid #ffcc00;padding:8px 12px;margin-bottom:12px;font-size:14px;border-radius:2px;">
+        🌙 <strong>{{ other.username }} is away:</strong> {{ other.away_message }}
+    </div>
+    {% endif %}
 
     <div class="thread" id="thread">
         {% for msg in messages %}
