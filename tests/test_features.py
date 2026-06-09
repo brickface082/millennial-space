@@ -395,9 +395,32 @@ def test_mood():
             u = User.query.filter_by(username="testbot").first()
             check("Invalid mood rejected, stored as empty", u is not None and u.mood == "")
 
-        # No mood — block hidden on profile
+        # Owner always sees mood picker even when mood is empty (shows "Set mood" prompt)
         r = c.get("/profile/testbot")
-        check("Mood block hidden when mood is empty", "Current Mood" not in r.data.decode("utf-8", errors="replace"))
+        check("Owner sees mood picker when mood is empty", "Set mood" in r.data.decode("utf-8", errors="replace"))
+
+        # Visitor does NOT see "Current Mood" when mood is empty
+        logout(c)
+        r = c.get("/profile/testbot")
+        check("Visitor sees no mood block when mood is empty", "Current Mood" not in r.data.decode("utf-8", errors="replace"))
+        login(c, "testbot@millennial-space.com", "testpass123")
+
+        # Inline /mood route — AJAX endpoint
+        r = c.post("/mood", data={"mood": "cool"})
+        check("/mood route returns JSON", r.status_code == 200)
+        import json
+        data = json.loads(r.data)
+        check("/mood returns ok:true", data.get("ok") == True)
+        check("/mood returns correct label", "Cool" in data.get("label", ""))
+        with app.app_context():
+            u = User.query.filter_by(username="testbot").first()
+            check("Mood updated via /mood route", u is not None and u.mood == "cool")
+
+        # Invalid mood via /mood route falls back to empty
+        c.post("/mood", data={"mood": "INVALID"})
+        with app.app_context():
+            u = User.query.filter_by(username="testbot").first()
+            check("Invalid mood via /mood stored as empty", u is not None and u.mood == "")
 
         # Clear mood after test
         with app.app_context():

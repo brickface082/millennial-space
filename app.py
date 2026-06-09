@@ -178,7 +178,10 @@ def profile(username):
                 if m:
                     top8_users.append(m)
     mood_labels = {key: label for key, label in MOOD_OPTIONS if key}
-    return render_template("profile.html", user=user, posts=posts, comments=comments, crew_status=crew_status, crew_request_id=crew_request_id, top8_users=top8_users, mood_labels=mood_labels)
+    return render_template("profile.html", user=user, posts=posts, comments=comments,
+                           crew_status=crew_status, crew_request_id=crew_request_id,
+                           top8_users=top8_users, mood_labels=mood_labels,
+                           mood_options=MOOD_OPTIONS)
 
 @app.route("/edit", methods=["GET", "POST"])
 @login_required
@@ -562,6 +565,15 @@ def sounds():
                 flash("Recording too long — max 5 seconds.", "danger")
         return redirect(url_for("sounds"))
     return render_template("sounds.html")
+
+@app.route("/mood", methods=["POST"])
+@login_required
+def set_mood():
+    m = request.form.get("mood", "")
+    current_user.mood = m if m in VALID_MOODS else ""
+    db.session.commit()
+    label = dict(MOOD_OPTIONS).get(current_user.mood, "")
+    return jsonify({"ok": True, "label": label, "mood": current_user.mood})
 
 @app.route("/status", methods=["POST"])
 @login_required
