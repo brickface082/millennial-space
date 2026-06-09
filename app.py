@@ -3,7 +3,8 @@ import re
 import secrets
 from PIL import Image
 from datetime import datetime
-from flask import Flask, render_template, redirect, url_for, request, flash, jsonify
+import random
+from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, current_user, logout_user, login_required
@@ -40,6 +41,7 @@ class User(db.Model, UserMixin):
     top8 = db.Column(db.String(200), default="")
     status = db.Column(db.String(10), default="online")
     last_seen = db.Column(db.DateTime, nullable=True)
+    msg_filter = db.Column(db.String(10), default="open")
 
     def __repr__(self):
         return f"User({self.username})"
@@ -171,6 +173,8 @@ def edit_profile():
         current_user.bg_color = request.form.get("bg_color", "#ff66b2")
         current_user.youtube_url = extract_url(request.form.get("youtube_url", ""))
         current_user.spotify_url = extract_url(request.form.get("spotify_url", ""))
+        mf = request.form.get("msg_filter", "open")
+        current_user.msg_filter = mf if mf in ("open", "verified", "crew") else "open"
         if request.files.get("profile_pic"):
             pic = request.files["profile_pic"]
             if pic.filename != "":
@@ -337,17 +341,58 @@ def search():
         results = User.query.filter(User.username.ilike(f"%{q}%")).limit(20).all()
     return render_template("search.html", q=q, results=results)
 
+def _check_msg_access(other):
+    """Return None if access granted, or a redirect response if blocked."""
+    f = other.msg_filter or "open"
+    if f == "open":
+        return None
+    if f == "crew":
+        req = get_crew_status(current_user.id, other.id)
+        if req and req.status == "accepted":
+            return None
+        flash(f"{other.username} only accepts messages from their crew.", "danger")
+        return redirect(url_for("profile", username=other.username))
+    if f == "verified":
+        flag = f"verified_for_{other.id}"
+        if session.get(flag):
+            return None
+        return redirect(url_for("chat_verify", username=other.username))
+    return None
+
 @app.route("/chat/<username>")
 @login_required
 def chat(username):
     other = User.query.filter_by(username=username).first_or_404()
     if other.id == current_user.id:
         return redirect(url_for("profile", username=current_user.username))
+    blocked = _check_msg_access(other)
+    if blocked:
+        return blocked
     messages = DirectMessage.query.filter(
         ((DirectMessage.from_id == current_user.id) & (DirectMessage.to_id == other.id)) |
         ((DirectMessage.from_id == other.id) & (DirectMessage.to_id == current_user.id))
     ).order_by(DirectMessage.timestamp.asc()).all()
     return render_template("chat.html", other=other, messages=messages)
+
+@app.route("/chat/<username>/verify", methods=["GET", "POST"])
+@login_required
+def chat_verify(username):
+    other = User.query.filter_by(username=username).first_or_404()
+    if other.id == current_user.id:
+        return redirect(url_for("profile", username=current_user.username))
+    if (other.msg_filter or "open") != "verified":
+        return redirect(url_for("chat", username=username))
+    if request.method == "POST":
+        answer = request.form.get("answer", "").strip()
+        correct = str(session.get(f"verify_answer_{other.id}", ""))
+        if answer == correct:
+            session[f"verified_for_{other.id}"] = True
+            return redirect(url_for("chat", username=username))
+        flash("Wrong answer — try again.", "danger")
+    a = random.randint(1, 12)
+    b = random.randint(1, 12)
+    session[f"verify_answer_{other.id}"] = a + b
+    return render_template("verify.html", other=other, a=a, b=b)
 
 @app.route("/chat/<username>/send", methods=["POST"])
 @login_required
@@ -415,6 +460,7 @@ with app.app_context():
             ("top8", "VARCHAR(200) DEFAULT ''"),
             ("status", "VARCHAR(10) DEFAULT 'online'"),
             ("last_seen", dt_type),
+            ("msg_filter", "VARCHAR(10) DEFAULT 'open'"),
         ]:
             if col not in existing:
                 conn.execute(db.text(f'ALTER TABLE "user" ADD COLUMN {col} {definition}'))

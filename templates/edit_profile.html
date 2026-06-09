@@ -54,6 +54,14 @@
         <label>Spotify URL</label>
         <input type="text" name="spotify_url" value="{{ current_user.spotify_url or '' }}" placeholder="https://open.spotify.com/track/...">
 
+        <label>Who can message me?</label>
+        <select name="msg_filter" style="font-family:inherit;font-size:14px;border:2px solid #ff66b2;padding:6px;margin-top:4px;width:100%;">
+            <option value="open"     {% if (current_user.msg_filter or 'open') == 'open'     %}selected{% endif %}>🌐 Open — anyone can message me</option>
+            <option value="verified" {% if (current_user.msg_filter or 'open') == 'verified' %}selected{% endif %}>🔐 Verified — must answer a math question first</option>
+            <option value="crew"     {% if (current_user.msg_filter or 'open') == 'crew'     %}selected{% endif %}>👥 Crew only — only my crew can message me</option>
+        </select>
+        <p class="section-note">Verified mode stops spam bots. Crew only mode is the most private.</p>
+
         <input type="submit" value="Save My Space!">
     </form>
 

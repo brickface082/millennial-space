@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Verify to Message {{ other.username }} - Millennial Space{% endblock %}
+
+{% block extra_style %}
+<style>
+    .verify-box {
+        background: rgba(255,255,255,0.93);
+        max-width: 420px;
+        margin: 0 auto;
+        padding: 28px;
+        border: 4px ridge #00ffff;
+        box-shadow: 4px 4px 0px #ff00ff;
+        text-align: center;
+    }
+    h1 { color: #ff1493; text-shadow: 2px 2px #ffff00; margin-top: 0; font-size: 1.3em; }
+    .question { font-size: 1.5em; font-weight: bold; color: #660066; margin: 20px 0; }
+    input[type="text"] {
+        font-family: inherit; font-size: 1.3em; padding: 8px 12px;
+        border: 2px solid #ff66b2; width: 100px; text-align: center; margin-bottom: 16px;
+    }
+    .btn {
+        background: #ff1493; color: white; border: none; padding: 10px 28px;
+        font-family: inherit; font-size: 15px; font-weight: bold; cursor: pointer;
+    }
+    .btn:hover { background: #cc0077; }
+    .note { font-size: 13px; color: #888; margin-top: 16px; }
+    a { color: #0000cc; font-weight: bold; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="verify-box">
+    <h1>🔐 Prove you're not a robot</h1>
+    <p style="color:#660066;">{{ other.username }} requires a quick check before messaging.</p>
+
+    <form method="POST">
+        <p class="question">What is {{ a }} + {{ b }}?</p>
+        <input type="text" name="answer" placeholder="?" autofocus autocomplete="off" maxlength="4">
+        <br>
+        <button class="btn" type="submit">Submit</button>
+    </form>
+
+    <p class="note"><a href="{{ url_for('profile', username=other.username) }}">← Back to {{ other.username }}'s Space</a></p>
+</div>
+{% endblock %}
