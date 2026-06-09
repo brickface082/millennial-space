@@ -404,17 +404,21 @@ with app.app_context():
     db.create_all()
     is_pg = database_url.startswith("postgresql")
     dt_type = "TIMESTAMP" if is_pg else "DATETIME"
-    for col, definition in [
-        ("top8", "VARCHAR(200) DEFAULT ''"),
-        ("status", "VARCHAR(10) DEFAULT 'online'"),
-        ("last_seen", dt_type),
-    ]:
-        try:
-            with db.engine.connect() as conn:
+    with db.engine.connect() as conn:
+        if is_pg:
+            existing = {row[0] for row in conn.execute(db.text(
+                "SELECT column_name FROM information_schema.columns WHERE table_name='user'"
+            ))}
+        else:
+            existing = {row[1] for row in conn.execute(db.text("PRAGMA table_info('user')"))}
+        for col, definition in [
+            ("top8", "VARCHAR(200) DEFAULT ''"),
+            ("status", "VARCHAR(10) DEFAULT 'online'"),
+            ("last_seen", dt_type),
+        ]:
+            if col not in existing:
                 conn.execute(db.text(f'ALTER TABLE "user" ADD COLUMN {col} {definition}'))
-                conn.commit()
-        except Exception:
-            pass
+        conn.commit()
 
 if __name__ == "__main__":
     app.run(debug=True)
