@@ -46,6 +46,7 @@ class User(db.Model, UserMixin):
     alert_sound = db.Column(db.String(30), default="classic_beep")
     custom_sound = db.Column(db.Text, default="")
     profile_views = db.Column(db.Integer, default=0)
+    mood = db.Column(db.String(30), default="")
 
     def __repr__(self):
         return f"User({self.username})"
@@ -176,7 +177,8 @@ def profile(username):
                 m = User.query.get(int(uid))
                 if m:
                     top8_users.append(m)
-    return render_template("profile.html", user=user, posts=posts, comments=comments, crew_status=crew_status, crew_request_id=crew_request_id, top8_users=top8_users)
+    mood_labels = {key: label for key, label in MOOD_OPTIONS if key}
+    return render_template("profile.html", user=user, posts=posts, comments=comments, crew_status=crew_status, crew_request_id=crew_request_id, top8_users=top8_users, mood_labels=mood_labels)
 
 @app.route("/edit", methods=["GET", "POST"])
 @login_required
@@ -189,6 +191,8 @@ def edit_profile():
         mf = request.form.get("msg_filter", "open")
         current_user.msg_filter = mf if mf in ("open", "verified", "crew") else "open"
         current_user.away_message = request.form.get("away_message", "")[:200]
+        submitted_mood = request.form.get("mood", "")
+        current_user.mood = submitted_mood if submitted_mood in VALID_MOODS else ""
         if request.files.get("profile_pic"):
             pic = request.files["profile_pic"]
             if pic.filename != "":
@@ -200,7 +204,7 @@ def edit_profile():
         db.session.commit()
         flash("Profile updated!", "success")
         return redirect(url_for("profile", username=current_user.username))
-    return render_template("edit_profile.html")
+    return render_template("edit_profile.html", mood_options=MOOD_OPTIONS)
 
 def get_crew_status(current_user_id, profile_user_id):
     req = CrewRequest.query.filter(
@@ -496,6 +500,24 @@ def inbox_mark_read(username):
     db.session.commit()
     return jsonify({"ok": True})
 
+# T021 — mood options: key stored in DB, value displayed in templates
+MOOD_OPTIONS = [
+    ("",              "— No mood set —"),
+    ("happy",         "😊 Happy"),
+    ("excited",       "😂 Excited"),
+    ("loved_up",      "😍 Loved Up"),
+    ("celebratory",   "🥳 Celebratory"),
+    ("cool",          "😎 Cool"),
+    ("thoughtful",    "🤔 Thoughtful"),
+    ("bored",         "🥱 Bored"),
+    ("tired",         "😴 Tired"),
+    ("anxious",       "😰 Anxious"),
+    ("sad",           "😢 Sad"),
+    ("angry",         "😤 Angry"),
+    ("dead_inside",   "💀 Dead Inside"),
+]
+VALID_MOODS = {key for key, _ in MOOD_OPTIONS}
+
 VALID_SOUNDS = {
     "none", "classic_beep", "double_ping", "triple_beep", "rising_tone",
     "falling_tone", "soft_chime", "retro_game", "soft_pop", "ding",
@@ -609,6 +631,18 @@ with app.app_context():
             existing_u2 = {row[1] for row in conn.execute(db.text("PRAGMA table_info('user')"))}
         if "profile_views" not in existing_u2:
             conn.execute(db.text("ALTER TABLE \"user\" ADD COLUMN profile_views INTEGER DEFAULT 0"))
+        conn.commit()
+
+    # user mood migration — separate connection per D002 SOP
+    with db.engine.connect() as conn:
+        if is_pg:
+            existing_u3 = {row[0] for row in conn.execute(db.text(
+                "SELECT column_name FROM information_schema.columns WHERE table_name='user'"
+            ))}
+        else:
+            existing_u3 = {row[1] for row in conn.execute(db.text("PRAGMA table_info('user')"))}
+        if "mood" not in existing_u3:
+            conn.execute(db.text("ALTER TABLE \"user\" ADD COLUMN mood VARCHAR(30) DEFAULT ''"))
         conn.commit()
 
 if __name__ == "__main__":

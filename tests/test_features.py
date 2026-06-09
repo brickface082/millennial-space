@@ -367,6 +367,44 @@ def test_profile_views():
         r = c.get("/profile/brickface082")
         check("View count displayed on profile page", "views" in r.data.decode("utf-8", errors="replace"))
 
+def test_mood():
+    print("\n-- Mood Indicator (T021) --")
+    with app.test_client() as c:
+        login(c, "testbot@millennial-space.com", "testpass123")
+
+        # Set a valid mood
+        r = c.post("/edit", data={
+            "bio": "", "bg_color": "#ff66b2", "youtube_url": "", "spotify_url": "",
+            "away_message": "", "msg_filter": "open", "mood": "happy"
+        }, follow_redirects=True)
+        check("Valid mood saves successfully", r.status_code == 200)
+        with app.app_context():
+            u = User.query.filter_by(username="testbot").first()
+            check("Mood stored in DB", u is not None and u.mood == "happy")
+
+        # Mood displays on profile
+        r = c.get("/profile/testbot")
+        check("Mood displayed on profile", "Happy" in r.data.decode("utf-8", errors="replace"))
+
+        # Invalid mood rejected — falls back to empty string
+        r = c.post("/edit", data={
+            "bio": "", "bg_color": "#ff66b2", "youtube_url": "", "spotify_url": "",
+            "away_message": "", "msg_filter": "open", "mood": "HACK_VALUE"
+        }, follow_redirects=True)
+        with app.app_context():
+            u = User.query.filter_by(username="testbot").first()
+            check("Invalid mood rejected, stored as empty", u is not None and u.mood == "")
+
+        # No mood — block hidden on profile
+        r = c.get("/profile/testbot")
+        check("Mood block hidden when mood is empty", "Current Mood" not in r.data.decode("utf-8", errors="replace"))
+
+        # Clear mood after test
+        with app.app_context():
+            u = User.query.filter_by(username="testbot").first()
+            u.mood = ""
+            db.session.commit()
+
 # ── run all ──────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -381,6 +419,7 @@ if __name__ == "__main__":
     test_sounds()
     test_icq_inbox()
     test_profile_views()
+    test_mood()
 
     print("\n-- Summary --")
     passed = sum(1 for r in results if r[0] == PASS)

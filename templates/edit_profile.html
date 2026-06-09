@@ -54,6 +54,14 @@
         <label>Spotify URL</label>
         <input type="text" name="spotify_url" value="{{ current_user.spotify_url or '' }}" placeholder="https://open.spotify.com/track/...">
 
+        <label>Current Mood</label>
+        <select name="mood" style="font-family:inherit;font-size:14px;border:2px solid #ff66b2;padding:6px;margin-top:4px;width:100%;">
+            {% for key, label in mood_options %}
+            <option value="{{ key }}" {% if (current_user.mood or '') == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <p class="section-note">Shown on your profile next to your view count.</p>
+
         <label>Away Message</label>
         <input type="text" name="away_message" value="{{ current_user.away_message or '' }}" placeholder="I'm away right now..." maxlength="200">
         <p class="section-note">Only shown when your status is set to Away.</p>
