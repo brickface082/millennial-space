@@ -328,6 +328,45 @@ def test_icq_inbox():
             u.status = "online"
             db.session.commit()
 
+def test_profile_views():
+    print("\n-- Profile View Counter (T020) --")
+    # Reset brickface082 view count to 0
+    with app.app_context():
+        u = db.session.get(User, 1)
+        u.profile_views = 0
+        db.session.commit()
+
+    with app.test_client() as c:
+        # Unauthenticated visit increments counter
+        c.get("/profile/brickface082")
+        with app.app_context():
+            u = db.session.get(User, 1)
+            check("Unauthenticated visit increments view count", (u.profile_views or 0) == 1)
+
+        # Another visitor also increments
+        login(c, "testbot@millennial-space.com", "testpass123")
+        c.get("/profile/brickface082")
+        with app.app_context():
+            u = db.session.get(User, 1)
+            check("Authenticated non-owner visit increments count", (u.profile_views or 0) == 2)
+
+        # Owner visiting own profile does NOT increment — use testbot (known password)
+        logout(c)
+        with app.app_context():
+            u = db.session.get(User, 3)
+            u.profile_views = 0
+            db.session.commit()
+        login(c, "testbot@millennial-space.com", "testpass123")
+        c.get("/profile/testbot")
+        with app.app_context():
+            u = db.session.get(User, 3)
+            check("Owner visit does NOT increment count", (u.profile_views or 0) == 0)
+
+        # View count displays on profile page
+        logout(c)
+        r = c.get("/profile/brickface082")
+        check("View count displayed on profile page", "views" in r.data.decode("utf-8", errors="replace"))
+
 # ── run all ──────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -341,6 +380,7 @@ if __name__ == "__main__":
     test_away_message()
     test_sounds()
     test_icq_inbox()
+    test_profile_views()
 
     print("\n-- Summary --")
     passed = sum(1 for r in results if r[0] == PASS)

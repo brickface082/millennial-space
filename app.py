@@ -45,6 +45,7 @@ class User(db.Model, UserMixin):
     away_message = db.Column(db.Text, default="")
     alert_sound = db.Column(db.String(30), default="classic_beep")
     custom_sound = db.Column(db.Text, default="")
+    profile_views = db.Column(db.Integer, default=0)
 
     def __repr__(self):
         return f"User({self.username})"
@@ -151,6 +152,14 @@ def logout():
 @app.route("/profile/<username>")
 def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
+    # Increment view counter — owner views don't count (W002 paper think: unauthenticated counts per spec)
+    is_owner = current_user.is_authenticated and current_user.id == user.id
+    if not is_owner:
+        try:
+            user.profile_views = (user.profile_views or 0) + 1
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
     posts = Post.query.filter_by(user_id=user.id).order_by(Post.timestamp.desc()).all()
     comments = Comment.query.filter_by(profile_id=user.id).order_by(Comment.timestamp.desc()).all()
     crew_status = None
@@ -578,7 +587,7 @@ with app.app_context():
                 conn.execute(db.text(f'ALTER TABLE "user" ADD COLUMN {col} {definition}'))
         conn.commit()
 
-    # direct_message migrations — separate connection per M010 SOP
+    # direct_message migrations — separate connection per D002 SOP
     with db.engine.connect() as conn:
         if is_pg:
             existing_dm = {row[0] for row in conn.execute(db.text(
@@ -588,6 +597,18 @@ with app.app_context():
             existing_dm = {row[1] for row in conn.execute(db.text("PRAGMA table_info('direct_message')"))}
         if "is_read" not in existing_dm:
             conn.execute(db.text("ALTER TABLE direct_message ADD COLUMN is_read BOOLEAN DEFAULT FALSE"))
+        conn.commit()
+
+    # user profile_views migration — separate connection per D002 SOP
+    with db.engine.connect() as conn:
+        if is_pg:
+            existing_u2 = {row[0] for row in conn.execute(db.text(
+                "SELECT column_name FROM information_schema.columns WHERE table_name='user'"
+            ))}
+        else:
+            existing_u2 = {row[1] for row in conn.execute(db.text("PRAGMA table_info('user')"))}
+        if "profile_views" not in existing_u2:
+            conn.execute(db.text("ALTER TABLE \"user\" ADD COLUMN profile_views INTEGER DEFAULT 0"))
         conn.commit()
 
 if __name__ == "__main__":

@@ -82,6 +82,8 @@
         <h1>{{ user.username }}'s Space</h1>
     </div>
 
+    <div style="font-size:12px;color:#888;margin-bottom:6px;">👁 {{ user.profile_views or 0 }} views</div>
+
     {% if user.status == 'away' and user.away_message %}
     <div style="background:#fff3cd;border:2px solid #ffcc00;padding:8px 12px;margin-bottom:10px;font-size:14px;">
         🌙 <strong>Away:</strong> {{ user.away_message }}
