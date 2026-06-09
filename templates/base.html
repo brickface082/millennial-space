@@ -336,6 +336,10 @@ window.icqLoadConvos = function() {
 
 // ── Individual chat ───────────────────────────────────────────────────────────
 window.icqOpenChat = function(username) {
+    // Make the window visible first (icqOpenChat can be called directly from profile links)
+    document.getElementById(WIN_ID).style.display = 'block';
+    restorePos();
+    updateLockBtn();
     _currentUser = username;
     _lastMsgId   = 0;
     document.getElementById('icq-inbox').style.display = 'none';
