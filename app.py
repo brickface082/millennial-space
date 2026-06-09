@@ -1,6 +1,7 @@
 import os
 import re
 import secrets
+from io import BytesIO
 from PIL import Image
 from datetime import datetime
 import random
@@ -8,6 +9,10 @@ from flask import Flask, render_template, redirect, url_for, request, flash, jso
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, current_user, logout_user, login_required
+import cloudinary
+import cloudinary.uploader
+from dotenv import load_dotenv
+load_dotenv()
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key-change-me")
@@ -23,9 +28,24 @@ bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
 
+# Cloudinary auto-configures from CLOUDINARY_URL env var (set in .env locally, env var on Render)
+cloudinary.config()
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+@app.context_processor
+def utility_processor():
+    """image_url(value, folder) — returns the correct URL for a stored image.
+    Handles both legacy local filenames and new Cloudinary URLs (T005/SOP T001)."""
+    def image_url(value, folder):
+        if not value or value == 'default.jpg':
+            return None
+        if value.startswith('http'):
+            return value  # Cloudinary URL — use directly
+        return url_for('static', filename=f'uploads/{folder}/{value}')  # legacy local
+    return dict(image_url=image_url)
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -90,6 +110,25 @@ class Comment(db.Model):
     author = db.relationship("User", foreign_keys=[author_id], backref=db.backref("comments_made", lazy=True))
     profile_user = db.relationship("User", foreign_keys=[profile_id], backref=db.backref("comments_received", lazy=True))
 
+class PhotoAlbum(db.Model):
+    __tablename__ = "photo_album"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    photos = db.relationship("Photo", backref="album", lazy=True, cascade="all, delete-orphan",
+                             order_by="Photo.created_at.asc()")
+    owner = db.relationship("User", backref=db.backref("albums", lazy=True))
+
+class Photo(db.Model):
+    __tablename__ = "photo"
+    id = db.Column(db.Integer, primary_key=True)
+    album_id = db.Column(db.Integer, db.ForeignKey("photo_album.id"), nullable=False)
+    url = db.Column(db.Text, nullable=False)          # Cloudinary secure URL
+    public_id = db.Column(db.String(200), nullable=False)  # Cloudinary public_id for deletion
+    caption = db.Column(db.String(200), default="")
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
 def extract_url(value):
     value = value.strip()
     match = re.search(r'src=["\']([^"\']+)["\']', value)
@@ -97,21 +136,22 @@ def extract_url(value):
         return match.group(1)
     return value
 
-def save_picture(form_picture, folder):
-    random_hex = secrets.token_hex(8)
-    _, f_ext = os.path.splitext(form_picture.filename)
-    picture_fn = random_hex + f_ext
-    folder_path = os.path.join(app.root_path, "static", "uploads", folder)
-    os.makedirs(folder_path, exist_ok=True)
-    picture_path = os.path.join(folder_path, picture_fn)
-    if folder == "profile_pics":
-        output_size = (150, 150)
-        i = Image.open(form_picture)
-        i.thumbnail(output_size)
-        i.save(picture_path)
-    else:
-        form_picture.save(picture_path)
-    return picture_fn
+def upload_to_cloudinary(file_obj, folder, resize=None):
+    """Upload a file to Cloudinary. Returns (secure_url, public_id).
+    resize: optional (w, h) tuple — thumbnail before upload (used for profile pics)."""
+    if resize:
+        img = Image.open(file_obj)
+        img.thumbnail(resize)
+        buf = BytesIO()
+        img.save(buf, format=(img.format or 'JPEG'))
+        buf.seek(0)
+        file_obj = buf
+    result = cloudinary.uploader.upload(
+        file_obj,
+        folder=f"millennial-space/{folder}",
+        resource_type="image"
+    )
+    return result['secure_url'], result['public_id']
 
 @app.route("/")
 def home():
@@ -199,11 +239,19 @@ def edit_profile():
         if request.files.get("profile_pic"):
             pic = request.files["profile_pic"]
             if pic.filename != "":
-                current_user.profile_pic = save_picture(pic, "profile_pics")
+                try:
+                    url, _ = upload_to_cloudinary(pic, "profile_pics", resize=(150, 150))
+                    current_user.profile_pic = url
+                except Exception:
+                    flash("Profile pic upload failed. Try again.", "danger")
         if request.files.get("bg_image"):
             bg = request.files["bg_image"]
             if bg.filename != "":
-                current_user.bg_image = save_picture(bg, "backgrounds")
+                try:
+                    url, _ = upload_to_cloudinary(bg, "backgrounds")
+                    current_user.bg_image = url
+                except Exception:
+                    flash("Background upload failed. Try again.", "danger")
         db.session.commit()
         flash("Profile updated!", "success")
         return redirect(url_for("profile", username=current_user.username))
@@ -326,7 +374,11 @@ def create_post():
     if request.files.get("post_image"):
         img = request.files["post_image"]
         if img.filename != "":
-            post.image = save_picture(img, "post_images")
+            try:
+                url, _ = upload_to_cloudinary(img, "post_images")
+                post.image = url
+            except Exception:
+                flash("Image upload failed — post saved without image.", "danger")
     db.session.add(post)
     db.session.commit()
     return redirect(url_for("profile", username=current_user.username))
@@ -582,6 +634,84 @@ def set_status():
         current_user.status = s
         db.session.commit()
     return redirect(request.referrer or url_for("profile", username=current_user.username))
+
+# ── T022: Photo Albums ────────────────────────────────────────────────────────
+
+@app.route("/album/create", methods=["POST"])
+@login_required
+def album_create():
+    name = request.form.get("name", "").strip()[:100]
+    if not name:
+        flash("Album name cannot be empty.", "danger")
+        return redirect(url_for("profile", username=current_user.username))
+    album = PhotoAlbum(user_id=current_user.id, name=name)
+    db.session.add(album)
+    db.session.commit()
+    return redirect(url_for("album_view", album_id=album.id))
+
+@app.route("/album/<int:album_id>")
+def album_view(album_id):
+    album = PhotoAlbum.query.get_or_404(album_id)
+    is_owner = current_user.is_authenticated and current_user.id == album.user_id
+    return render_template("album.html", album=album, is_owner=is_owner)
+
+@app.route("/album/<int:album_id>/upload", methods=["POST"])
+@login_required
+def album_upload(album_id):
+    album = PhotoAlbum.query.get_or_404(album_id)
+    if album.user_id != current_user.id:
+        flash("Not your album.", "danger")
+        return redirect(url_for("album_view", album_id=album_id))
+    files = request.files.getlist("photos")
+    caption = request.form.get("caption", "").strip()[:200]
+    uploaded = 0
+    for f in files:
+        if f and f.filename:
+            try:
+                url, public_id = upload_to_cloudinary(f, f"albums/{current_user.id}")
+                photo = Photo(album_id=album.id, url=url, public_id=public_id, caption=caption)
+                db.session.add(photo)
+                uploaded += 1
+            except Exception:
+                flash(f"One file failed to upload — skipped.", "danger")
+    if uploaded:
+        db.session.commit()
+        flash(f"{uploaded} photo(s) added.", "success")
+    return redirect(url_for("album_view", album_id=album_id))
+
+@app.route("/album/<int:album_id>/delete", methods=["POST"])
+@login_required
+def album_delete(album_id):
+    album = PhotoAlbum.query.get_or_404(album_id)
+    if album.user_id != current_user.id:
+        flash("Not your album.", "danger")
+        return redirect(url_for("profile", username=current_user.username))
+    # Delete photos from Cloudinary
+    for photo in album.photos:
+        try:
+            cloudinary.uploader.destroy(photo.public_id)
+        except Exception:
+            pass  # Log and continue — DB record still gets deleted
+    db.session.delete(album)
+    db.session.commit()
+    flash("Album deleted.", "success")
+    return redirect(url_for("profile", username=current_user.username))
+
+@app.route("/photo/<int:photo_id>/delete", methods=["POST"])
+@login_required
+def photo_delete(photo_id):
+    photo = Photo.query.get_or_404(photo_id)
+    album = PhotoAlbum.query.get_or_404(photo.album_id)
+    if album.user_id != current_user.id:
+        flash("Not your photo.", "danger")
+        return redirect(url_for("album_view", album_id=album.id))
+    try:
+        cloudinary.uploader.destroy(photo.public_id)
+    except Exception:
+        pass
+    db.session.delete(photo)
+    db.session.commit()
+    return redirect(url_for("album_view", album_id=album.id))
 
 @app.route("/comment/<int:comment_id>/delete", methods=["POST"])
 @login_required

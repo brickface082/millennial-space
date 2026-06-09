@@ -12,3 +12,5 @@ itsdangerous==2.2.0
 blinker==1.9.0
 click==8.4.1
 greenlet==3.5.1
+cloudinary==1.44.2
+python-dotenv==1.2.2

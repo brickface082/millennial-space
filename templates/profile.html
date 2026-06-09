@@ -4,8 +4,9 @@
 
 {% block body_style %}
     background-color: {{ user.bg_color }};
-    {% if user.bg_image %}
-    background-image: url("{{ url_for('static', filename='uploads/backgrounds/' + user.bg_image) }}");
+    {% set bg_src = image_url(user.bg_image, 'backgrounds') %}
+    {% if bg_src %}
+    background-image: url("{{ bg_src }}");
     background-size: cover;
     background-attachment: fixed;
     {% endif %}
@@ -74,8 +75,9 @@
 <div class="profile-box">
 
     <div class="profile-header">
-        {% if user.profile_pic and user.profile_pic != 'default.jpg' %}
-            <img class="profile-pic" src="{{ url_for('static', filename='uploads/profile_pics/' + user.profile_pic) }}" alt="Profile pic">
+        {% set pic_src = image_url(user.profile_pic, 'profile_pics') %}
+        {% if pic_src %}
+            <img class="profile-pic" src="{{ pic_src }}" alt="Profile pic">
         {% else %}
             <div class="profile-pic-placeholder"></div>
         {% endif %}
@@ -126,8 +128,9 @@
         <div style="display:flex;flex-wrap:wrap;gap:12px;">
             {% for member in top8_users %}
             <a href="{{ url_for('profile', username=member.username) }}" style="text-align:center;text-decoration:none;">
-                {% if member.profile_pic and member.profile_pic != 'default.jpg' %}
-                    <img src="{{ url_for('static', filename='uploads/profile_pics/' + member.profile_pic) }}" style="width:60px;height:60px;border-radius:50%;border:3px solid #ff00ff;object-fit:cover;display:block;">
+                {% set m_pic = image_url(member.profile_pic, 'profile_pics') %}
+                {% if m_pic %}
+                    <img src="{{ m_pic }}" style="width:60px;height:60px;border-radius:50%;border:3px solid #ff00ff;object-fit:cover;display:block;">
                 {% else %}
                     <div style="width:60px;height:60px;border-radius:50%;border:3px solid #ff00ff;background:#ffccee;"></div>
                 {% endif %}
@@ -214,8 +217,9 @@
     <div class="post-card">
         <p class="post-timestamp">{{ post.timestamp.strftime('%B %d, %Y at %I:%M %p') }}</p>
         <p class="post-body">{{ post.body }}</p>
-        {% if post.image %}
-            <img class="post-image" src="{{ url_for('static', filename='uploads/post_images/' + post.image) }}" alt="Post image">
+        {% set post_img = image_url(post.image, 'post_images') %}
+        {% if post_img %}
+            <img class="post-image" src="{{ post_img }}" alt="Post image">
         {% endif %}
         {% if current_user.is_authenticated and current_user.id == post.user_id %}
         <div style="margin-top:8px;">
@@ -242,6 +246,7 @@
     {% endif %}
 
     {% for comment in comments %}
+
     <div class="post-card">
         <p class="post-timestamp">
             <strong>{{ comment.author.username }}</strong> — {{ comment.timestamp.strftime('%B %d, %Y at %I:%M %p') }}
@@ -256,6 +261,40 @@
     {% else %}
     <p class="no-posts">No comments yet.</p>
     {% endfor %}
+
+    <hr class="divider-cyan">
+    <p class="section-label">📷 Photo Albums</p>
+
+    {% if current_user.is_authenticated and current_user.username == user.username %}
+    <form method="POST" action="{{ url_for('album_create') }}" style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input type="text" name="name" placeholder="New album name..." maxlength="100"
+               style="font-family:'Comic Sans MS',cursive;font-size:13px;border:2px solid #ff66b2;padding:5px 8px;flex:1;min-width:160px;">
+        <input type="submit" value="+ Create Album"
+               style="background:#ff1493;color:white;border:none;padding:6px 16px;font-family:'Comic Sans MS',cursive;font-size:13px;cursor:pointer;font-weight:bold;">
+    </form>
+    {% endif %}
+
+    {% if user.albums %}
+    <div style="display:flex;flex-wrap:wrap;gap:14px;">
+        {% for album in user.albums %}
+        <a href="{{ url_for('album_view', album_id=album.id) }}" style="text-decoration:none;text-align:center;">
+            <div style="width:110px;border:3px solid #ff66b2;background:#fff0f8;overflow:hidden;">
+                {% if album.photos %}
+                    <img src="{{ album.photos[0].url }}" style="width:110px;height:80px;object-fit:cover;display:block;">
+                {% else %}
+                    <div style="width:110px;height:80px;background:#ffccee;display:flex;align-items:center;justify-content:center;font-size:28px;">📷</div>
+                {% endif %}
+                <div style="padding:4px 6px;font-size:11px;font-weight:bold;color:#660066;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                    {{ album.name }}
+                </div>
+                <div style="padding:0 6px 4px;font-size:10px;color:#999;">{{ album.photos|length }} photo(s)</div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="color:#aaa;font-style:italic;text-align:center;padding:12px 0;">No albums yet.</p>
+    {% endif %}
 
 </div>
 

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}{{ album.name }} — {{ album.owner.username }}'s Space{% endblock %}
+
+{% block extra_style %}
+<style>
+    .album-box {
+        background: rgba(255, 255, 255, 0.88);
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 4px ridge #00ffff;
+        box-shadow: 4px 4px 0px #ff00ff;
+    }
+    .album-title { color: #ff1493; font-size: 1.5em; text-shadow: 2px 2px #ffff00; margin: 0 0 4px 0; }
+    .album-owner { font-size: 13px; color: #888; margin-bottom: 16px; }
+    .photo-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+    .photo-card {
+        border: 3px solid #ff66b2;
+        background: #fff0f8;
+        width: 160px;
+        position: relative;
+    }
+    .photo-card img { width: 160px; height: 120px; object-fit: cover; display: block; }
+    .photo-caption { padding: 4px 6px; font-size: 11px; color: #660066; min-height: 20px; word-break: break-word; }
+    .photo-delete {
+        position: absolute; top: 3px; right: 3px;
+        background: rgba(0,0,0,0.55); color: #fff; border: none;
+        font-size: 12px; cursor: pointer; padding: 1px 5px; border-radius: 3px;
+        font-family: 'Comic Sans MS', cursive;
+    }
+    .upload-area { margin-bottom: 18px; padding: 12px; border: 2px dashed #ff66b2; background: rgba(255,204,238,0.2); }
+    .divider { border: none; border-top: 3px dashed #ff66b2; margin: 16px 0; }
+    @media (max-width: 500px) {
+        .photo-card { width: 130px; }
+        .photo-card img { width: 130px; height: 95px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="album-box">
+
+    <div style="margin-bottom:12px;">
+        <a href="{{ url_for('profile', username=album.owner.username) }}" style="color:#0000cc;font-size:13px;font-weight:bold;text-decoration:none;">← {{ album.owner.username }}'s Space</a>
+    </div>
+
+    <h1 class="album-title">📷 {{ album.name }}</h1>
+    <p class="album-owner">by {{ album.owner.username }} · {{ album.photos|length }} photo(s)</p>
+
+    {% if is_owner %}
+    <div class="upload-area">
+        <form method="POST" action="{{ url_for('album_upload', album_id=album.id) }}" enctype="multipart/form-data">
+            <div style="margin-bottom:8px;font-size:13px;font-weight:bold;color:#660066;">Add Photos</div>
+            <input type="file" name="photos" accept="image/*" multiple
+                   style="font-family:'Comic Sans MS',cursive;font-size:13px;margin-bottom:8px;display:block;">
+            <input type="text" name="caption" placeholder="Caption (optional)..." maxlength="200"
+                   style="font-family:'Comic Sans MS',cursive;font-size:13px;border:2px solid #ff66b2;padding:4px 8px;width:100%;box-sizing:border-box;margin-bottom:8px;">
+            <input type="submit" value="Upload"
+                   style="background:#ff1493;color:white;border:none;padding:6px 18px;font-family:'Comic Sans MS',cursive;font-size:13px;cursor:pointer;font-weight:bold;">
+        </form>
+    </div>
+    {% endif %}
+
+    {% if album.photos %}
+    <div class="photo-grid">
+        {% for photo in album.photos %}
+        <div class="photo-card">
+            <a href="{{ photo.url }}" target="_blank">
+                <img src="{{ photo.url }}" alt="{{ photo.caption or 'photo' }}">
+            </a>
+            {% if photo.caption %}
+            <div class="photo-caption">{{ photo.caption }}</div>
+            {% endif %}
+            {% if is_owner %}
+            <form method="POST" action="{{ url_for('photo_delete', photo_id=photo.id) }}"
+                  onsubmit="return confirm('Delete this photo?');" style="display:inline;">
+                <button class="photo-delete" type="submit">✕</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="color:#aaa;font-style:italic;text-align:center;padding:20px 0;">No photos yet.{% if is_owner %} Upload some above!{% endif %}</p>
+    {% endif %}
+
+    {% if is_owner %}
+    <hr class="divider">
+    <form method="POST" action="{{ url_for('album_delete', album_id=album.id) }}"
+          onsubmit="return confirm('Delete this entire album and all its photos?');">
+        <button type="submit"
+                style="background:none;border:2px solid #cc0000;color:#cc0000;padding:6px 14px;font-family:'Comic Sans MS',cursive;font-size:13px;cursor:pointer;font-weight:bold;">
+            🗑️ Delete Album
+        </button>
+    </form>
+    {% endif %}
+
+</div>
+{% endblock %}
