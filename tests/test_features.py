@@ -212,6 +212,62 @@ def test_away_message():
         r = c.get("/profile/testbot")
         check("Away banner hidden when status=online", b"Gone fishin" not in r.data)
 
+def test_sounds():
+    print("\n-- Sounds (T019) --")
+    with app.test_client() as c:
+        # Unauthenticated — should redirect to login
+        r = c.get("/sounds", follow_redirects=True)
+        check("Sounds page requires login", "login" in r.request.path.lower() or r.status_code == 200)
+
+        login(c, "testbot@millennial-space.com", "testpass123")
+
+        # GET sounds page loads
+        r = c.get("/sounds")
+        check("Sounds page loads for logged-in user", r.status_code == 200)
+        check("Sounds page shows built-in options", b"classic_beep" in r.data or b"Classic Beep" in r.data)
+
+        # Select a valid sound
+        r = c.post("/sounds", data={"action": "select", "alert_sound": "rising_tone"},
+                   follow_redirects=True)
+        check("Can select a built-in sound", r.status_code == 200)
+        with app.app_context():
+            u = User.query.filter_by(username="testbot").first()
+            check("alert_sound saved to DB", u is not None and u.alert_sound == "rising_tone")
+
+        # Invalid sound name rejected — falls back to classic_beep
+        r = c.post("/sounds", data={"action": "select", "alert_sound": "HACK_VALUE"},
+                   follow_redirects=True)
+        check("Invalid sound name rejected", r.status_code == 200)
+        with app.app_context():
+            u = User.query.filter_by(username="testbot").first()
+            check("Invalid sound falls back to classic_beep", u is not None and u.alert_sound == "classic_beep")
+
+        # Upload oversized file is rejected
+        import io
+        big_audio = io.BytesIO(b"\x00" * 70_000)  # 70KB — over the limit
+        r = c.post("/sounds", data={"action": "upload",
+                                     "sound_file": (big_audio, "test.mp3", "audio/mpeg")},
+                   content_type="multipart/form-data", follow_redirects=True)
+        check("Oversized upload rejected", b"too large" in r.data or r.status_code == 200)
+
+        # Upload valid small file is accepted
+        small_audio = io.BytesIO(b"\x00" * 1000)  # 1KB — fine
+        r = c.post("/sounds", data={"action": "upload",
+                                     "sound_file": (small_audio, "test.mp3", "audio/mpeg")},
+                   content_type="multipart/form-data", follow_redirects=True)
+        check("Small upload accepted", b"uploaded" in r.data or r.status_code == 200)
+        with app.app_context():
+            u = User.query.filter_by(username="testbot").first()
+            check("alert_sound set to custom after upload", u is not None and u.alert_sound == "custom")
+            check("custom_sound stored as base64 data URI", u is not None and (u.custom_sound or "").startswith("data:"))
+
+        # Reset testbot back to classic_beep
+        with app.app_context():
+            u = User.query.filter_by(username="testbot").first()
+            u.alert_sound = "classic_beep"
+            u.custom_sound = ""
+            db.session.commit()
+
 # ── run all ──────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -223,6 +279,7 @@ if __name__ == "__main__":
     test_messaging_verified()
     test_crew()
     test_away_message()
+    test_sounds()
 
     print("\n-- Summary --")
     passed = sum(1 for r in results if r[0] == PASS)

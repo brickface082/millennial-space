@@ -43,6 +43,8 @@ class User(db.Model, UserMixin):
     last_seen = db.Column(db.DateTime, nullable=True)
     msg_filter = db.Column(db.String(10), default="open")
     away_message = db.Column(db.Text, default="")
+    alert_sound = db.Column(db.String(30), default="classic_beep")
+    custom_sound = db.Column(db.Text, default="")
 
     def __repr__(self):
         return f"User({self.username})"
@@ -429,6 +431,51 @@ def chat_messages(username):
         "time": m.timestamp.strftime("%b %d at %I:%M %p")
     } for m in messages])
 
+VALID_SOUNDS = {
+    "none", "classic_beep", "double_ping", "triple_beep", "rising_tone",
+    "falling_tone", "soft_chime", "retro_game", "soft_pop", "ding",
+    "deep_bong", "fast_blip", "old_phone", "doorbell", "laser", "win95", "custom"
+}
+MAX_CUSTOM_SOUND_B64 = 80_000  # ~60KB audio
+
+@app.route("/sounds", methods=["GET", "POST"])
+@login_required
+def sounds():
+    if request.method == "POST":
+        action = request.form.get("action", "select")
+        if action == "select":
+            s = request.form.get("alert_sound", "classic_beep")
+            current_user.alert_sound = s if s in VALID_SOUNDS else "classic_beep"
+            db.session.commit()
+            flash("Alert sound saved!", "success")
+        elif action == "upload":
+            f = request.files.get("sound_file")
+            if f and f.filename:
+                import base64
+                data = f.read()
+                if len(data) > 60_000:
+                    flash("File too large — max 5 seconds / ~60KB.", "danger")
+                else:
+                    b64 = base64.b64encode(data).decode("utf-8")
+                    mime = f.content_type or "audio/mpeg"
+                    current_user.custom_sound = f"data:{mime};base64,{b64}"
+                    current_user.alert_sound = "custom"
+                    db.session.commit()
+                    flash("Custom sound uploaded!", "success")
+            else:
+                flash("No file selected.", "danger")
+        elif action == "record":
+            b64_data = request.form.get("recorded_sound", "")
+            if b64_data and len(b64_data) <= MAX_CUSTOM_SOUND_B64:
+                current_user.custom_sound = b64_data
+                current_user.alert_sound = "custom"
+                db.session.commit()
+                flash("Custom recording saved!", "success")
+            elif len(b64_data) > MAX_CUSTOM_SOUND_B64:
+                flash("Recording too long — max 5 seconds.", "danger")
+        return redirect(url_for("sounds"))
+    return render_template("sounds.html")
+
 @app.route("/status", methods=["POST"])
 @login_required
 def set_status():
@@ -467,6 +514,8 @@ with app.app_context():
             ("last_seen", dt_type),
             ("msg_filter", "VARCHAR(10) DEFAULT 'open'"),
             ("away_message", "TEXT DEFAULT ''"),
+            ("alert_sound", "VARCHAR(30) DEFAULT 'classic_beep'"),
+            ("custom_sound", "TEXT DEFAULT ''"),
         ]:
             if col not in existing:
                 conn.execute(db.text(f'ALTER TABLE "user" ADD COLUMN {col} {definition}'))
