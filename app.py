@@ -400,6 +400,9 @@ def chat_send(username):
     other = User.query.filter_by(username=username).first_or_404()
     if other.id == current_user.id:
         return redirect(url_for("profile", username=current_user.username))
+    blocked = _check_msg_access(other)
+    if blocked:
+        return blocked
     body = request.form.get("body", "").strip()
     if body:
         msg = DirectMessage(from_id=current_user.id, to_id=other.id, body=body)
