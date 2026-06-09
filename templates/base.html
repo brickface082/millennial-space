@@ -209,8 +209,8 @@
 const WIN_ID      = 'icq-win';
 const POS_KEY     = 'icq_pos';
 const LOCK_KEY    = 'icq_locked';
-const alertKey    = {{ ('"' + (current_user.alert_sound or 'classic_beep') + '"') | safe }};
-const customSnd   = {{ ('"' + current_user.custom_sound + '"') | safe if current_user.custom_sound else '""' }};
+const alertKey    = {{ (current_user.alert_sound or 'classic_beep') | tojson }};
+const customSnd   = {{ (current_user.custom_sound or '') | tojson }};
 
 let _locked       = localStorage.getItem(LOCK_KEY) === '1';
 let _dragging     = false;
@@ -393,7 +393,7 @@ function icqPollChat() {
 }
 
 function appendIcqMsg(m) {
-    const me = {{ ('"' + current_user.username + '"') | safe }};
+    const me = {{ current_user.username | tojson }};
     const mine = m.from === me;
     const div = document.createElement('div');
     div.style.cssText = 'max-width:85%;padding:4px 7px;border-radius:2px;font-size:12px;word-break:break-word;' +
