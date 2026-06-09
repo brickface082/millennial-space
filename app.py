@@ -67,6 +67,7 @@ class User(db.Model, UserMixin):
     custom_sound = db.Column(db.Text, default="")
     profile_views = db.Column(db.Integer, default=0)
     mood = db.Column(db.String(30), default="")
+    polls_enabled = db.Column(db.Boolean, default=False)
 
     def __repr__(self):
         return f"User({self.username})"
@@ -136,6 +137,38 @@ class EntryPhoto(db.Model):
     public_id = db.Column(db.String(300), nullable=False)
     caption = db.Column(db.String(300), default="")
     position = db.Column(db.Integer, default=0)
+
+class Poll(db.Model):
+    """T024 — site-wide polls. Visible based on creator's audience + voter's filter."""
+    __tablename__ = "poll"
+    id = db.Column(db.Integer, primary_key=True)
+    creator_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    question = db.Column(db.String(300), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    creator = db.relationship("User", backref=db.backref("polls_created", lazy=True))
+    options = db.relationship("PollOption", backref="poll", lazy=True,
+                              cascade="all, delete-orphan",
+                              order_by="PollOption.position.asc()")
+    votes = db.relationship("PollVote", backref="poll", lazy=True,
+                            cascade="all, delete-orphan")
+
+class PollOption(db.Model):
+    __tablename__ = "poll_option"
+    id = db.Column(db.Integer, primary_key=True)
+    poll_id = db.Column(db.Integer, db.ForeignKey("poll.id"), nullable=False)
+    text = db.Column(db.String(200), nullable=False)
+    position = db.Column(db.Integer, default=0)
+
+class PollVote(db.Model):
+    __tablename__ = "poll_vote"
+    __table_args__ = (db.UniqueConstraint("poll_id", "user_id", name="uq_poll_user"),)
+    id = db.Column(db.Integer, primary_key=True)
+    poll_id = db.Column(db.Integer, db.ForeignKey("poll.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    option_id = db.Column(db.Integer, db.ForeignKey("poll_option.id"), nullable=False)
+    voted_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    voter = db.relationship("User", backref=db.backref("poll_votes", lazy=True))
+    chosen = db.relationship("PollOption", backref=db.backref("vote_records", lazy=True))
 
 class PhotoAlbum(db.Model):
     __tablename__ = "photo_album"
@@ -270,6 +303,7 @@ def edit_profile():
         current_user.away_message = request.form.get("away_message", "")[:200]
         submitted_mood = request.form.get("mood", "")
         current_user.mood = submitted_mood if submitted_mood in VALID_MOODS else ""
+        current_user.polls_enabled = request.form.get("polls_enabled") == "on"
         if request.files.get("profile_pic"):
             pic = request.files["profile_pic"]
             if pic.filename != "":
@@ -545,10 +579,18 @@ def inbox_unread():
     by_sender = {}
     for m in unread:
         by_sender[m.sender.username] = by_sender.get(m.sender.username, 0) + 1
+    # T024 — polls badge count (unanswered eligible polls)
+    polls_count = 0
+    if current_user.polls_enabled and (current_user.msg_filter or 'open') != 'verified':
+        eligible = _get_eligible_polls(current_user)
+        if eligible:
+            voted_ids = {v.poll_id for v in PollVote.query.filter_by(user_id=current_user.id).all()}
+            polls_count = sum(1 for p in eligible if p.id not in voted_ids)
     return jsonify({
         "count": len(unread),
         "senders": [{"username": u, "count": c} for u, c in by_sender.items()],
-        "dnd": (current_user.status == "dnd")
+        "dnd": (current_user.status == "dnd"),
+        "polls_count": polls_count
     })
 
 @app.route("/inbox/conversations")
@@ -746,6 +788,100 @@ def photo_delete(photo_id):
     db.session.delete(photo)
     db.session.commit()
     return redirect(url_for("album_view", album_id=album.id))
+
+# ── T024: Polls ──────────────────────────────────────────────────────────────
+
+def _get_eligible_polls(user):
+    """Return polls this user can see based on opt-in + message filter."""
+    if not user.polls_enabled:
+        return []
+    f = user.msg_filter or 'open'
+    if f == 'verified':
+        return []
+    if f == 'crew':
+        crew_reqs = CrewRequest.query.filter(
+            ((CrewRequest.from_id == user.id) | (CrewRequest.to_id == user.id)),
+            CrewRequest.status == 'accepted'
+        ).all()
+        crew_ids = [r.to_id if r.from_id == user.id else r.from_id for r in crew_reqs]
+        if not crew_ids:
+            return []
+        return Poll.query.filter(Poll.creator_id.in_(crew_ids)).order_by(Poll.created_at.desc()).all()
+    return Poll.query.order_by(Poll.created_at.desc()).all()
+
+@app.route("/polls")
+@login_required
+def polls():
+    opted_in = bool(current_user.polls_enabled)
+    poll_list = _get_eligible_polls(current_user) if opted_in else []
+    # Map poll_id -> option_id the current user chose
+    voted = {v.poll_id: v.option_id for v in PollVote.query.filter_by(user_id=current_user.id).all()}
+    # Precompute vote counts: {poll_id: {option_id: count, '_total': total}}
+    vote_counts = {}
+    for poll in poll_list:
+        counts = {}
+        for vote in poll.votes:
+            counts[vote.option_id] = counts.get(vote.option_id, 0) + 1
+        counts['_total'] = sum(counts.values())
+        vote_counts[poll.id] = counts
+    return render_template("polls.html", poll_list=poll_list, voted=voted,
+                           opted_in=opted_in, vote_counts=vote_counts)
+
+@app.route("/polls/new", methods=["GET", "POST"])
+@login_required
+def polls_new():
+    if request.method == "POST":
+        question = request.form.get("question", "").strip()[:300]
+        options  = [o.strip()[:200] for o in request.form.getlist("option") if o.strip()]
+        if not question:
+            flash("Question is required.", "danger")
+            return redirect(url_for("polls_new"))
+        if len(options) < 2:
+            flash("You need at least 2 options.", "danger")
+            return redirect(url_for("polls_new"))
+        options = options[:20]
+        poll = Poll(creator_id=current_user.id, question=question)
+        db.session.add(poll)
+        db.session.flush()
+        for i, text in enumerate(options):
+            db.session.add(PollOption(poll_id=poll.id, text=text, position=i))
+        db.session.commit()
+        flash("Poll created and live!", "success")
+        return redirect(url_for("polls"))
+    return render_template("polls_new.html")
+
+@app.route("/polls/<int:poll_id>/vote", methods=["POST"])
+@login_required
+def polls_vote(poll_id):
+    poll      = Poll.query.get_or_404(poll_id)
+    option_id = request.form.get("option_id", type=int)
+    if not option_id:
+        flash("Select an option.", "danger")
+        return redirect(url_for("polls"))
+    option = PollOption.query.filter_by(id=option_id, poll_id=poll_id).first()
+    if not option:
+        flash("Invalid option.", "danger")
+        return redirect(url_for("polls"))
+    existing = PollVote.query.filter_by(poll_id=poll_id, user_id=current_user.id).first()
+    if existing:
+        flash("You already voted on that poll.", "info")
+        return redirect(url_for("polls"))
+    db.session.add(PollVote(poll_id=poll_id, user_id=current_user.id, option_id=option_id))
+    db.session.commit()
+    flash("Vote counted!", "success")
+    return redirect(url_for("polls"))
+
+@app.route("/polls/<int:poll_id>/delete", methods=["POST"])
+@login_required
+def polls_delete(poll_id):
+    poll = Poll.query.get_or_404(poll_id)
+    if poll.creator_id != current_user.id:
+        flash("Not your poll.", "danger")
+        return redirect(url_for("polls"))
+    db.session.delete(poll)
+    db.session.commit()
+    flash("Poll deleted.", "success")
+    return redirect(url_for("polls"))
 
 # ── T023: Diary (private) & Blog (public) ────────────────────────────────────
 
@@ -1001,6 +1137,18 @@ with app.app_context():
             existing_u3 = {row[1] for row in conn.execute(db.text("PRAGMA table_info('user')"))}
         if "mood" not in existing_u3:
             conn.execute(db.text("ALTER TABLE \"user\" ADD COLUMN mood VARCHAR(30) DEFAULT ''"))
+        conn.commit()
+
+    # T024 — user polls_enabled migration — separate connection per D002 SOP
+    with db.engine.connect() as conn:
+        if is_pg:
+            existing_u4 = {row[0] for row in conn.execute(db.text(
+                "SELECT column_name FROM information_schema.columns WHERE table_name='user'"
+            ))}
+        else:
+            existing_u4 = {row[1] for row in conn.execute(db.text("PRAGMA table_info('user')"))}
+        if "polls_enabled" not in existing_u4:
+            conn.execute(db.text('ALTER TABLE "user" ADD COLUMN polls_enabled BOOLEAN DEFAULT FALSE'))
         conn.commit()
 
 if __name__ == "__main__":

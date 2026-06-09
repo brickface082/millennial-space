@@ -122,6 +122,10 @@
             <a href="{{ url_for('profile', username=current_user.username) }}">My Space</a>
             <a href="{{ url_for('crew_requests') }}">Crew</a>
             <a href="{{ url_for('sounds') }}">🔔 Sounds</a>
+            <a href="{{ url_for('polls') }}" id="polls-nav-btn" title="Polls"
+               style="position:relative;display:inline-block;color:#ffccee;font-size:15px;font-weight:bold;text-decoration:none;">
+                📊<span id="polls-badge" style="display:none;position:absolute;top:-6px;right:-10px;background:#ff6600;color:#fff;font-size:10px;font-weight:bold;padding:1px 4px;border-radius:8px;min-width:14px;text-align:center;"></span>
+            </a>
             <span id="msg-alert-btn" onclick="icqToggle()" title="Messages" style="cursor:pointer;position:relative;font-size:15px;font-weight:bold;color:#ffccee;user-select:none;display:inline-block;">
                 ✉ <span id="msg-badge" style="display:none;position:absolute;top:-6px;right:-10px;background:#ff0000;color:#fff;font-size:10px;font-weight:bold;padding:1px 4px;border-radius:8px;min-width:14px;text-align:center;"></span>
             </span>
@@ -457,6 +461,16 @@ function pollInbox() {
                 stopBlink();
             }
             _prevUnread = data.count;
+            // T024 — polls badge
+            const pollsBadge = document.getElementById('polls-badge');
+            if (pollsBadge) {
+                if (data.polls_count > 0) {
+                    pollsBadge.style.display = 'block';
+                    pollsBadge.textContent   = data.polls_count;
+                } else {
+                    pollsBadge.style.display = 'none';
+                }
+            }
         })
         .catch(()=>{});
 }

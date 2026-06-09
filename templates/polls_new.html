@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Create a Poll — Millennial Space{% endblock %}
+
+{% block extra_style %}
+<style>
+    .polls-box {
+        background: rgba(255,255,255,0.92);
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 24px;
+        border: 4px ridge #00ffff;
+        box-shadow: 4px 4px 0px #ff00ff;
+    }
+    .polls-title { color: #ff1493; text-shadow: 2px 2px #ffff00; margin: 0 0 16px 0; font-size: 1.4em; }
+    .form-label { font-size: 13px; font-weight: bold; color: #660066; margin-bottom: 4px; display: block; }
+    .form-input, .form-textarea {
+        width: 100%; box-sizing: border-box;
+        font-family: 'Comic Sans MS', cursive; font-size: 14px;
+        border: 2px solid #ff66b2; padding: 8px 10px;
+        background: white; color: #330033; margin-bottom: 6px;
+    }
+    .form-textarea { height: 80px; resize: vertical; }
+    .option-input {
+        width: 100%; box-sizing: border-box;
+        font-family: 'Comic Sans MS', cursive; font-size: 13px;
+        border: 2px solid #ffaad4; padding: 6px 10px;
+        background: #fff0f8; color: #330033; margin-bottom: 6px;
+        display: block;
+    }
+    .option-input:focus { border-color: #ff1493; outline: none; }
+    .btn-add {
+        background: none; border: 2px dashed #ff66b2; color: #cc0066;
+        font-family: 'Comic Sans MS', cursive; font-size: 13px;
+        padding: 6px 14px; cursor: pointer; margin-bottom: 14px;
+        width: 100%;
+    }
+    .btn-add:hover { background: #fff0f8; }
+    .btn-add:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-submit {
+        background: #ff1493; color: white; border: 2px solid #cc0077;
+        padding: 10px 24px; font-family: 'Comic Sans MS', cursive;
+        font-size: 15px; font-weight: bold; cursor: pointer;
+    }
+    .btn-submit:hover { background: #cc0077; }
+    .divider { border: none; border-top: 3px dashed #ff66b2; margin: 18px 0; }
+    #option-counter { font-size: 12px; color: #999; margin-bottom: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="polls-box">
+
+    <h2 class="polls-title">✏️ Create a Poll</h2>
+
+    <form method="POST" action="{{ url_for('polls_new') }}" id="poll-form">
+
+        <label class="form-label" for="question">Your question</label>
+        <textarea class="form-textarea" id="question" name="question"
+                  required maxlength="300"
+                  placeholder="Ask the community something..."></textarea>
+
+        <hr class="divider">
+
+        <label class="form-label">Options <span style="font-weight:normal;color:#aaa;">(min 2, max 20)</span></label>
+        <div id="option-counter">2 / 20 options</div>
+
+        <div id="options-container">
+            <input class="option-input" type="text" name="option"
+                   placeholder="Option 1" maxlength="200" required>
+            <input class="option-input" type="text" name="option"
+                   placeholder="Option 2" maxlength="200" required>
+        </div>
+
+        <button type="button" class="btn-add" id="add-option-btn" onclick="addOption()">
+            ➕ Add another option
+        </button>
+
+        <input type="submit" class="btn-submit" value="Launch Poll 🚀">
+    </form>
+
+    <hr class="divider">
+    <a href="{{ url_for('polls') }}"
+       style="color:#0000cc;font-size:13px;font-weight:bold;text-decoration:none;">
+        ← Back to Polls
+    </a>
+
+</div>
+
+<script>
+(function() {
+    var MAX_OPTIONS = 20;
+    var container   = document.getElementById('options-container');
+    var addBtn      = document.getElementById('add-option-btn');
+    var counter     = document.getElementById('option-counter');
+
+    function updateCounter() {
+        var count = container.querySelectorAll('input[name="option"]').length;
+        counter.textContent = count + ' / ' + MAX_OPTIONS + ' options';
+        addBtn.disabled = count >= MAX_OPTIONS;
+    }
+
+    window.addOption = function() {
+        var inputs = container.querySelectorAll('input[name="option"]');
+        if (inputs.length >= MAX_OPTIONS) return;
+        var n   = inputs.length + 1;
+        var inp = document.createElement('input');
+        inp.className   = 'option-input';
+        inp.type        = 'text';
+        inp.name        = 'option';
+        inp.placeholder = 'Option ' + n;
+        inp.maxLength   = 200;
+        container.appendChild(inp);
+        inp.focus();
+        updateCounter();
+    };
+})();
+</script>
+{% endblock %}

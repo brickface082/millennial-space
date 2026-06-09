@@ -6,7 +6,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import app as application
-from app import app, db, User, CrewRequest, DirectMessage, bcrypt, JournalEntry
+from app import app, db, User, CrewRequest, DirectMessage, bcrypt, JournalEntry, Poll, PollOption, PollVote
 
 app.config["TESTING"] = True
 app.config["WTF_CSRF_ENABLED"] = False
@@ -545,6 +545,109 @@ def test_journal():
         db.session.commit()
 
 
+def test_polls():
+    """T024 — Polls: create, vote, filter, opt-in/out, duplicate vote blocked."""
+    print("\n-- Polls (T024) --")
+
+    # Cleanup leftovers
+    with app.app_context():
+        Poll.query.filter_by(creator_id=3).delete()
+        u3 = User.query.filter_by(username="testbot").first()
+        u4 = User.query.filter_by(username="testreceiver").first()
+        u3.polls_enabled = True
+        u4.polls_enabled = True
+        u3.msg_filter = "open"
+        u4.msg_filter = "open"
+        db.session.commit()
+
+    # 1. Logged-in user can create a poll
+    with app.test_client() as c:
+        login(c, "testbot@millennial-space.com", "testpass123")
+        r = c.post("/polls/new", data={
+            "question": "What is your fav color?",
+            "option": ["Red", "Blue", "Green"]
+        }, follow_redirects=True)
+        check("Poll created successfully", r.status_code == 200)
+        with app.app_context():
+            poll = Poll.query.filter_by(creator_id=3).first()
+            check("Poll saved to DB", poll is not None)
+            check("Poll has 3 options", poll is not None and len(poll.options) == 3)
+
+    # 2. User can vote (opted in, open filter)
+    with app.app_context():
+        poll = Poll.query.filter_by(creator_id=3).first()
+        poll_id   = poll.id
+        option_id = poll.options[0].id
+
+    with app.test_client() as c:
+        login(c, "testreceiver@millennial-space.com", "testpass123")
+        r = c.post(f"/polls/{poll_id}/vote",
+                   data={"option_id": option_id}, follow_redirects=True)
+        check("Vote submitted", r.status_code == 200)
+        with app.app_context():
+            vote = PollVote.query.filter_by(poll_id=poll_id, user_id=4).first()
+            check("Vote saved to DB", vote is not None)
+
+    # 3. Cannot vote twice on same poll
+    with app.test_client() as c:
+        login(c, "testreceiver@millennial-space.com", "testpass123")
+        r = c.post(f"/polls/{poll_id}/vote",
+                   data={"option_id": option_id}, follow_redirects=True)
+        check("Duplicate vote blocked (redirected, not error)", r.status_code == 200)
+        with app.app_context():
+            count = PollVote.query.filter_by(poll_id=poll_id, user_id=4).count()
+            check("Still only 1 vote in DB after duplicate attempt", count == 1)
+
+    # 4. Opted-out user sees opt-in prompt, not polls
+    with app.app_context():
+        u4 = User.query.filter_by(username="testreceiver").first()
+        u4.polls_enabled = False
+        db.session.commit()
+    with app.test_client() as c:
+        login(c, "testreceiver@millennial-space.com", "testpass123")
+        r = c.get("/polls")
+        check("Opted-out user sees opt-in prompt",
+              "Turn On Polls" in r.data.decode("utf-8", errors="replace"))
+
+    # 5. Verified filter blocks polls
+    with app.app_context():
+        u4 = User.query.filter_by(username="testreceiver").first()
+        u4.polls_enabled = True
+        u4.msg_filter = "verified"
+        db.session.commit()
+    with app.test_client() as c:
+        login(c, "testreceiver@millennial-space.com", "testpass123")
+        r = c.get("/polls")
+        html = r.data.decode("utf-8", errors="replace")
+        check("Verified filter user sees no polls",
+              "What is your fav color?" not in html)
+
+    # 6. Only creator can delete poll
+    with app.test_client() as c:
+        login(c, "testreceiver@millennial-space.com", "testpass123")
+        r = c.post(f"/polls/{poll_id}/delete", follow_redirects=True)
+        with app.app_context():
+            still_exists = Poll.query.get(poll_id) is not None
+        check("Non-creator cannot delete poll", still_exists)
+
+    with app.test_client() as c:
+        login(c, "testbot@millennial-space.com", "testpass123")
+        r = c.post(f"/polls/{poll_id}/delete", follow_redirects=True)
+        check("Creator can delete poll", r.status_code == 200)
+        with app.app_context():
+            gone = Poll.query.get(poll_id) is None
+        check("Poll removed from DB after delete", gone)
+
+    # Cleanup
+    with app.app_context():
+        u4 = User.query.filter_by(username="testreceiver").first()
+        u4.polls_enabled = False
+        u4.msg_filter = "open"
+        u3 = User.query.filter_by(username="testbot").first()
+        u3.polls_enabled = False
+        db.session.commit()
+
+
 # ── run all ──────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -562,6 +665,7 @@ if __name__ == "__main__":
     test_mood()
     test_script_rendering()
     test_journal()
+    test_polls()
 
     print("\n-- Summary --")
     passed = sum(1 for r in results if r[0] == PASS)

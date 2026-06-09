@@ -74,6 +74,20 @@
         </select>
         <p class="section-note">Verified mode stops spam bots. Crew only mode is the most private.</p>
 
+        <label>📊 Polls</label>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
+            <label style="display:flex;align-items:center;gap:8px;font-weight:normal;margin-top:0;cursor:pointer;">
+                <input type="checkbox" name="polls_enabled" value="on"
+                       {% if current_user.polls_enabled %}checked{% endif %}
+                       style="width:auto;margin:0;">
+                Receive polls from others
+            </label>
+        </div>
+        <p class="section-note">
+            When on, polls show up in your 📊 Polls feed. Your message filter still applies —
+            crew-only means only crew polls reach you, and verified/math blocks all polls.
+        </p>
+
         <input type="submit" value="Save My Space!">
     </form>
 

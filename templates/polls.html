@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Polls — Millennial Space{% endblock %}
+
+{% block extra_style %}
+<style>
+    .polls-box {
+        background: rgba(255,255,255,0.92);
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 24px;
+        border: 4px ridge #00ffff;
+        box-shadow: 4px 4px 0px #ff00ff;
+    }
+    .polls-title { color: #ff1493; text-shadow: 2px 2px #ffff00; margin: 0 0 4px 0; font-size: 1.5em; }
+    .divider { border: none; border-top: 3px dashed #ff66b2; margin: 18px 0; }
+    .poll-card {
+        padding: 16px;
+        border: 2px solid #ff66b2;
+        background: rgba(255,255,240,0.8);
+        margin-bottom: 18px;
+        box-shadow: 2px 2px 0px #ffccee;
+    }
+    .poll-question {
+        font-size: 16px; font-weight: bold; color: #330033;
+        margin: 0 0 6px 0; line-height: 1.4;
+    }
+    .poll-meta { font-size: 11px; color: #999; margin-bottom: 14px; }
+    /* ── Vote buttons ── */
+    .vote-option {
+        display: block; width: 100%; box-sizing: border-box;
+        background: #fff0f8; border: 2px solid #ff66b2;
+        padding: 8px 12px; margin-bottom: 6px;
+        font-family: 'Comic Sans MS', cursive; font-size: 14px;
+        color: #330033; text-align: left; cursor: pointer;
+    }
+    .vote-option:hover { background: #ff66b2; color: #fff; }
+    /* ── Results bars ── */
+    .result-row { margin-bottom: 10px; }
+    .result-label {
+        font-size: 13px; color: #330033; margin-bottom: 3px;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .result-label.my-vote { font-weight: bold; color: #cc0066; }
+    .result-bar-bg {
+        background: #ffe0f0; border: 1px solid #ff66b2;
+        height: 20px; width: 100%; border-radius: 2px; overflow: hidden;
+    }
+    .result-bar-fill {
+        background: linear-gradient(to right, #ff1493, #ff66b2);
+        height: 100%;
+        transition: width 0.3s;
+    }
+    .result-bar-fill.my-bar {
+        background: linear-gradient(to right, #cc0000, #ff6600);
+    }
+    .total-votes { font-size: 11px; color: #999; margin-top: 8px; }
+    /* ── Opt-in prompt ── */
+    .opt-in-box {
+        text-align: center; padding: 32px 16px;
+        border: 3px dashed #ff66b2; background: rgba(255,240,248,0.5);
+        margin-top: 16px;
+    }
+    .btn-primary {
+        display: inline-block;
+        background: #ff1493; color: white; border: 2px solid #cc0077;
+        padding: 9px 22px; font-family: 'Comic Sans MS', cursive;
+        font-size: 14px; font-weight: bold; text-decoration: none; cursor: pointer;
+    }
+    .btn-primary:hover { background: #cc0077; }
+    .no-polls { color: #aaa; font-style: italic; text-align: center; padding: 32px 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="polls-box">
+
+    <h1 class="polls-title">📊 Polls</h1>
+
+    {% if not opted_in %}
+    {# ── User hasn't opted in yet ── #}
+    <div class="opt-in-box">
+        <p style="font-size:15px;color:#660066;margin-bottom:16px;">
+            You're not receiving polls yet.<br>
+            <span style="font-size:13px;color:#888;">Turn on polls in your profile settings to join in.</span>
+        </p>
+        <a href="{{ url_for('edit_profile') }}" class="btn-primary">⚙️ Turn On Polls</a>
+    </div>
+
+    {% else %}
+    {# ── Opted in: show feed ── #}
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <span style="font-size:13px;color:#888;">
+            {% if poll_list %}{{ poll_list|length }} poll(s) in your feed{% else %}No polls yet{% endif %}
+        </span>
+        <a href="{{ url_for('polls_new') }}" class="btn-primary" style="font-size:13px;padding:7px 16px;">
+            ✏️ Create a Poll
+        </a>
+    </div>
+
+    <hr class="divider">
+
+    {% if poll_list %}
+    {% for poll in poll_list %}
+    {% set my_vote = voted.get(poll.id) %}
+    {% set counts  = vote_counts.get(poll.id, {}) %}
+    {% set total   = counts.get('_total', 0) %}
+
+    <div class="poll-card">
+        <p class="poll-question">{{ poll.question }}</p>
+        <div class="poll-meta">
+            by <strong>{{ poll.creator.username }}</strong> ·
+            {{ poll.created_at.strftime('%B %d, %Y') }} ·
+            {{ total }} vote(s)
+        </div>
+
+        {% if my_vote %}
+        {# ── Results view (already voted) ── #}
+        {% for option in poll.options %}
+        {% set ov  = counts.get(option.id, 0) %}
+        {% set pct = ((ov / total * 100) | round | int) if total > 0 else 0 %}
+        <div class="result-row">
+            <div class="result-label {% if option.id == my_vote %}my-vote{% endif %}">
+                <span>{% if option.id == my_vote %}✓ {% endif %}{{ option.text }}</span>
+                <span>{{ ov }} vote(s) ({{ pct }}%)</span>
+            </div>
+            <div class="result-bar-bg">
+                <div class="result-bar-fill {% if option.id == my_vote %}my-bar{% endif %}"
+                     style="width:{{ pct }}%;"></div>
+            </div>
+        </div>
+        {% endfor %}
+        <div class="total-votes">{{ total }} total vote(s)</div>
+
+        {% else %}
+        {# ── Vote view (hasn't voted yet) ── #}
+        <form method="POST" action="{{ url_for('polls_vote', poll_id=poll.id) }}">
+            {% for option in poll.options %}
+            <button type="submit" name="option_id" value="{{ option.id }}" class="vote-option">
+                {{ option.text }}
+            </button>
+            {% endfor %}
+        </form>
+        {% endif %}
+
+        {% if current_user.id == poll.creator_id %}
+        <div style="margin-top:10px;text-align:right;">
+            <form method="POST" action="{{ url_for('polls_delete', poll_id=poll.id) }}"
+                  onsubmit="return confirm('Delete this poll and all votes?');"
+                  style="display:inline;">
+                <button type="submit"
+                        style="background:none;border:none;color:#cc0000;font-family:inherit;
+                               font-size:12px;font-weight:bold;cursor:pointer;padding:0;">
+                    🗑️ Delete poll
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <p class="no-polls">No polls in your feed yet. Be the first to create one! ✏️</p>
+    {% endif %}
+
+    <hr class="divider">
+    <p style="font-size:12px;color:#aaa;text-align:center;">
+        Your message filter controls which polls reach you.
+        <a href="{{ url_for('edit_profile') }}" style="color:#0000cc;">Change settings</a>
+    </p>
+    {% endif %}
+
+</div>
+{% endblock %}
