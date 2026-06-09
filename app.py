@@ -322,8 +322,11 @@ def add_comment(username):
 @app.before_request
 def update_last_seen():
     if current_user.is_authenticated:
-        current_user.last_seen = datetime.utcnow()
-        db.session.commit()
+        try:
+            current_user.last_seen = datetime.utcnow()
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
 @app.route("/search")
 @login_required
