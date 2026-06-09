@@ -190,7 +190,7 @@
                 </form>
             {% endif %}
             {% if crew_status != 'blocked' %}
-             | <a href="{{ url_for('chat', username=user.username) }}" style="color:#0000cc;font-weight:bold;text-decoration:none;">💬 Message</a>
+             | <a href="#" onclick="icqOpenChat('{{ user.username }}'); return false;" style="color:#0000cc;font-weight:bold;text-decoration:none;">💬 Message</a>
             {% endif %}
         {% endif %}
     </div>
