@@ -82,28 +82,36 @@
         <h1>{{ user.username }}'s Space</h1>
     </div>
 
-    <div style="font-size:12px;color:#888;margin-bottom:6px;">
+    <div style="font-size:12px;color:#888;margin-bottom:10px;">
         👁 {{ user.profile_views or 0 }} views
-        {% if current_user.is_authenticated and current_user.username == user.username %}
-            &nbsp;|&nbsp; <strong>Current Mood:</strong>
-            <span id="mood-display"
-                  onclick="toggleMoodPicker()"
-                  title="Click to change mood"
-                  style="cursor:pointer;text-decoration:underline dotted;color:#cc00cc;">
-                {{ mood_labels.get(user.mood, '') if user.mood else '➕ Set mood' }}
-            </span>
-            <select id="mood-picker"
-                    style="display:none;font-family:inherit;font-size:12px;border:2px solid #ff66b2;padding:2px 4px;color:#660066;"
-                    onchange="saveMood(this.value)"
-                    onblur="hideMoodPicker()">
+    </div>
+
+    {% if current_user.is_authenticated and current_user.username == user.username %}
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+        <form method="POST" action="{{ url_for('set_status') }}" style="display:flex;align-items:center;gap:6px;">
+            <label style="font-size:13px;font-weight:bold;color:#660066;">Status:</label>
+            <select name="status" onchange="this.form.submit()"
+                    style="font-family:'Comic Sans MS',cursive;font-size:13px;border:2px solid #ff66b2;padding:3px 6px;cursor:pointer;color:#660066;">
+                <option value="online" {% if user.status == 'online' %}selected{% endif %}>🟢 Online</option>
+                <option value="away"   {% if user.status == 'away'   %}selected{% endif %}>🌙 Away</option>
+                <option value="dnd"    {% if user.status == 'dnd'    %}selected{% endif %}>🔴 DND</option>
+            </select>
+        </form>
+        <form method="POST" action="{{ url_for('set_mood') }}" style="display:flex;align-items:center;gap:6px;">
+            <label style="font-size:13px;font-weight:bold;color:#660066;">Mood:</label>
+            <select name="mood" onchange="this.form.submit()"
+                    style="font-family:'Comic Sans MS',cursive;font-size:13px;border:2px solid #ff66b2;padding:3px 6px;cursor:pointer;color:#660066;">
                 {% for key, label in mood_options %}
                 <option value="{{ key }}" {% if (user.mood or '') == key %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
             </select>
-        {% elif user.mood and mood_labels.get(user.mood) %}
-            &nbsp;|&nbsp; <strong>Current Mood:</strong> {{ mood_labels[user.mood] }}
-        {% endif %}
+        </form>
     </div>
+    {% elif user.mood and mood_labels.get(user.mood) %}
+    <div style="font-size:13px;color:#660066;margin-bottom:10px;">
+        <strong>Current Mood:</strong> {{ mood_labels[user.mood] }}
+    </div>
+    {% endif %}
 
     {% if user.status == 'away' and user.away_message %}
     <div style="background:#fff3cd;border:2px solid #ffcc00;padding:8px 12px;margin-bottom:10px;font-size:14px;">
@@ -251,47 +259,4 @@
 
 </div>
 
-{% if current_user.is_authenticated and current_user.username == user.username %}
-<script>
-function toggleMoodPicker() {
-    var display = document.getElementById('mood-display');
-    var picker  = document.getElementById('mood-picker');
-    if (!picker) return;
-    display.style.display = 'none';
-    picker.style.display  = 'inline-block';
-    picker.focus();
-}
-function hideMoodPicker() {
-    // Small delay so onchange fires before blur hides the element
-    setTimeout(function() {
-        var display = document.getElementById('mood-display');
-        var picker  = document.getElementById('mood-picker');
-        if (!picker) return;
-        picker.style.display  = 'none';
-        display.style.display = 'inline';
-    }, 200);
-}
-function saveMood(val) {
-    var display = document.getElementById('mood-display');
-    var picker  = document.getElementById('mood-picker');
-    fetch('/mood', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'mood=' + encodeURIComponent(val)
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-        if (data.ok) {
-            display.textContent = data.label || '➕ Set mood';
-        }
-        picker.style.display  = 'none';
-        display.style.display = 'inline';
-    })
-    .catch(function() {
-        picker.style.display  = 'none';
-        display.style.display = 'inline';
-    });
-}
-</script>
-{% endif %}
 {% endblock %}

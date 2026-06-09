@@ -395,9 +395,9 @@ def test_mood():
             u = User.query.filter_by(username="testbot").first()
             check("Invalid mood rejected, stored as empty", u is not None and u.mood == "")
 
-        # Owner always sees mood picker even when mood is empty (shows "Set mood" prompt)
+        # Owner always sees mood dropdown on their profile
         r = c.get("/profile/testbot")
-        check("Owner sees mood picker when mood is empty", "Set mood" in r.data.decode("utf-8", errors="replace"))
+        check("Owner sees mood dropdown on profile", "Mood:" in r.data.decode("utf-8", errors="replace"))
 
         # Visitor does NOT see "Current Mood" when mood is empty
         logout(c)
@@ -405,19 +405,15 @@ def test_mood():
         check("Visitor sees no mood block when mood is empty", "Current Mood" not in r.data.decode("utf-8", errors="replace"))
         login(c, "testbot@millennial-space.com", "testpass123")
 
-        # Inline /mood route — AJAX endpoint
-        r = c.post("/mood", data={"mood": "cool"})
-        check("/mood route returns JSON", r.status_code == 200)
-        import json
-        data = json.loads(r.data)
-        check("/mood returns ok:true", data.get("ok") == True)
-        check("/mood returns correct label", "Cool" in data.get("label", ""))
+        # /mood route saves and redirects to profile
+        r = c.post("/mood", data={"mood": "cool"}, follow_redirects=True)
+        check("/mood route redirects to profile", r.status_code == 200)
         with app.app_context():
             u = User.query.filter_by(username="testbot").first()
             check("Mood updated via /mood route", u is not None and u.mood == "cool")
 
         # Invalid mood via /mood route falls back to empty
-        c.post("/mood", data={"mood": "INVALID"})
+        c.post("/mood", data={"mood": "INVALID"}, follow_redirects=True)
         with app.app_context():
             u = User.query.filter_by(username="testbot").first()
             check("Invalid mood via /mood stored as empty", u is not None and u.mood == "")

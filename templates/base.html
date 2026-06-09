@@ -119,13 +119,6 @@
             <button type="submit">Go!</button>
         </form>
         <div class="nav-right">
-            <form method="POST" action="{{ url_for('set_status') }}" style="display:inline;">
-                <select name="status" onchange="this.form.submit()" style="font-family:'Comic Sans MS',cursive;font-size:12px;border:2px solid #ff66b2;padding:2px 4px;cursor:pointer;">
-                    <option value="online" {% if current_user.status == 'online' %}selected{% endif %}>🟢 Online</option>
-                    <option value="away"   {% if current_user.status == 'away'   %}selected{% endif %}>🌙 Away</option>
-                    <option value="dnd"    {% if current_user.status == 'dnd'    %}selected{% endif %}>🔴 DND</option>
-                </select>
-            </form>
             <a href="{{ url_for('profile', username=current_user.username) }}">My Space</a>
             <a href="{{ url_for('crew_requests') }}">Crew</a>
             <a href="{{ url_for('sounds') }}">🔔 Sounds</a>

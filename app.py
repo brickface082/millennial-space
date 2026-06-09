@@ -572,8 +572,7 @@ def set_mood():
     m = request.form.get("mood", "")
     current_user.mood = m if m in VALID_MOODS else ""
     db.session.commit()
-    label = dict(MOOD_OPTIONS).get(current_user.mood, "")
-    return jsonify({"ok": True, "label": label, "mood": current_user.mood})
+    return redirect(url_for("profile", username=current_user.username))
 
 @app.route("/status", methods=["POST"])
 @login_required
