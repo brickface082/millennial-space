@@ -224,7 +224,8 @@ let _prevUnread   = 0;
 
 // ── Window open / close ───────────────────────────────────────────────────────
 function icqOpen() {
-    const win = document.getElementById(WIN_ID);
+    var win = document.getElementById(WIN_ID);
+    if (!win) return;
     win.style.display = 'block';
     restorePos();
     updateLockBtn();
@@ -269,22 +270,27 @@ window.icqToggleLock = function() {
     updateLockBtn();
 };
 function updateLockBtn() {
-    document.getElementById('icq-lock-btn').textContent = _locked ? '🔒' : '🔓';
+    var btn = document.getElementById('icq-lock-btn');
+    if (btn) btn.textContent = _locked ? '🔒' : '🔓';
 }
-const titlebar = document.getElementById('icq-titlebar');
-titlebar.addEventListener('mousedown', function(e) {
-    if (_locked) return;
-    if (e.target.tagName === 'BUTTON') return;
-    _dragging = true;
-    const win = document.getElementById(WIN_ID);
-    const rect = win.getBoundingClientRect();
-    _dragOX = e.clientX - rect.left;
-    _dragOY = e.clientY - rect.top;
-    e.preventDefault();
-});
+// Null-guard all startup DOM access — a crash here would kill icqOpenChat (SOP M013)
+var titlebar = document.getElementById('icq-titlebar');
+if (titlebar) {
+    titlebar.addEventListener('mousedown', function(e) {
+        if (_locked) return;
+        if (e.target.tagName === 'BUTTON') return;
+        _dragging = true;
+        var win = document.getElementById(WIN_ID);
+        var rect = win.getBoundingClientRect();
+        _dragOX = e.clientX - rect.left;
+        _dragOY = e.clientY - rect.top;
+        e.preventDefault();
+    });
+}
 document.addEventListener('mousemove', function(e) {
     if (!_dragging) return;
-    const win = document.getElementById(WIN_ID);
+    var win = document.getElementById(WIN_ID);
+    if (!win) return;
     win.style.left   = (e.clientX - _dragOX) + 'px';
     win.style.top    = (e.clientY - _dragOY) + 'px';
     win.style.right  = '';
