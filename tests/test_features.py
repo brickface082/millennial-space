@@ -268,6 +268,66 @@ def test_sounds():
             u.custom_sound = ""
             db.session.commit()
 
+def test_icq_inbox():
+    print("\n-- ICQ Inbox / Unread (T019.5) --")
+    # Seed: testbot sends a message to testreceiver
+    with app.app_context():
+        for m in DirectMessage.query.filter(
+            (DirectMessage.from_id.in_([3,4])) | (DirectMessage.to_id.in_([3,4]))
+        ).all():
+            db.session.delete(m)
+        db.session.commit()
+        msg = DirectMessage(from_id=3, to_id=4, body="hey unread test", is_read=False)
+        db.session.add(msg)
+        db.session.commit()
+
+    with app.test_client() as c:
+        login(c, "testreceiver@millennial-space.com", "testpass123")
+
+        # /inbox/unread should show 1 unread
+        r = c.get("/inbox/unread")
+        check("/inbox/unread returns JSON", r.status_code == 200)
+        import json
+        data = json.loads(r.data)
+        check("Unread count is 1", data["count"] == 1)
+        check("Sender is testbot", any(s["username"] == "testbot" for s in data["senders"]))
+
+        # /inbox/conversations should list testbot
+        r = c.get("/inbox/conversations")
+        convos = json.loads(r.data)
+        check("Conversations lists testbot", any(c2["username"] == "testbot" for c2 in convos))
+        check("Unread count in conversation", any(c2["unread"] == 1 for c2 in convos if c2["username"] == "testbot"))
+
+        # Opening chat marks messages read
+        c.get("/chat/testbot")
+        r = c.get("/inbox/unread")
+        data2 = json.loads(r.data)
+        check("Unread count drops to 0 after opening chat", data2["count"] == 0)
+
+        # /inbox/read/<username> POST also marks read
+        with app.app_context():
+            msg2 = DirectMessage(from_id=3, to_id=4, body="another unread", is_read=False)
+            db.session.add(msg2)
+            db.session.commit()
+        r = c.post("/inbox/read/testbot")
+        check("/inbox/read POST returns ok", r.status_code == 200)
+        r = c.get("/inbox/unread")
+        data3 = json.loads(r.data)
+        check("Unread count 0 after /inbox/read", data3["count"] == 0)
+
+        # DND flag returned correctly
+        with app.app_context():
+            u = db.session.get(User, 4)
+            u.status = "dnd"
+            db.session.commit()
+        r = c.get("/inbox/unread")
+        data4 = json.loads(r.data)
+        check("DND flag true when status=dnd", data4["dnd"] == True)
+        with app.app_context():
+            u = db.session.get(User, 4)
+            u.status = "online"
+            db.session.commit()
+
 # ── run all ──────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -280,6 +340,7 @@ if __name__ == "__main__":
     test_crew()
     test_away_message()
     test_sounds()
+    test_icq_inbox()
 
     print("\n-- Summary --")
     passed = sum(1 for r in results if r[0] == PASS)

@@ -75,6 +75,7 @@ class DirectMessage(db.Model):
     to_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     body = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    is_read = db.Column(db.Boolean, default=False, nullable=False)
     sender = db.relationship("User", foreign_keys=[from_id], backref=db.backref("sent_messages", lazy=True))
     recipient = db.relationship("User", foreign_keys=[to_id], backref=db.backref("received_messages", lazy=True))
 
@@ -376,6 +377,9 @@ def chat(username):
         ((DirectMessage.from_id == current_user.id) & (DirectMessage.to_id == other.id)) |
         ((DirectMessage.from_id == other.id) & (DirectMessage.to_id == current_user.id))
     ).order_by(DirectMessage.timestamp.asc()).all()
+    # Mark incoming messages as read
+    DirectMessage.query.filter_by(from_id=other.id, to_id=current_user.id, is_read=False).update({"is_read": True})
+    db.session.commit()
     return render_template("chat.html", other=other, messages=messages)
 
 @app.route("/chat/<username>/verify", methods=["GET", "POST"])
@@ -430,6 +434,58 @@ def chat_messages(username):
         "body": m.body,
         "time": m.timestamp.strftime("%b %d at %I:%M %p")
     } for m in messages])
+
+@app.route("/inbox/unread")
+@login_required
+def inbox_unread():
+    """Returns unread message count and per-sender breakdown. Used by global nav poller."""
+    unread = DirectMessage.query.filter_by(to_id=current_user.id, is_read=False).all()
+    by_sender = {}
+    for m in unread:
+        by_sender[m.sender.username] = by_sender.get(m.sender.username, 0) + 1
+    return jsonify({
+        "count": len(unread),
+        "senders": [{"username": u, "count": c} for u, c in by_sender.items()],
+        "dnd": (current_user.status == "dnd")
+    })
+
+@app.route("/inbox/conversations")
+@login_required
+def inbox_conversations():
+    """Returns all conversations (last message + unread count) for the floating inbox panel."""
+    # Find all users the current user has exchanged messages with
+    sent = db.session.query(DirectMessage.to_id).filter_by(from_id=current_user.id)
+    received = db.session.query(DirectMessage.from_id).filter_by(to_id=current_user.id)
+    partner_ids = {r[0] for r in sent.union(received).all()} - {current_user.id}
+
+    convos = []
+    for pid in partner_ids:
+        partner = db.session.get(User, pid)
+        if not partner:
+            continue
+        last_msg = DirectMessage.query.filter(
+            ((DirectMessage.from_id == current_user.id) & (DirectMessage.to_id == pid)) |
+            ((DirectMessage.from_id == pid) & (DirectMessage.to_id == current_user.id))
+        ).order_by(DirectMessage.timestamp.desc()).first()
+        unread_count = DirectMessage.query.filter_by(from_id=pid, to_id=current_user.id, is_read=False).count()
+        if last_msg:
+            convos.append({
+                "username": partner.username,
+                "unread": unread_count,
+                "last_body": last_msg.body[:50],
+                "last_time": last_msg.timestamp.strftime("%b %d at %I:%M %p")
+            })
+    convos.sort(key=lambda x: x["unread"], reverse=True)
+    return jsonify(convos)
+
+@app.route("/inbox/read/<username>", methods=["POST"])
+@login_required
+def inbox_mark_read(username):
+    """Mark all messages from username as read (called when opening chat in floating window)."""
+    other = User.query.filter_by(username=username).first_or_404()
+    DirectMessage.query.filter_by(from_id=other.id, to_id=current_user.id, is_read=False).update({"is_read": True})
+    db.session.commit()
+    return jsonify({"ok": True})
 
 VALID_SOUNDS = {
     "none", "classic_beep", "double_ping", "triple_beep", "rising_tone",
@@ -503,11 +559,11 @@ with app.app_context():
     dt_type = "TIMESTAMP" if is_pg else "DATETIME"
     with db.engine.connect() as conn:
         if is_pg:
-            existing = {row[0] for row in conn.execute(db.text(
+            existing_user = {row[0] for row in conn.execute(db.text(
                 "SELECT column_name FROM information_schema.columns WHERE table_name='user'"
             ))}
         else:
-            existing = {row[1] for row in conn.execute(db.text("PRAGMA table_info('user')"))}
+            existing_user = {row[1] for row in conn.execute(db.text("PRAGMA table_info('user')"))}
         for col, definition in [
             ("top8", "VARCHAR(200) DEFAULT ''"),
             ("status", "VARCHAR(10) DEFAULT 'online'"),
@@ -517,8 +573,19 @@ with app.app_context():
             ("alert_sound", "VARCHAR(30) DEFAULT 'classic_beep'"),
             ("custom_sound", "TEXT DEFAULT ''"),
         ]:
-            if col not in existing:
+            if col not in existing_user:
                 conn.execute(db.text(f'ALTER TABLE "user" ADD COLUMN {col} {definition}'))
+
+        # direct_message migrations
+        if is_pg:
+            existing_dm = {row[0] for row in conn.execute(db.text(
+                "SELECT column_name FROM information_schema.columns WHERE table_name='direct_message'"
+            ))}
+        else:
+            existing_dm = {row[1] for row in conn.execute(db.text("PRAGMA table_info('direct_message')"))}
+        if "is_read" not in existing_dm:
+            conn.execute(db.text("ALTER TABLE direct_message ADD COLUMN is_read BOOLEAN DEFAULT FALSE"))
+
         conn.commit()
 
 if __name__ == "__main__":

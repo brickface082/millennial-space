@@ -129,6 +129,9 @@
             <a href="{{ url_for('profile', username=current_user.username) }}">My Space</a>
             <a href="{{ url_for('crew_requests') }}">Crew</a>
             <a href="{{ url_for('sounds') }}">🔔 Sounds</a>
+            <span id="msg-alert-btn" onclick="icqToggle()" title="Messages" style="cursor:pointer;position:relative;font-size:15px;font-weight:bold;color:#ffccee;user-select:none;display:inline-block;">
+                ✉ <span id="msg-badge" style="display:none;position:absolute;top:-6px;right:-10px;background:#ff0000;color:#fff;font-size:10px;font-weight:bold;padding:1px 4px;border-radius:8px;min-width:14px;text-align:center;"></span>
+            </span>
             <a href="{{ url_for('logout') }}">Logout</a>
         </div>
     {% else %}
@@ -150,5 +153,393 @@
     {% block content %}{% endblock %}
 </div>
 
+{% if current_user.is_authenticated %}
+<!-- ══════════════════════════════════════════════════════════════
+     ICQ-STYLE FLOATING CHAT WINDOW
+     ══════════════════════════════════════════════════════════════ -->
+<div id="icq-win" style="display:none;position:fixed;z-index:9999;width:300px;min-height:360px;
+     background:#c0c0c0;border:2px solid #fff;border-right-color:#808080;border-bottom-color:#808080;
+     box-shadow:2px 2px 0 #000;font-family:'Comic Sans MS',cursive;font-size:13px;">
+
+  <!-- Title bar -->
+  <div id="icq-titlebar" style="background:linear-gradient(to right,#000080,#1084d0);color:#fff;
+       padding:4px 6px;display:flex;align-items:center;justify-content:space-between;cursor:move;user-select:none;">
+    <span style="font-weight:bold;font-size:13px;">📨 Messages</span>
+    <div style="display:flex;gap:4px;align-items:center;">
+      <button id="icq-lock-btn" onclick="icqToggleLock()" title="Lock/unlock position"
+              style="background:#c0c0c0;border:1px outset #fff;width:18px;height:16px;font-size:10px;cursor:pointer;padding:0;">🔓</button>
+      <button onclick="icqClose()"
+              style="background:#c0c0c0;border:1px outset #fff;width:18px;height:16px;font-size:11px;cursor:pointer;padding:0;font-weight:bold;">✕</button>
+    </div>
+  </div>
+
+  <!-- Inbox list view -->
+  <div id="icq-inbox" style="padding:6px;">
+    <div style="background:#000080;color:#ffff00;font-size:11px;font-weight:bold;padding:3px 6px;margin-bottom:6px;letter-spacing:1px;">
+      ── INBOX ──────────────────
+    </div>
+    <div id="icq-convo-list" style="max-height:260px;overflow-y:auto;">
+      <div style="color:#555;font-style:italic;text-align:center;padding:20px 0;">Loading…</div>
+    </div>
+    <div style="margin-top:8px;text-align:center;">
+      <button onclick="icqLoadConvos()" style="background:#000080;color:#ffff00;border:2px outset #c0c0c0;
+              font-family:'Comic Sans MS',cursive;font-size:11px;padding:3px 10px;cursor:pointer;font-weight:bold;">
+        ↺ Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Individual chat view (hidden until user clicks a conversation) -->
+  <div id="icq-chat" style="display:none;padding:6px;">
+    <div style="background:#000080;color:#ffff00;font-size:11px;font-weight:bold;padding:3px 6px;margin-bottom:6px;display:flex;justify-content:space-between;">
+      <span id="icq-chat-title">Chat</span>
+      <span onclick="icqShowInbox()" style="cursor:pointer;color:#fff;font-size:11px;">← Back</span>
+    </div>
+    <div id="icq-thread" style="height:200px;overflow-y:auto;background:#fff;border:1px inset #808080;
+         padding:6px;display:flex;flex-direction:column;gap:4px;margin-bottom:6px;"></div>
+    <div style="display:flex;gap:4px;">
+      <input id="icq-input" type="text" maxlength="1000" placeholder="Type here…"
+             style="flex:1;font-family:'Comic Sans MS',cursive;font-size:12px;padding:3px 5px;
+             border:1px inset #808080;background:#ffffcc;"
+             onkeydown="if(event.key==='Enter'){icqSend();}">
+      <button onclick="icqSend()" style="background:#000080;color:#ffff00;border:2px outset #c0c0c0;
+              font-family:'Comic Sans MS',cursive;font-size:11px;padding:3px 8px;cursor:pointer;font-weight:bold;">
+        Send
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+// ── State ─────────────────────────────────────────────────────────────────────
+const WIN_ID      = 'icq-win';
+const POS_KEY     = 'icq_pos';
+const LOCK_KEY    = 'icq_locked';
+const alertKey    = {{ ('"' + current_user.alert_sound + '"') | safe }};
+const customSnd   = {{ ('"' + current_user.custom_sound + '"') | safe if current_user.custom_sound else '""' }};
+
+let _locked       = localStorage.getItem(LOCK_KEY) === '1';
+let _dragging     = false;
+let _dragOX       = 0, _dragOY = 0;
+let _currentUser  = null;   // username of open chat
+let _lastMsgId    = 0;
+let _chatPollTmr  = null;
+let _actx         = null;
+let _audioUnlocked = false;
+let _prevUnread   = 0;
+
+// ── Window open / close ───────────────────────────────────────────────────────
+function icqOpen() {
+    const win = document.getElementById(WIN_ID);
+    win.style.display = 'block';
+    restorePos();
+    updateLockBtn();
+    icqLoadConvos();
+}
+window.icqClose = function() {
+    document.getElementById(WIN_ID).style.display = 'none';
+    stopChatPoll();
+};
+window.icqToggle = function() {
+    const win = document.getElementById(WIN_ID);
+    if (win.style.display === 'none') icqOpen(); else icqClose();
+};
+
+// ── Position memory ───────────────────────────────────────────────────────────
+function savePos() {
+    const win = document.getElementById(WIN_ID);
+    localStorage.setItem(POS_KEY, JSON.stringify({ left: win.style.left, top: win.style.top }));
+}
+function restorePos() {
+    const win = document.getElementById(WIN_ID);
+    const saved = localStorage.getItem(POS_KEY);
+    if (saved) {
+        try {
+            const p = JSON.parse(saved);
+            win.style.left = p.left;
+            win.style.top  = p.top;
+            return;
+        } catch(e) {}
+    }
+    // Default: bottom-right
+    win.style.right  = '20px';
+    win.style.bottom = '20px';
+    win.style.left   = '';
+    win.style.top    = '';
+}
+
+// ── Lock / drag ───────────────────────────────────────────────────────────────
+window.icqToggleLock = function() {
+    _locked = !_locked;
+    localStorage.setItem(LOCK_KEY, _locked ? '1' : '0');
+    updateLockBtn();
+};
+function updateLockBtn() {
+    document.getElementById('icq-lock-btn').textContent = _locked ? '🔒' : '🔓';
+}
+const titlebar = document.getElementById('icq-titlebar');
+titlebar.addEventListener('mousedown', function(e) {
+    if (_locked) return;
+    if (e.target.tagName === 'BUTTON') return;
+    _dragging = true;
+    const win = document.getElementById(WIN_ID);
+    const rect = win.getBoundingClientRect();
+    _dragOX = e.clientX - rect.left;
+    _dragOY = e.clientY - rect.top;
+    e.preventDefault();
+});
+document.addEventListener('mousemove', function(e) {
+    if (!_dragging) return;
+    const win = document.getElementById(WIN_ID);
+    win.style.left   = (e.clientX - _dragOX) + 'px';
+    win.style.top    = (e.clientY - _dragOY) + 'px';
+    win.style.right  = '';
+    win.style.bottom = '';
+});
+document.addEventListener('mouseup', function() {
+    if (_dragging) { _dragging = false; savePos(); }
+});
+
+// ── Inbox list ────────────────────────────────────────────────────────────────
+window.icqLoadConvos = function() {
+    const list = document.getElementById('icq-convo-list');
+    list.innerHTML = '<div style="color:#555;font-style:italic;text-align:center;padding:10px 0;">Loading…</div>';
+    fetch('/inbox/conversations')
+        .then(r => r.json())
+        .then(convos => {
+            if (!convos.length) {
+                list.innerHTML = '<div style="color:#555;font-style:italic;text-align:center;padding:16px 0;">No messages yet.</div>';
+                return;
+            }
+            list.innerHTML = '';
+            convos.forEach(c => {
+                const row = document.createElement('div');
+                row.style.cssText = 'padding:5px 6px;border-bottom:1px solid #aaa;cursor:pointer;display:flex;' +
+                                    'justify-content:space-between;align-items:center;background:' +
+                                    (c.unread ? '#ffffcc' : '#f0f0f0') + ';';
+                row.onmouseenter = () => row.style.background = '#ddeeff';
+                row.onmouseleave = () => row.style.background = c.unread ? '#ffffcc' : '#f0f0f0';
+                row.onclick = () => icqOpenChat(c.username);
+                const left = document.createElement('div');
+                left.innerHTML = '<strong style="color:#000080;">' + escHtml(c.username) + '</strong>' +
+                                 '<div style="font-size:11px;color:#555;white-space:nowrap;overflow:hidden;' +
+                                 'text-overflow:ellipsis;max-width:180px;">' + escHtml(c.last_body) + '</div>';
+                const right = document.createElement('div');
+                right.style.cssText = 'font-size:10px;color:#555;text-align:right;';
+                if (c.unread) {
+                    right.innerHTML = '<span style="background:#ff0000;color:#fff;padding:1px 5px;border-radius:8px;' +
+                                      'font-weight:bold;">' + c.unread + '</span>';
+                }
+                row.appendChild(left);
+                row.appendChild(right);
+                list.appendChild(row);
+            });
+        })
+        .catch(() => {
+            list.innerHTML = '<div style="color:#c00;text-align:center;padding:10px;">Could not load.</div>';
+        });
+};
+
+// ── Individual chat ───────────────────────────────────────────────────────────
+window.icqOpenChat = function(username) {
+    _currentUser = username;
+    _lastMsgId   = 0;
+    document.getElementById('icq-inbox').style.display = 'none';
+    document.getElementById('icq-chat').style.display  = 'block';
+    document.getElementById('icq-chat-title').textContent = '💬 ' + username;
+    document.getElementById('icq-thread').innerHTML = '';
+    // Mark read
+    fetch('/inbox/read/' + encodeURIComponent(username), { method: 'POST' }).catch(()=>{});
+    // Load history
+    fetch('/chat/' + encodeURIComponent(username) + '/messages?after=0')
+        .then(r => r.json())
+        .then(msgs => {
+            msgs.forEach(appendIcqMsg);
+            scrollIcq();
+            if (msgs.length) _lastMsgId = msgs[msgs.length-1].id;
+        }).catch(()=>{});
+    startChatPoll();
+};
+window.icqShowInbox = function() {
+    document.getElementById('icq-chat').style.display  = 'none';
+    document.getElementById('icq-inbox').style.display = 'block';
+    stopChatPoll();
+    icqLoadConvos();
+};
+
+function startChatPoll() {
+    stopChatPoll();
+    _chatPollTmr = setInterval(icqPollChat, 5000);
+}
+function stopChatPoll() {
+    if (_chatPollTmr) { clearInterval(_chatPollTmr); _chatPollTmr = null; }
+}
+function icqPollChat() {
+    if (!_currentUser) return;
+    fetch('/chat/' + encodeURIComponent(_currentUser) + '/messages?after=' + _lastMsgId)
+        .then(r => r.json())
+        .then(msgs => {
+            if (msgs.length) {
+                msgs.forEach(appendIcqMsg);
+                scrollIcq();
+                _lastMsgId = msgs[msgs.length-1].id;
+                fetch('/inbox/read/' + encodeURIComponent(_currentUser), { method: 'POST' }).catch(()=>{});
+            }
+        }).catch(()=>{});
+}
+
+function appendIcqMsg(m) {
+    const me = {{ ('"' + current_user.username + '"') | safe }};
+    const mine = m.from === me;
+    const div = document.createElement('div');
+    div.style.cssText = 'max-width:85%;padding:4px 7px;border-radius:2px;font-size:12px;word-break:break-word;' +
+                        (mine ? 'align-self:flex-end;background:#000080;color:#fff;margin-left:auto;'
+                               : 'align-self:flex-start;background:#e8f0ff;color:#000;border:1px solid #aac;');
+    div.innerHTML = '<div style="font-size:10px;opacity:0.7;margin-bottom:2px;">' +
+                    (mine ? '' : escHtml(m.from) + ' · ') + escHtml(m.time) + '</div>' +
+                    escHtml(m.body);
+    document.getElementById('icq-thread').appendChild(div);
+}
+function scrollIcq() {
+    const t = document.getElementById('icq-thread');
+    t.scrollTop = t.scrollHeight;
+}
+
+window.icqSend = function() {
+    const input = document.getElementById('icq-input');
+    const body  = input.value.trim();
+    if (!body || !_currentUser) return;
+    input.value = '';
+    fetch('/chat/' + encodeURIComponent(_currentUser) + '/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'body=' + encodeURIComponent(body)
+    }).then(() => icqPollChat()).catch(()=>{});
+};
+
+// ── Global unread poller (runs on every page) ─────────────────────────────────
+let _blinkTmr = null;
+function startBlink() {
+    const btn = document.getElementById('msg-alert-btn');
+    if (!btn || _blinkTmr) return;
+    _blinkTmr = setInterval(() => {
+        btn.style.color = btn.style.color === 'rgb(255, 0, 0)' ? '#ffccee' : 'red';
+    }, 500);
+}
+function stopBlink() {
+    const btn = document.getElementById('msg-alert-btn');
+    if (_blinkTmr) { clearInterval(_blinkTmr); _blinkTmr = null; }
+    if (btn) btn.style.color = '#ffccee';
+}
+
+function pollInbox() {
+    fetch('/inbox/unread')
+        .then(r => r.json())
+        .then(data => {
+            const badge = document.getElementById('msg-badge');
+            const isDND = data.dnd;
+            if (data.count > 0) {
+                badge.style.display = 'block';
+                badge.textContent   = data.count;
+                if (!isDND) {
+                    startBlink();
+                    // Play alert only when count goes up (new message arrived)
+                    if (data.count > _prevUnread) playAlertSound();
+                } else {
+                    stopBlink();
+                }
+            } else {
+                badge.style.display = 'none';
+                stopBlink();
+            }
+            _prevUnread = data.count;
+        })
+        .catch(()=>{});
+}
+
+// ── Web Audio ─────────────────────────────────────────────────────────────────
+function getCtx() {
+    if (!_actx) _actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_actx.state === 'suspended') _actx.resume();
+    return _actx;
+}
+function unlockAudio() {
+    getCtx();
+    _audioUnlocked = true;
+    document.removeEventListener('click', unlockAudio);
+    document.removeEventListener('keydown', unlockAudio);
+}
+document.addEventListener('click', unlockAudio);
+document.addEventListener('keydown', unlockAudio);
+
+function beep(freq, start, dur, vol, type) {
+    const ctx = getCtx(), t = ctx.currentTime;
+    const o = ctx.createOscillator(), og = ctx.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t + start);
+    og.gain.setValueAtTime(vol || 0.4, t + start);
+    og.gain.exponentialRampToValueAtTime(0.001, t + start + dur);
+    o.connect(og); og.connect(ctx.destination);
+    o.start(t + start); o.stop(t + start + dur + 0.05);
+}
+
+function playAlertSound() {
+    if (!_audioUnlocked) return;
+    if (alertKey === 'none') return;
+    if (alertKey === 'custom') {
+        if (customSnd) { try { new Audio(customSnd).play(); } catch(e){} }
+        return;
+    }
+    const ctx = getCtx(), t = ctx.currentTime;
+    switch (alertKey) {
+        case 'classic_beep': beep(880,0,0.18); break;
+        case 'double_ping':  beep(1200,0,0.1); beep(1200,0.18,0.1); break;
+        case 'triple_beep':  beep(1000,0,0.08); beep(1000,0.12,0.08); beep(1000,0.24,0.08); break;
+        case 'rising_tone':
+            { const o=ctx.createOscillator(),og=ctx.createGain(); o.type='sine';
+              o.frequency.setValueAtTime(400,t); o.frequency.linearRampToValueAtTime(1400,t+0.35);
+              og.gain.setValueAtTime(0.4,t); og.gain.exponentialRampToValueAtTime(0.001,t+0.38);
+              o.connect(og); og.connect(ctx.destination); o.start(t); o.stop(t+0.4); } break;
+        case 'falling_tone':
+            { const o=ctx.createOscillator(),og=ctx.createGain(); o.type='sine';
+              o.frequency.setValueAtTime(1400,t); o.frequency.linearRampToValueAtTime(300,t+0.35);
+              og.gain.setValueAtTime(0.4,t); og.gain.exponentialRampToValueAtTime(0.001,t+0.38);
+              o.connect(og); og.connect(ctx.destination); o.start(t); o.stop(t+0.4); } break;
+        case 'soft_chime':   beep(1047,0,0.4,0.25); beep(1319,0.08,0.35,0.2); beep(1568,0.16,0.3,0.15); break;
+        case 'retro_game':   beep(440,0,0.07,0.3,'square'); beep(660,0.09,0.07,0.3,'square'); beep(880,0.18,0.07,0.3,'square'); break;
+        case 'soft_pop':
+            { const o=ctx.createOscillator(),og=ctx.createGain(); o.type='sine';
+              o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(80,t+0.12);
+              og.gain.setValueAtTime(0.5,t); og.gain.exponentialRampToValueAtTime(0.001,t+0.15);
+              o.connect(og); og.connect(ctx.destination); o.start(t); o.stop(t+0.18); } break;
+        case 'ding':         beep(1760,0,0.5,0.3); break;
+        case 'deep_bong':    beep(110,0,0.7,0.5); break;
+        case 'fast_blip':    beep(2000,0,0.04,0.3,'square'); break;
+        case 'old_phone':
+            for(let i=0;i<3;i++){beep(480,i*0.25,0.1,0.4,'square');beep(620,i*0.25+0.05,0.08,0.3,'square');} break;
+        case 'doorbell':     beep(523,0,0.25,0.35); beep(392,0.28,0.35,0.35); break;
+        case 'laser':
+            { const o=ctx.createOscillator(),og=ctx.createGain(); o.type='sawtooth';
+              o.frequency.setValueAtTime(800,t); o.frequency.exponentialRampToValueAtTime(100,t+0.2);
+              og.gain.setValueAtTime(0.4,t); og.gain.exponentialRampToValueAtTime(0.001,t+0.22);
+              o.connect(og); og.connect(ctx.destination); o.start(t); o.stop(t+0.25); } break;
+        case 'win95':
+            beep(392,0,0.12,0.3); beep(523,0.14,0.12,0.3); beep(659,0.28,0.12,0.3); beep(784,0.42,0.2,0.3); break;
+    }
+}
+
+// ── Utility ───────────────────────────────────────────────────────────────────
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+pollInbox();
+setInterval(pollInbox, 5000);
+
+})();
+</script>
+{% endif %}
 </body>
 </html>

@@ -147,8 +147,18 @@
     let _actx = null;
     function _getCtx() {
         if (!_actx) _actx = new (window.AudioContext || window.webkitAudioContext)();
+        // Resume suspended context (browser autoplay policy requires a user gesture first)
+        if (_actx.state === 'suspended') _actx.resume();
         return _actx;
     }
+    // Unlock AudioContext on first user interaction
+    function _unlockAudio() {
+        _getCtx();
+        document.removeEventListener('click', _unlockAudio);
+        document.removeEventListener('keydown', _unlockAudio);
+    }
+    document.addEventListener('click', _unlockAudio);
+    document.addEventListener('keydown', _unlockAudio);
     function _beep(freq, start, dur, vol, type) {
         const ctx = _getCtx(), t = ctx.currentTime;
         const o = ctx.createOscillator(), og = ctx.createGain();
