@@ -218,10 +218,17 @@ def profile(username):
                 if m:
                     top8_users.append(m)
     mood_labels = {key: label for key, label in MOOD_OPTIONS if key}
+    # T022: recent photos strip — 4 most recent photos across all albums
+    recent_photos = (Photo.query.join(PhotoAlbum)
+                     .filter(PhotoAlbum.user_id == user.id)
+                     .order_by(Photo.created_at.desc())
+                     .limit(4).all())
+    album_count = PhotoAlbum.query.filter_by(user_id=user.id).count()
     return render_template("profile.html", user=user, posts=posts, comments=comments,
                            crew_status=crew_status, crew_request_id=crew_request_id,
                            top8_users=top8_users, mood_labels=mood_labels,
-                           mood_options=MOOD_OPTIONS)
+                           mood_options=MOOD_OPTIONS,
+                           recent_photos=recent_photos, album_count=album_count)
 
 @app.route("/edit", methods=["GET", "POST"])
 @login_required

@@ -198,6 +198,28 @@
         {% endif %}
     </div>
 
+    {% if recent_photos or user.albums %}
+    <hr class="divider">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span class="section-label" style="margin:0;">📷 Photos</span>
+        <a href="#albums" style="font-size:12px;color:#0000cc;font-weight:bold;text-decoration:none;">
+            View Albums ({{ album_count }}) →
+        </a>
+    </div>
+    {% if recent_photos %}
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px;">
+        {% for photo in recent_photos %}
+        <a href="{{ photo.url }}" target="_blank" title="{{ photo.caption or '' }}">
+            <img src="{{ photo.url }}"
+                 style="width:80px;height:80px;object-fit:cover;border:3px solid #ff66b2;display:block;">
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="color:#aaa;font-style:italic;font-size:13px;margin:0 0 4px 0;">No photos yet.</p>
+    {% endif %}
+    {% endif %}
+
     {% if current_user.is_authenticated and current_user.username == user.username %}
     <hr class="divider">
     <p class="section-label">📝 New Post</p>
@@ -263,7 +285,7 @@
     {% endfor %}
 
     <hr class="divider-cyan">
-    <p class="section-label">📷 Photo Albums</p>
+    <p class="section-label" id="albums">📷 Photo Albums</p>
 
     {% if current_user.is_authenticated and current_user.username == user.username %}
     <form method="POST" action="{{ url_for('album_create') }}" style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
