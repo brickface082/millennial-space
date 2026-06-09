@@ -216,7 +216,7 @@
 const WIN_ID      = 'icq-win';
 const POS_KEY     = 'icq_pos';
 const LOCK_KEY    = 'icq_locked';
-const alertKey    = {{ ('"' + current_user.alert_sound + '"') | safe }};
+const alertKey    = {{ ('"' + (current_user.alert_sound or 'classic_beep') + '"') | safe }};
 const customSnd   = {{ ('"' + current_user.custom_sound + '"') | safe if current_user.custom_sound else '""' }};
 
 let _locked       = localStorage.getItem(LOCK_KEY) === '1';

@@ -557,6 +557,7 @@ with app.app_context():
     db.create_all()
     is_pg = database_url.startswith("postgresql")
     dt_type = "TIMESTAMP" if is_pg else "DATETIME"
+    # user table migrations — each column in its own connection (M010: PG aborts whole tx on failure)
     with db.engine.connect() as conn:
         if is_pg:
             existing_user = {row[0] for row in conn.execute(db.text(
@@ -575,8 +576,10 @@ with app.app_context():
         ]:
             if col not in existing_user:
                 conn.execute(db.text(f'ALTER TABLE "user" ADD COLUMN {col} {definition}'))
+        conn.commit()
 
-        # direct_message migrations
+    # direct_message migrations — separate connection per M010 SOP
+    with db.engine.connect() as conn:
         if is_pg:
             existing_dm = {row[0] for row in conn.execute(db.text(
                 "SELECT column_name FROM information_schema.columns WHERE table_name='direct_message'"
@@ -585,7 +588,6 @@ with app.app_context():
             existing_dm = {row[1] for row in conn.execute(db.text("PRAGMA table_info('direct_message')"))}
         if "is_read" not in existing_dm:
             conn.execute(db.text("ALTER TABLE direct_message ADD COLUMN is_read BOOLEAN DEFAULT FALSE"))
-
         conn.commit()
 
 if __name__ == "__main__":
