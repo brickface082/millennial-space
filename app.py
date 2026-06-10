@@ -11,6 +11,8 @@ from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, current_user, logout_user, login_required
 import cloudinary
 import cloudinary.uploader
+from flask_mail import Mail, Message
+from datetime import timedelta
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -23,8 +25,16 @@ if database_url.startswith("postgres://"):
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["UPLOAD_FOLDER"] = os.path.join(basedir, "static/uploads")
 
+app.config["MAIL_SERVER"]   = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
+app.config["MAIL_PORT"]     = int(os.environ.get("MAIL_PORT", "587"))
+app.config["MAIL_USE_TLS"]  = True
+app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME", "")
+app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD", "")
+app.config["MAIL_DEFAULT_SENDER"] = os.environ.get("MAIL_USERNAME", "noreply@millennial-space.com")
+
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
+mail = Mail(app)
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
 
@@ -214,6 +224,16 @@ class Feedback(db.Model):
     status = db.Column(db.String(20), nullable=False, default="open")  # 'open' | 'reviewed'
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     submitter = db.relationship("User", backref=db.backref("feedback_submitted", lazy=True))
+
+class PasswordResetToken(db.Model):
+    """T029 — single-use, 1-hour password reset tokens. FMEA: mark used before any response."""
+    __tablename__ = "password_reset_token"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    token = db.Column(db.String(64), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    used = db.Column(db.Boolean, nullable=False, default=False)
+    user = db.relationship("User", backref=db.backref("reset_tokens", lazy=True))
 
 def extract_url(value):
     value = value.strip()
@@ -1227,7 +1247,9 @@ def account_delete():
         inv.used_at = None
     # 10. Anonymize feedback (keep the report, lose the attribution)
     Feedback.query.filter_by(user_id=uid).update({"user_id": None}, synchronize_session=False)
-    # 11. Flush all FK children, then delete the user row
+    # 11. Password reset tokens
+    PasswordResetToken.query.filter_by(user_id=uid).delete(synchronize_session=False)
+    # 12. Flush all FK children, then delete the user row
     db.session.flush()
     user_obj = db.session.get(User, uid)
     db.session.delete(user_obj)
@@ -1235,6 +1257,65 @@ def account_delete():
     logout_user()
     flash("Your account has been permanently deleted.", "info")
     return redirect(url_for("login"))
+
+# ── T029 — Password reset ─────────────────────────────────────────────────────
+
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if current_user.is_authenticated:
+        return redirect(url_for("profile", username=current_user.username))
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        user = User.query.filter_by(email=email).first()
+        if user:
+            token = secrets.token_urlsafe(32)
+            record = PasswordResetToken(user_id=user.id, token=token)
+            db.session.add(record)
+            db.session.commit()
+            reset_url = url_for("reset_password", token=token, _external=True)
+            try:
+                msg = Message(
+                    "Reset your Millennial Space password",
+                    recipients=[user.email],
+                    body=(
+                        f"Hi {user.username},\n\n"
+                        f"Click the link below to reset your password.\n"
+                        f"This link expires in 1 hour and can only be used once.\n\n"
+                        f"{reset_url}\n\n"
+                        f"If you didn't request this, you can ignore this email."
+                    )
+                )
+                mail.send(msg)
+            except Exception:
+                pass  # never reveal mail failure — prevents enumeration + avoids 500
+        flash("If an account with that email exists, a reset link has been sent.", "info")
+        return redirect(url_for("forgot_password"))
+    return render_template("forgot_password.html")
+
+@app.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(url_for("profile", username=current_user.username))
+    record = PasswordResetToken.query.filter_by(token=token, used=False).first()
+    if not record or (datetime.utcnow() - record.created_at) > timedelta(hours=1):
+        flash("This reset link is invalid or has expired. Request a new one.", "danger")
+        return redirect(url_for("forgot_password"))
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        confirm  = request.form.get("confirm_password", "")
+        if len(password) < 8:
+            flash("Password must be at least 8 characters.", "danger")
+            return render_template("reset_password.html", token=token)
+        if password != confirm:
+            flash("Passwords do not match.", "danger")
+            return render_template("reset_password.html", token=token)
+        # Mark used FIRST (FMEA #3: prevent token reuse on concurrent requests)
+        record.used = True
+        record.user.password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
+        db.session.commit()
+        flash("Password reset! You can now log in with your new password.", "success")
+        return redirect(url_for("login"))
+    return render_template("reset_password.html", token=token)
 
 with app.app_context():
     os.makedirs(os.path.join(basedir, "instance"), exist_ok=True)
