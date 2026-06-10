@@ -3,14 +3,16 @@
 # Tests run against the local Flask test client (no browser, no Render needed).
 import sys
 import os
+from datetime import datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import app as application
-from app import app, db, User, CrewRequest, DirectMessage, bcrypt, JournalEntry, Poll, PollOption, PollVote, Invite, Feedback
+from app import app, db, User, CrewRequest, DirectMessage, bcrypt, JournalEntry, Poll, PollOption, PollVote, Invite, Feedback, PasswordResetToken
 
 app.config["TESTING"] = True
 app.config["WTF_CSRF_ENABLED"] = False
 app.config["SERVER_NAME"] = None
+app.config["MAIL_SUPPRESS_SEND"] = True   # never send real emails during tests
 
 PASS = "[PASS]"
 FAIL = "[FAIL]"
@@ -802,6 +804,120 @@ def test_delete_account():
             check("User removed from DB", gone is None)
 
 
+def test_password_reset():
+    print("\n-- T029 Password Reset --")
+
+    # 1. Forgot-password page loads unauthenticated
+    with app.test_client() as c:
+        r = c.get("/forgot-password")
+        check("Forgot-password page loads", r.status_code == 200)
+        check("Page contains email form", b"email" in r.data.lower())
+
+    # 2. Unknown email → generic message, no 500, no enumeration
+    with app.test_client() as c:
+        r = c.post("/forgot-password",
+                   data={"email": "nobody@nowhere.com"},
+                   follow_redirects=True)
+        check("Unknown email shows generic message (no enumeration)", r.status_code == 200)
+        check("Generic message present", b"if an account" in r.data.lower())
+        with app.app_context():
+            count = PasswordResetToken.query.count()
+            check("No token created for unknown email", count == 0)
+
+    # 3. Known email → token created in DB, same generic message shown
+    with app.test_client() as c:
+        r = c.post("/forgot-password",
+                   data={"email": "testbot@millennial-space.com"},
+                   follow_redirects=True)
+        check("Known email still shows generic message", r.status_code == 200)
+
+    with app.app_context():
+        record = PasswordResetToken.query.filter(
+            PasswordResetToken.used == False  # noqa: E712
+        ).first()
+        check("Token created in DB for known email", record is not None)
+        token = record.token if record else None
+
+    # 4. Reset page loads for valid unused token
+    with app.test_client() as c:
+        r = c.get(f"/reset-password/{token}")
+        check("Reset page loads for valid token", r.status_code == 200)
+        check("Reset page contains password fields", b"password" in r.data.lower())
+
+    # 5. Invalid token redirects with error
+    with app.test_client() as c:
+        r = c.get("/reset-password/totallyfaketoken999", follow_redirects=True)
+        check("Invalid token redirects to forgot-password", r.status_code == 200)
+        check("Error message shown for invalid token", b"invalid or has expired" in r.data.lower())
+
+    # 6. Short password rejected
+    with app.test_client() as c:
+        r = c.post(f"/reset-password/{token}",
+                   data={"password": "short", "confirm_password": "short"},
+                   follow_redirects=True)
+        check("Short password rejected", b"at least 8" in r.data.lower())
+
+    with app.app_context():
+        record = PasswordResetToken.query.filter_by(token=token).first()
+        check("Token NOT marked used after short-password failure", record is not None and not record.used)
+
+    # 7. Mismatched passwords rejected
+    with app.test_client() as c:
+        r = c.post(f"/reset-password/{token}",
+                   data={"password": "newpassword1", "confirm_password": "differentpass"},
+                   follow_redirects=True)
+        check("Mismatched passwords rejected", b"do not match" in r.data.lower())
+
+    # 8. Valid reset — password changed, token marked used, can log in
+    with app.test_client() as c:
+        r = c.post(f"/reset-password/{token}",
+                   data={"password": "brand_new_pass", "confirm_password": "brand_new_pass"},
+                   follow_redirects=True)
+        check("Valid reset redirects to login", r.status_code == 200)
+        check("Success flash shown", b"password reset" in r.data.lower())
+
+    with app.app_context():
+        record = PasswordResetToken.query.filter_by(token=token).first()
+        check("Token marked used after successful reset", record is not None and record.used)
+
+    # 9. Can now log in with new password
+    with app.test_client() as c:
+        r = login(c, "testbot@millennial-space.com", "brand_new_pass")
+        check("Can log in with new password", b"testbot" in r.data or r.status_code == 200)
+
+    # 10. Token cannot be reused
+    with app.test_client() as c:
+        r = c.post(f"/reset-password/{token}",
+                   data={"password": "another_pass1", "confirm_password": "another_pass1"},
+                   follow_redirects=True)
+        check("Used token cannot be reused (redirected)", b"invalid or has expired" in r.data.lower())
+
+    # 11. Expired token rejected (simulate by backdating created_at)
+    with app.app_context():
+        new_token_str = "expiredtokentest12345678"
+        expired_record = PasswordResetToken(
+            user_id=User.query.filter_by(username="testbot").first().id,
+            token=new_token_str,
+            used=False,
+            created_at=datetime.utcnow() - timedelta(hours=2)
+        )
+        db.session.add(expired_record)
+        db.session.commit()
+
+    with app.test_client() as c:
+        r = c.get(f"/reset-password/{new_token_str}", follow_redirects=True)
+        check("Expired token redirects with error", b"invalid or has expired" in r.data.lower())
+
+    # Restore testbot password for remaining tests
+    with app.app_context():
+        u = User.query.filter_by(username="testbot").first()
+        u.password_hash = bcrypt.generate_password_hash("testpass123").decode("utf-8")
+        PasswordResetToken.query.filter(
+            PasswordResetToken.user_id == u.id
+        ).delete(synchronize_session=False)
+        db.session.commit()
+
+
 # ── run all ──────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -823,6 +939,7 @@ if __name__ == "__main__":
     test_invites()
     test_feedback()
     test_delete_account()
+    test_password_reset()
 
     print("\n-- Summary --")
     passed = sum(1 for r in results if r[0] == PASS)
