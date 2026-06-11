@@ -24,6 +24,7 @@ if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["UPLOAD_FOLDER"] = os.path.join(basedir, "static/uploads")
+app.config["PREFERRED_URL_SCHEME"] = "https"
 
 app.config["MAIL_SERVER"]   = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
 app.config["MAIL_PORT"]     = int(os.environ.get("MAIL_PORT", "587"))
