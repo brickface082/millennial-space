@@ -187,6 +187,7 @@
             <span id="msg-alert-btn" onclick="icqToggle()" title="Messages" style="cursor:pointer;position:relative;font-size:15px;font-weight:bold;color:#ffccee;user-select:none;display:inline-block;">
                 ✉ <span id="msg-badge" style="display:none;position:absolute;top:-6px;right:-10px;background:#ff0000;color:#fff;font-size:10px;font-weight:bold;padding:1px 4px;border-radius:8px;min-width:14px;text-align:center;"></span>
             </span>
+            <a href="{{ url_for('help_page') }}">❓ Help</a>
             <a href="{{ url_for('feedback_new') }}" title="Bug report or suggestion" style="color:#ffccee;font-size:13px;font-weight:bold;text-decoration:none;">🐛</a>
             <a href="{{ url_for('logout') }}">Logout</a>
         </div>
@@ -216,7 +217,7 @@
      ══════════════════════════════════════════════════════════════ -->
 <div id="icq-win" style="display:none;position:fixed;z-index:9999;width:300px;min-height:360px;
      background:#c0c0c0;border:2px solid #fff;border-right-color:#808080;border-bottom-color:#808080;
-     box-shadow:2px 2px 0 #000;font-family:'Comic Sans MS',cursive;font-size:13px;">
+     box-shadow:2px 2px 0 #000;font-family:inherit;font-size:13px;">
 
   <!-- Title bar -->
   <div id="icq-titlebar" style="background:linear-gradient(to right,#000080,#1084d0);color:#fff;
@@ -240,7 +241,7 @@
     </div>
     <div style="margin-top:8px;text-align:center;">
       <button onclick="icqLoadConvos()" style="background:#000080;color:#ffff00;border:2px outset #c0c0c0;
-              font-family:'Comic Sans MS',cursive;font-size:11px;padding:3px 10px;cursor:pointer;font-weight:bold;">
+              font-family:inherit;font-size:11px;padding:3px 10px;cursor:pointer;font-weight:bold;">
         ↺ Refresh
       </button>
     </div>
@@ -256,11 +257,11 @@
          padding:6px;display:flex;flex-direction:column;gap:4px;margin-bottom:6px;"></div>
     <div style="display:flex;gap:4px;">
       <input id="icq-input" type="text" maxlength="1000" placeholder="Type here…"
-             style="flex:1;font-family:'Comic Sans MS',cursive;font-size:12px;padding:3px 5px;
+             style="flex:1;font-family:inherit;font-size:12px;padding:3px 5px;
              border:1px inset #808080;background:#ffffcc;"
              onkeydown="if(event.key==='Enter'){icqSend();}">
       <button onclick="icqSend()" style="background:#000080;color:#ffff00;border:2px outset #c0c0c0;
-              font-family:'Comic Sans MS',cursive;font-size:11px;padding:3px 8px;cursor:pointer;font-weight:bold;">
+              font-family:inherit;font-size:11px;padding:3px 8px;cursor:pointer;font-weight:bold;">
         Send
       </button>
     </div>

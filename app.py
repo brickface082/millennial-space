@@ -1274,6 +1274,10 @@ def account_delete():
 
 # ── T029 — Password reset ─────────────────────────────────────────────────────
 
+@app.route("/help")
+def help_page():
+    return render_template("help.html")
+
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     if current_user.is_authenticated:

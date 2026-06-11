@@ -24,7 +24,7 @@
     .form-label { font-size: 13px; font-weight: bold; color: #5c0000; margin-bottom: 4px; display: block; }
     .form-input, .form-textarea {
         width: 100%; box-sizing: border-box;
-        font-family: 'Comic Sans MS', cursive; font-size: 14px;
+        font-family: inherit; font-size: 14px;
         border: 2px solid #c0956a; padding: 8px 10px;
         background: #fffdf5; color: #3a2010;
         margin-bottom: 14px;
@@ -32,7 +32,7 @@
     .form-textarea { height: 280px; resize: vertical; line-height: 1.6; }
     .btn-save {
         background: #8b0000; color: #fff3e0; border: 2px solid #5c0000;
-        padding: 9px 22px; font-family: 'Comic Sans MS', cursive;
+        padding: 9px 22px; font-family: inherit;
         font-size: 14px; font-weight: bold; cursor: pointer;
     }
     .btn-save:hover { background: #5c0000; }
@@ -97,7 +97,7 @@
             Add photos (up to {{ slots }} more, optional)
         </label>
         <input type="file" name="photos" accept="image/*" multiple
-               style="font-family:'Comic Sans MS',cursive;font-size:13px;margin-bottom:14px;display:block;">
+               style="font-family:inherit;font-size:13px;margin-bottom:14px;display:block;">
         {% endif %}
 
         <input type="submit" class="btn-save"

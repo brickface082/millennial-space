@@ -93,7 +93,7 @@
         <form method="POST" action="{{ url_for('set_status') }}" style="display:flex;align-items:center;gap:6px;">
             <label style="font-size:13px;font-weight:bold;color:#660066;">Status:</label>
             <select name="status" onchange="this.form.submit()"
-                    style="font-family:'Comic Sans MS',cursive;font-size:13px;border:2px solid #ff66b2;padding:3px 6px;cursor:pointer;color:#660066;">
+                    style="font-family:inherit;font-size:13px;border:2px solid #ff66b2;padding:3px 6px;cursor:pointer;color:#660066;">
                 <option value="online" {% if user.status == 'online' %}selected{% endif %}>🟢 Online</option>
                 <option value="away"   {% if user.status == 'away'   %}selected{% endif %}>🌙 Away</option>
                 <option value="dnd"    {% if user.status == 'dnd'    %}selected{% endif %}>🔴 DND</option>
@@ -102,7 +102,7 @@
         <form method="POST" action="{{ url_for('set_mood') }}" style="display:flex;align-items:center;gap:6px;">
             <label style="font-size:13px;font-weight:bold;color:#660066;">Mood:</label>
             <select name="mood" onchange="this.form.submit()"
-                    style="font-family:'Comic Sans MS',cursive;font-size:13px;border:2px solid #ff66b2;padding:3px 6px;cursor:pointer;color:#660066;">
+                    style="font-family:inherit;font-size:13px;border:2px solid #ff66b2;padding:3px 6px;cursor:pointer;color:#660066;">
                 {% for key, label in mood_options %}
                 <option value="{{ key }}" {% if (user.mood or '') == key %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
@@ -209,7 +209,7 @@
         <div style="margin-bottom: 14px;">
             <a href="{{ url_for('diary_index') }}"
                style="display:inline-block;background:#8b0000;color:#fff3e0;border:3px solid #5c0000;
-                      padding:9px 18px;font-family:'Comic Sans MS',cursive;font-size:14px;
+                      padding:9px 18px;font-family:inherit;font-size:14px;
                       font-weight:bold;text-decoration:none;letter-spacing:0.5px;">
                 🔒 My Private Diary
             </a>
@@ -223,7 +223,7 @@
         <div>
             <a href="{{ url_for('blog_index', username=user.username) }}"
                style="display:inline-block;background:#006633;color:#e8ffe8;border:3px solid #004422;
-                      padding:9px 18px;font-family:'Comic Sans MS',cursive;font-size:14px;
+                      padding:9px 18px;font-family:inherit;font-size:14px;
                       font-weight:bold;text-decoration:none;letter-spacing:0.5px;">
                 🌐 My Public Blog
             </a>
@@ -236,7 +236,7 @@
         {# Visitor: only the public blog link — diary is not shown at all #}
         <a href="{{ url_for('blog_index', username=user.username) }}"
            style="display:inline-block;background:#006633;color:#e8ffe8;border:3px solid #004422;
-                  padding:9px 18px;font-family:'Comic Sans MS',cursive;font-size:14px;
+                  padding:9px 18px;font-family:inherit;font-size:14px;
                   font-weight:bold;text-decoration:none;">
             📓 {{ user.username }}'s Blog
         </a>
@@ -335,9 +335,9 @@
     {% if current_user.is_authenticated and current_user.username == user.username %}
     <form method="POST" action="{{ url_for('album_create') }}" style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         <input type="text" name="name" placeholder="New album name..." maxlength="100"
-               style="font-family:'Comic Sans MS',cursive;font-size:13px;border:2px solid #ff66b2;padding:5px 8px;flex:1;min-width:160px;">
+               style="font-family:inherit;font-size:13px;border:2px solid #ff66b2;padding:5px 8px;flex:1;min-width:160px;">
         <input type="submit" value="+ Create Album"
-               style="background:#ff1493;color:white;border:none;padding:6px 16px;font-family:'Comic Sans MS',cursive;font-size:13px;cursor:pointer;font-weight:bold;">
+               style="background:#ff1493;color:white;border:none;padding:6px 16px;font-family:inherit;font-size:13px;cursor:pointer;font-weight:bold;">
     </form>
     {% endif %}
 

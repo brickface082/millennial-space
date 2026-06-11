@@ -27,7 +27,7 @@
         position: absolute; top: 3px; right: 3px;
         background: rgba(0,0,0,0.55); color: #fff; border: none;
         font-size: 12px; cursor: pointer; padding: 1px 5px; border-radius: 3px;
-        font-family: 'Comic Sans MS', cursive;
+        font-family: inherit;
     }
     .upload-area { margin-bottom: 18px; padding: 12px; border: 2px dashed #ff66b2; background: rgba(255,204,238,0.2); }
     .divider { border: none; border-top: 3px dashed #ff66b2; margin: 16px 0; }
@@ -53,11 +53,11 @@
         <form method="POST" action="{{ url_for('album_upload', album_id=album.id) }}" enctype="multipart/form-data">
             <div style="margin-bottom:8px;font-size:13px;font-weight:bold;color:#660066;">Add Photos</div>
             <input type="file" name="photos" accept="image/*" multiple
-                   style="font-family:'Comic Sans MS',cursive;font-size:13px;margin-bottom:8px;display:block;">
+                   style="font-family:inherit;font-size:13px;margin-bottom:8px;display:block;">
             <input type="text" name="caption" placeholder="Caption (optional)..." maxlength="200"
-                   style="font-family:'Comic Sans MS',cursive;font-size:13px;border:2px solid #ff66b2;padding:4px 8px;width:100%;box-sizing:border-box;margin-bottom:8px;">
+                   style="font-family:inherit;font-size:13px;border:2px solid #ff66b2;padding:4px 8px;width:100%;box-sizing:border-box;margin-bottom:8px;">
             <input type="submit" value="Upload"
-                   style="background:#ff1493;color:white;border:none;padding:6px 18px;font-family:'Comic Sans MS',cursive;font-size:13px;cursor:pointer;font-weight:bold;">
+                   style="background:#ff1493;color:white;border:none;padding:6px 18px;font-family:inherit;font-size:13px;cursor:pointer;font-weight:bold;">
         </form>
     </div>
     {% endif %}
@@ -90,7 +90,7 @@
     <form method="POST" action="{{ url_for('album_delete', album_id=album.id) }}"
           onsubmit="return confirm('Delete this entire album and all its photos?');">
         <button type="submit"
-                style="background:none;border:2px solid #cc0000;color:#cc0000;padding:6px 14px;font-family:'Comic Sans MS',cursive;font-size:13px;cursor:pointer;font-weight:bold;">
+                style="background:none;border:2px solid #cc0000;color:#cc0000;padding:6px 14px;font-family:inherit;font-size:13px;cursor:pointer;font-weight:bold;">
             🗑️ Delete Album
         </button>
     </form>

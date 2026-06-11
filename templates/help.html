@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Help - Millennial Space{% endblock %}
+
+{% block content %}
+<div style="max-width:700px;margin:0 auto;padding:24px;">
+
+    <div style="background:rgba(255,255,255,0.93);border:4px ridge #cc44aa;box-shadow:4px 4px 0 #888;padding:28px;margin-bottom:20px;">
+        <h1 style="color:var(--accent);margin-top:0;">❓ Millennial Space — Help</h1>
+        <p style="color:#555;margin-top:0;">Everything you can do on the site and how to do it.</p>
+    </div>
+
+    {% macro section(title, items) %}
+    <div style="background:rgba(255,255,255,0.93);border:2px solid #ccc;box-shadow:2px 2px 0 #aaa;padding:20px;margin-bottom:16px;">
+        <h2 style="color:var(--accent);margin-top:0;font-size:1.1em;border-bottom:2px solid #eee;padding-bottom:8px;">{{ title }}</h2>
+        {% for item in items %}
+        <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #f0f0f0;">
+            <strong>{{ item[0] }}</strong><br>
+            <span style="color:#555;font-size:14px;">{{ item[1] }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endmacro %}
+
+    {{ section("👤 Your Profile", [
+        ("Edit your profile", "Go to My Space → click Edit Profile. You can update your bio, profile picture, background color, links, and more."),
+        ("Change accent color", "Edit Profile → Site Accent Color. Pick any color — it changes buttons, borders, and headings just for you."),
+        ("Enable dark mode", "Edit Profile → check the Dark Mode box. Dark background, light text sitewide."),
+        ("Change font", "Edit Profile → Font Style dropdown. Choose from Arial, Georgia, Verdana, and more."),
+        ("Set your mood", "Edit Profile → Mood dropdown. Shows on your profile."),
+        ("Set your status", "Edit Profile → Status (online/away/busy/offline)."),
+        ("Add YouTube or Spotify", "Edit Profile → paste your YouTube or Spotify link. It embeds on your profile page."),
+        ("Away message", "Edit Profile → Away Message. Shown when your status is Away.")
+    ]) }}
+
+    {{ section("👥 Crew (Friends)", [
+        ("Find someone to add", "Click the search icon in the nav bar or go to Members. Type a name — results filter as you type."),
+        ("Send a crew request", "Find the person in Members search → click + Add Crew. Or visit their profile and click Add to My Crew."),
+        ("Accept a crew request", "Click Crew in the nav bar → you'll see pending requests. Click Accept."),
+        ("Remove someone from crew", "Go to their profile → click Remove from Crew."),
+        ("See your full crew list", "Go to My Space — your crew is listed on your profile page.")
+    ]) }}
+
+    {{ section("✉ Messages", [
+        ("Send a message", "Visit someone's profile → click Message. Or click the ✉ envelope icon in the nav bar."),
+        ("Read messages", "Click the ✉ envelope icon in the nav. Unread messages show a red badge."),
+        ("Message privacy", "Edit Profile → Message Filter. Set to Open (anyone), Crew only, or Verified only.")
+    ]) }}
+
+    {{ section("📝 Posts & Shoutouts", [
+        ("Post on your profile", "Go to My Space → type in the New Post box → click Post It!"),
+        ("Leave a shoutout", "Visit someone else's profile → type in the Shoutouts box → click Shout it Out!"),
+        ("Delete a post", "On your own profile, each post has a Delete button next to it.")
+    ]) }}
+
+    {{ section("📓 Journal & Blog", [
+        ("Write a journal entry", "Go to My Space → scroll to Journal section. Private entries are only visible to you."),
+        ("Write a blog post", "Go to My Space → Blog section. Public posts are visible to everyone."),
+        ("Add a photo to a post", "When writing a journal or blog entry, use the photo upload option.")
+    ]) }}
+
+    {{ section("📊 Polls", [
+        ("Enable polls", "Edit Profile → check Polls Enabled."),
+        ("Create a poll", "Go to the Polls page (📊 in the nav) → create a new poll with up to 20 options."),
+        ("Vote on a poll", "Go to the Polls page → click your choice on any open poll.")
+    ]) }}
+
+    {{ section("📷 Photos", [
+        ("Upload a profile picture", "Edit Profile → Profile Picture → choose a file."),
+        ("Add photos to your page", "Go to My Space → Photo Albums section → create an album and upload photos."),
+        ("Top 8 photo strip", "Edit Profile → Top 8 — paste usernames of your top friends to show their pics on your profile.")
+    ]) }}
+
+    {{ section("🔒 Account & Security", [
+        ("Change your password", "Go to My Space → Edit Profile → scroll to Change Password section."),
+        ("Forgot your password", "On the login page → click Forgot your password? → enter your email → check your inbox."),
+        ("Delete your account", "Edit Profile → scroll to the bottom → Delete Account. You must type your username to confirm."),
+        ("Send an invite", "Go to My Space → Edit Profile → Invite Links section → generate a link and share it.")
+    ]) }}
+
+    {{ section("🔔 Sounds & Notifications", [
+        ("Change message alert sound", "Click 🔔 Sounds in the nav → pick a sound or upload your own."),
+        ("Turn off sounds", "Click 🔔 Sounds → select Silent.")
+    ]) }}
+
+    <div style="background:rgba(255,255,255,0.93);border:2px solid #ccc;padding:16px;text-align:center;font-size:13px;color:#888;">
+        Found a bug or have a suggestion? Click the 🐛 icon in the nav bar to send feedback.
+    </div>
+
+</div>
+{% endblock %}
