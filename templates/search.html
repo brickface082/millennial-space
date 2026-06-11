@@ -1,45 +1,60 @@
 {% extends "base.html" %}
 
-{% block title %}Search - Millennial Space{% endblock %}
+{% block title %}Members - Millennial Space{% endblock %}
 
 {% block content %}
 <div style="background:rgba(255,255,255,0.9); max-width:600px; margin:0 auto; padding:24px; border:4px ridge #00ffff; box-shadow:4px 4px 0px #ff00ff;">
-    <h1 style="color:#ff1493; text-shadow:2px 2px #ffff00; margin-top:0;">🔍 Search Results</h1>
+    <h1 style="color:#ff1493; text-shadow:2px 2px #ffff00; margin-top:0;">👥 Members</h1>
 
-    {% if q %}
-        <p style="color:#660066;">Results for: <strong>{{ q }}</strong></p>
-        {% if results %}
-            {% for user in results %}
-            <div style="border:2px solid #ff66b2; padding:12px; margin-bottom:10px; background:rgba(255,255,240,0.75); display:flex; align-items:center; gap:14px;">
-                {% if user.profile_pic and user.profile_pic != 'default.jpg' %}
-                    <img src="{{ url_for('static', filename='uploads/profile_pics/' + user.profile_pic) }}"
-                         style="width:50px;height:50px;border-radius:50%;border:3px solid #ff00ff;object-fit:cover;flex-shrink:0;">
-                {% else %}
-                    <div style="width:50px;height:50px;border-radius:50%;border:3px solid #ff00ff;background:#ffccee;flex-shrink:0;"></div>
-                {% endif %}
-                <a href="{{ url_for('profile', username=user.username) }}"
-                   style="color:#0000cc; font-weight:bold; font-size:16px; text-decoration:none; flex:1;">
-                    {{ user.username }}
-                </a>
-                {% set status = crew_statuses.get(user.id) %}
-                {% if status == 'accepted' %}
-                    <span style="color:#009900; font-weight:bold; font-size:13px;">✓ Crew</span>
-                {% elif status == 'pending' %}
-                    <span style="color:#cc6600; font-weight:bold; font-size:13px;">⏳ Pending</span>
-                {% elif status == 'blocked' %}
-                    <span style="color:#cc0000; font-weight:bold; font-size:13px;">Blocked</span>
-                {% else %}
-                    <form method="POST" action="{{ url_for('crew_add', user_id=user.id) }}" style="margin:0;">
-                        <button type="submit" style="background:#ff1493;color:white;border:none;padding:6px 14px;font-family:inherit;font-size:13px;font-weight:bold;cursor:pointer;">+ Add Crew</button>
-                    </form>
-                {% endif %}
-            </div>
-            {% endfor %}
-        {% else %}
-            <p style="color:#aaa; font-style:italic;">No users found matching "{{ q }}".</p>
-        {% endif %}
-    {% else %}
-        <p style="color:#aaa; font-style:italic;">Enter a username in the search bar above.</p>
-    {% endif %}
+    <input id="member-filter" type="text" placeholder="Type a username to filter..."
+           autofocus
+           style="width:100%;box-sizing:border-box;padding:10px;font-size:16px;border:2px solid #ff66b2;margin-bottom:16px;">
+
+    <div id="member-list">
+        {% for user in results %}
+        <div class="member-row" data-username="{{ user.username | lower }}"
+             style="border:2px solid #ff66b2; padding:12px; margin-bottom:10px; background:rgba(255,255,240,0.75); display:flex; align-items:center; gap:14px;">
+            {% if user.profile_pic and user.profile_pic != 'default.jpg' %}
+                <img src="{{ url_for('static', filename='uploads/profile_pics/' + user.profile_pic) }}"
+                     style="width:50px;height:50px;border-radius:50%;border:3px solid #ff00ff;object-fit:cover;flex-shrink:0;">
+            {% else %}
+                <div style="width:50px;height:50px;border-radius:50%;border:3px solid #ff00ff;background:#ffccee;flex-shrink:0;"></div>
+            {% endif %}
+            <a href="{{ url_for('profile', username=user.username) }}"
+               style="color:#0000cc; font-weight:bold; font-size:16px; text-decoration:none; flex:1;">
+                {{ user.username }}
+            </a>
+            {% set status = crew_statuses.get(user.id) %}
+            {% if status == 'accepted' %}
+                <span style="color:#009900; font-weight:bold; font-size:13px;">✓ Crew</span>
+            {% elif status == 'pending' %}
+                <span style="color:#cc6600; font-weight:bold; font-size:13px;">⏳ Pending</span>
+            {% elif status == 'blocked' %}
+                <span style="color:#cc0000; font-weight:bold; font-size:13px;">Blocked</span>
+            {% else %}
+                <form method="POST" action="{{ url_for('crew_add', user_id=user.id) }}" style="margin:0;">
+                    <button type="submit" style="background:#ff1493;color:white;border:none;padding:6px 14px;font-family:inherit;font-size:13px;font-weight:bold;cursor:pointer;">+ Add Crew</button>
+                </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <p id="no-results" style="display:none; color:#aaa; font-style:italic;">No members found.</p>
 </div>
+
+<script>
+document.getElementById('member-filter').addEventListener('input', function() {
+    var q = this.value.toLowerCase();
+    var rows = document.querySelectorAll('.member-row');
+    var visible = 0;
+    rows.forEach(function(row) {
+        var name = row.getAttribute('data-username');
+        var match = name.startsWith(q);
+        row.style.display = match ? 'flex' : 'none';
+        if (match) visible++;
+    });
+    document.getElementById('no-results').style.display = visible === 0 ? 'block' : 'none';
+});
+</script>
 {% endblock %}

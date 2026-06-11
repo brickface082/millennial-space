@@ -535,21 +535,15 @@ def update_last_seen():
 @app.route("/search")
 @login_required
 def search():
-    q = request.args.get("q", "").strip()[:20]
-    results = []
+    results = User.query.filter(User.id != current_user.id).order_by(User.username).all()
     crew_statuses = {}
-    if q:
-        results = User.query.filter(
-            User.username.ilike(f"%{q}%"),
-            User.id != current_user.id
-        ).limit(20).all()
-        for u in results:
-            rel = CrewRequest.query.filter(
-                ((CrewRequest.from_id == current_user.id) & (CrewRequest.to_id == u.id)) |
-                ((CrewRequest.from_id == u.id) & (CrewRequest.to_id == current_user.id))
-            ).first()
-            crew_statuses[u.id] = rel.status if rel else None
-    return render_template("search.html", q=q, results=results, crew_statuses=crew_statuses)
+    for u in results:
+        rel = CrewRequest.query.filter(
+            ((CrewRequest.from_id == current_user.id) & (CrewRequest.to_id == u.id)) |
+            ((CrewRequest.from_id == u.id) & (CrewRequest.to_id == current_user.id))
+        ).first()
+        crew_statuses[u.id] = rel.status if rel else None
+    return render_template("search.html", results=results, crew_statuses=crew_statuses)
 
 def _check_msg_access(other):
     """Return None if access granted, or a redirect response if blocked."""
