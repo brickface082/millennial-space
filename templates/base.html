@@ -110,10 +110,28 @@
             padding: 8px 12px;
             margin: 8px 16px;
         }
+
+        /* Dark mode */
+        body.dark-mode {
+            background-color: #1a1a2e !important;
+            color: #e0e0e0;
+        }
+        body.dark-mode .page-wrap { background: transparent; }
+        body.dark-mode div[style*="background:rgba(255,255,255"],
+        body.dark-mode div[style*="background: rgba(255,255,255"] {
+            background: rgba(30,30,50,0.95) !important;
+            color: #e0e0e0;
+        }
+        body.dark-mode a { color: #aaddff; }
+        body.dark-mode input, body.dark-mode textarea, body.dark-mode select {
+            background: #2a2a3e;
+            color: #e0e0e0;
+            border-color: var(--accent);
+        }
     </style>
     {% block extra_style %}{% endblock %}
 </head>
-<body>
+<body class="{{ 'dark-mode' if current_user.is_authenticated and current_user.dark_mode else '' }}">
 
 <!-- T026 WIP Banner — dismissible, sessionStorage keeps it gone for the session -->
 <div id="wip-banner" style="background:#1a1000;color:#ffcc66;font-size:12px;text-align:center;padding:5px 44px 5px 12px;position:relative;border-bottom:2px solid #7a4f00;line-height:1.4;">
