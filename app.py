@@ -79,6 +79,7 @@ class User(db.Model, UserMixin):
     profile_views = db.Column(db.Integer, default=0)
     mood = db.Column(db.String(30), default="")
     polls_enabled = db.Column(db.Boolean, default=False)
+    theme_color = db.Column(db.String(7), default="#cc44aa")
 
     def __repr__(self):
         return f"User({self.username})"
@@ -362,6 +363,8 @@ def edit_profile():
         submitted_mood = request.form.get("mood", "")
         current_user.mood = submitted_mood if submitted_mood in VALID_MOODS else ""
         current_user.polls_enabled = request.form.get("polls_enabled") == "on"
+        tc = request.form.get("theme_color", "#cc44aa")
+        current_user.theme_color = tc if (len(tc) == 7 and tc.startswith("#")) else "#cc44aa"
         if request.files.get("profile_pic"):
             pic = request.files["profile_pic"]
             if pic.filename != "":
@@ -1394,6 +1397,18 @@ with app.app_context():
             existing_u4 = {row[1] for row in conn.execute(db.text("PRAGMA table_info('user')"))}
         if "polls_enabled" not in existing_u4:
             conn.execute(db.text('ALTER TABLE "user" ADD COLUMN polls_enabled BOOLEAN DEFAULT FALSE'))
+        conn.commit()
+
+    # theme_color migration — separate connection (M010 SOP) ──────────────────
+    with db.engine.connect() as conn:
+        if is_pg:
+            existing_tc = {row[0] for row in conn.execute(db.text(
+                "SELECT column_name FROM information_schema.columns WHERE table_name='user'"
+            ))}
+        else:
+            existing_tc = {row[1] for row in conn.execute(db.text("PRAGMA table_info('user')"))}
+        if "theme_color" not in existing_tc:
+            conn.execute(db.text("ALTER TABLE \"user\" ADD COLUMN theme_color VARCHAR(7) DEFAULT '#cc44aa'"))
         conn.commit()
 
 if __name__ == "__main__":

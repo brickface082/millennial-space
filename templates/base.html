@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Millennial Space{% endblock %}</title>
     <style>
+        :root {
+            --accent: {{ (current_user.theme_color if current_user.is_authenticated else '#cc44aa') | tojson }};
+        }
         body {
             {% block body_style %}background-color: #ff66b2;{% endblock %}
             font-family: Arial, sans-serif;
@@ -23,7 +26,7 @@
         }
 
         .site-nav .site-title {
-            color: #ff66b2;
+            color: var(--accent);
             font-weight: bold;
             font-size: 16px;
             text-decoration: none;
@@ -40,7 +43,7 @@
             font-family: Arial, sans-serif;
             font-size: 13px;
             padding: 4px 8px;
-            border: 2px solid #ff66b2;
+            border: 2px solid var(--accent);
             background: #fff;
             width: 150px;
         }
@@ -49,7 +52,7 @@
             font-family: Arial, sans-serif;
             font-size: 13px;
             padding: 4px 10px;
-            background: #ff1493;
+            background: var(--accent);
             color: white;
             border: none;
             cursor: pointer;
@@ -57,7 +60,8 @@
         }
 
         .search-form button:hover {
-            background: #cc0077;
+            background: var(--accent);
+            opacity: 0.85;
         }
 
         .nav-right {

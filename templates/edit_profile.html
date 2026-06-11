@@ -40,6 +40,9 @@
         <label>Background Color</label>
         <input type="color" name="bg_color" value="{{ current_user.bg_color or '#ff66b2' }}">
 
+        <label>Site Accent Color <span style="font-size:12px;font-weight:normal;color:#666;">(buttons, borders, headings)</span></label>
+        <input type="color" name="theme_color" value="{{ current_user.theme_color or '#cc44aa' }}">
+
         <label>Profile Picture</label>
         <p class="section-note">Current: {{ current_user.profile_pic }}</p>
         <input type="file" name="profile_pic" accept="image/*">
