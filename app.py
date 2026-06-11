@@ -81,6 +81,7 @@ class User(db.Model, UserMixin):
     polls_enabled = db.Column(db.Boolean, default=False)
     theme_color = db.Column(db.String(7), default="#cc44aa")
     dark_mode = db.Column(db.Boolean, default=False)
+    font_choice = db.Column(db.String(50), default="Arial")
 
     def __repr__(self):
         return f"User({self.username})"
@@ -367,6 +368,9 @@ def edit_profile():
         tc = request.form.get("theme_color", "#cc44aa")
         current_user.theme_color = tc if (len(tc) == 7 and tc.startswith("#")) else "#cc44aa"
         current_user.dark_mode = request.form.get("dark_mode") == "on"
+        VALID_FONTS = ["Arial", "Georgia", "Verdana", "Trebuchet MS", "Courier New", "Times New Roman"]
+        fc = request.form.get("font_choice", "Arial")
+        current_user.font_choice = fc if fc in VALID_FONTS else "Arial"
         if request.files.get("profile_pic"):
             pic = request.files["profile_pic"]
             if pic.filename != "":
@@ -1399,6 +1403,18 @@ with app.app_context():
             existing_u4 = {row[1] for row in conn.execute(db.text("PRAGMA table_info('user')"))}
         if "polls_enabled" not in existing_u4:
             conn.execute(db.text('ALTER TABLE "user" ADD COLUMN polls_enabled BOOLEAN DEFAULT FALSE'))
+        conn.commit()
+
+    # font_choice migration — separate connection (M010 SOP) ─────────────────
+    with db.engine.connect() as conn:
+        if is_pg:
+            existing_fc = {row[0] for row in conn.execute(db.text(
+                "SELECT column_name FROM information_schema.columns WHERE table_name='user'"
+            ))}
+        else:
+            existing_fc = {row[1] for row in conn.execute(db.text("PRAGMA table_info('user')"))}
+        if "font_choice" not in existing_fc:
+            conn.execute(db.text("ALTER TABLE \"user\" ADD COLUMN font_choice VARCHAR(50) DEFAULT 'Arial'"))
         conn.commit()
 
     # dark_mode migration — separate connection (M010 SOP) ───────────────────

@@ -8,6 +8,9 @@
         :root {
             --accent: {{ (current_user.theme_color if current_user.is_authenticated else '#cc44aa') | tojson }};
         }
+        body, input, textarea, select, button {
+            font-family: {{ ((current_user.font_choice or 'Arial') if current_user.is_authenticated else 'Arial') | tojson }}, sans-serif !important;
+        }
         body {
             {% block body_style %}background-color: #ff66b2;{% endblock %}
             font-family: Arial, sans-serif;
@@ -111,22 +114,47 @@
             margin: 8px 16px;
         }
 
-        /* Dark mode */
+        /* Dark mode — body bg dark, content boxes dark, inputs stay white */
         body.dark-mode {
-            background-color: #1a1a2e !important;
-            color: #e0e0e0;
+            background-color: #1a1a1a !important;
+            color: #e8e8e8 !important;
         }
-        body.dark-mode .page-wrap { background: transparent; }
-        body.dark-mode div[style*="background:rgba(255,255,255"],
-        body.dark-mode div[style*="background: rgba(255,255,255"] {
-            background: rgba(30,30,50,0.95) !important;
-            color: #e0e0e0;
+        body.dark-mode div,
+        body.dark-mode section,
+        body.dark-mode td,
+        body.dark-mode li {
+            background: #2a2a2a !important;
+            background-color: #2a2a2a !important;
+            color: #e8e8e8 !important;
+            border-color: #444 !important;
         }
-        body.dark-mode a { color: #aaddff; }
-        body.dark-mode input, body.dark-mode textarea, body.dark-mode select {
-            background: #2a2a3e;
-            color: #e0e0e0;
-            border-color: var(--accent);
+        body.dark-mode .site-nav,
+        body.dark-mode #icq-window {
+            background: rgba(0,0,0,0.92) !important;
+        }
+        body.dark-mode h1, body.dark-mode h2, body.dark-mode h3,
+        body.dark-mode h4, body.dark-mode p, body.dark-mode span,
+        body.dark-mode label, body.dark-mode li, body.dark-mode td {
+            color: #e8e8e8 !important;
+        }
+        body.dark-mode a { color: #88ccff !important; }
+        body.dark-mode a:hover { color: #ffffff !important; }
+        /* Inputs stay WHITE with dark text for readability */
+        body.dark-mode input[type="text"],
+        body.dark-mode input[type="email"],
+        body.dark-mode input[type="password"],
+        body.dark-mode input[type="search"],
+        body.dark-mode input[type="url"],
+        body.dark-mode textarea,
+        body.dark-mode select {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            color: #222222 !important;
+            border-color: var(--accent) !important;
+        }
+        body.dark-mode button,
+        body.dark-mode input[type="submit"] {
+            color: #ffffff !important;
         }
     </style>
     {% block extra_style %}{% endblock %}
