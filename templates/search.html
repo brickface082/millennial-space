@@ -18,9 +18,21 @@
                     <div style="width:50px;height:50px;border-radius:50%;border:3px solid #ff00ff;background:#ffccee;flex-shrink:0;"></div>
                 {% endif %}
                 <a href="{{ url_for('profile', username=user.username) }}"
-                   style="color:#0000cc; font-weight:bold; font-size:16px; text-decoration:none;">
+                   style="color:#0000cc; font-weight:bold; font-size:16px; text-decoration:none; flex:1;">
                     {{ user.username }}
                 </a>
+                {% set status = crew_statuses.get(user.id) %}
+                {% if status == 'accepted' %}
+                    <span style="color:#009900; font-weight:bold; font-size:13px;">✓ Crew</span>
+                {% elif status == 'pending' %}
+                    <span style="color:#cc6600; font-weight:bold; font-size:13px;">⏳ Pending</span>
+                {% elif status == 'blocked' %}
+                    <span style="color:#cc0000; font-weight:bold; font-size:13px;">Blocked</span>
+                {% else %}
+                    <form method="POST" action="{{ url_for('crew_add', user_id=user.id) }}" style="margin:0;">
+                        <button type="submit" style="background:#ff1493;color:white;border:none;padding:6px 14px;font-family:inherit;font-size:13px;font-weight:bold;cursor:pointer;">+ Add Crew</button>
+                    </form>
+                {% endif %}
             </div>
             {% endfor %}
         {% else %}
