@@ -70,6 +70,17 @@
 
         <aside class="ms-sidebar">
 
+            {% set qotd = quote_of_the_day() %}
+            {% if qotd %}
+            <div class="ms-box ms-qotd-box">
+                <div class="ms-box-header">✨ Today's Vibe</div>
+                <div class="ms-box-body ms-qotd-body">
+                    <blockquote>"{{ qotd.text }}"</blockquote>
+                    {% if qotd.author %}<cite>— {{ qotd.author }}</cite>{% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             {% if user.status == 'away' and user.away_message %}
             <div class="ms-box">
                 <div class="ms-box-header">Away Message</div>

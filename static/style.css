@@ -478,6 +478,21 @@
     line-height: 1.4;
 }
 
+.ms-qotd-body blockquote {
+    margin: 0 0 6px;
+    font-style: italic;
+    font-size: 13px;
+    color: #333;
+}
+.ms-qotd-body cite {
+    display: block;
+    font-size: 11px;
+    color: #666;
+    font-style: normal;
+}
+body.dark-mode .ms-qotd-body blockquote { color: #eee; }
+body.dark-mode .ms-qotd-body cite { color: #aaa; }
+
 /* Sidebar identity block */
 .ms-identity {
     text-align: center;

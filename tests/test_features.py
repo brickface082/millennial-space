@@ -75,6 +75,7 @@ def test_profile():
         r = c.get("/profile/brickface082")
         check("Profile page loads unauthenticated", r.status_code == 200)
         check("Profile shows username", b"brickface082" in r.data)
+        check("Profile shows daily quote", b"Today's Vibe" in r.data)
 
         r = c.get("/profile/doesnotexist999")
         check("Unknown profile returns 404", r.status_code == 404)
