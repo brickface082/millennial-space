@@ -478,20 +478,69 @@
     line-height: 1.4;
 }
 
-.ms-qotd-body blockquote {
-    margin: 0 0 6px;
-    font-style: italic;
-    font-size: 13px;
-    color: #333;
+/* Prominent daily quote banner — full width below profile header */
+.ms-daily-quote-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 18px 20px;
+    background: linear-gradient(135deg, #fff8e8 0%, #ffe0f0 45%, #e8f4ff 100%);
+    border: 3px ridge var(--accent, #ff66b2);
+    border-top: none;
+    box-shadow: inset 0 0 24px rgba(255, 255, 255, 0.6);
+    text-align: center;
+    position: relative;
+    z-index: 2;
 }
-.ms-qotd-body cite {
+.ms-daily-quote-inner {
+    flex: 1;
+    min-width: 200px;
+    max-width: 720px;
+}
+.ms-daily-quote-label {
     display: block;
     font-size: 11px;
-    color: #666;
-    font-style: normal;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #884488;
+    margin-bottom: 6px;
 }
-body.dark-mode .ms-qotd-body blockquote { color: #eee; }
-body.dark-mode .ms-qotd-body cite { color: #aaa; }
+.ms-daily-quote-text {
+    margin: 0;
+    font-size: 1.35em;
+    font-style: italic;
+    font-weight: bold;
+    line-height: 1.35;
+    color: #222;
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.8);
+}
+.ms-daily-quote-author {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    font-style: normal;
+    color: #555;
+}
+.ms-daily-quote-hide-link {
+    font-size: 11px;
+    color: #666;
+    text-decoration: underline;
+    white-space: nowrap;
+    align-self: flex-end;
+}
+.ms-daily-quote-hide-link:hover { color: #333; }
+body.dark-mode .ms-daily-quote-banner {
+    background: linear-gradient(135deg, #2a2520 0%, #302030 50%, #1a2830 100%);
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.4);
+}
+body.dark-mode .ms-daily-quote-label { color: #ddaadd; }
+body.dark-mode .ms-daily-quote-text { color: #fff; text-shadow: 1px 1px 2px #000; }
+body.dark-mode .ms-daily-quote-author { color: #ccc; }
+body.dark-mode .ms-daily-quote-hide-link { color: #aaa; }
 
 /* Sidebar identity block */
 .ms-identity {

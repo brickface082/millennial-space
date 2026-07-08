@@ -66,20 +66,24 @@
         {% endif %}
     </header>
 
+    {% if daily_quote %}
+    <div class="ms-daily-quote-banner" role="complementary" aria-label="Daily positive quote">
+        <div class="ms-daily-quote-inner">
+            <span class="ms-daily-quote-label">✨ Today's Vibe</span>
+            <blockquote class="ms-daily-quote-text">"{{ daily_quote.text }}"</blockquote>
+            {% if daily_quote.author %}
+            <cite class="ms-daily-quote-author">— {{ daily_quote.author }}</cite>
+            {% endif %}
+        </div>
+        {% if is_owner %}
+        <a href="{{ url_for('edit_profile') }}#quote-settings" class="ms-daily-quote-hide-link" title="Turn off on your profile">Hide quote on my page</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
     <div class="ms-profile-body">
 
         <aside class="ms-sidebar">
-
-            {% set qotd = quote_of_the_day() %}
-            {% if qotd %}
-            <div class="ms-box ms-qotd-box">
-                <div class="ms-box-header">✨ Today's Vibe</div>
-                <div class="ms-box-body ms-qotd-body">
-                    <blockquote>"{{ qotd.text }}"</blockquote>
-                    {% if qotd.author %}<cite>— {{ qotd.author }}</cite>{% endif %}
-                </div>
-            </div>
-            {% endif %}
 
             {% if user.status == 'away' and user.away_message %}
             <div class="ms-box">

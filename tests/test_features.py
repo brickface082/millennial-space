@@ -75,7 +75,28 @@ def test_profile():
         r = c.get("/profile/brickface082")
         check("Profile page loads unauthenticated", r.status_code == 200)
         check("Profile shows username", b"brickface082" in r.data)
-        check("Profile shows daily quote", b"Today's Vibe" in r.data)
+        check("Profile shows prominent daily quote", b"ms-daily-quote-banner" in r.data and b"Today's Vibe" in r.data)
+
+    with app.test_client() as c:
+        login(c, "testbot@millennial-space.com", "testpass123")
+        r = c.post("/edit", data={
+            "bio": "",
+            "show_daily_quote": "on",
+        }, follow_redirects=True)
+        check("Edit profile saves quote preference", r.status_code == 200)
+        r = c.get("/profile/testbot")
+        check("Quote visible when enabled", b"ms-daily-quote-banner" in r.data)
+
+        with app.app_context():
+            u = User.query.filter_by(username="testbot").first()
+            u.show_daily_quote = False
+            db.session.commit()
+        r = c.get("/profile/testbot")
+        check("Quote hidden when disabled", b"ms-daily-quote-banner" not in r.data)
+        with app.app_context():
+            u = User.query.filter_by(username="testbot").first()
+            u.show_daily_quote = True
+            db.session.commit()
 
         r = c.get("/profile/doesnotexist999")
         check("Unknown profile returns 404", r.status_code == 404)

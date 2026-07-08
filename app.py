@@ -174,6 +174,7 @@ class User(db.Model, UserMixin):
     updates_opt_in = db.Column(db.Boolean, default=False)
     updates_opt_in_at = db.Column(db.DateTime, nullable=True)
     updates_unsub_token = db.Column(db.String(64), unique=True, nullable=True)
+    show_daily_quote = db.Column(db.Boolean, default=True)
 
     def __repr__(self):
         return f"User({self.username})"
@@ -1128,6 +1129,7 @@ def profile(username):
         montage=montage if show_montage else None,
         montage_music_items=montage_music_items,
         montage_music_label=montage_music_label,
+        daily_quote=quote_of_the_day() if user.show_daily_quote else None,
         suppress_profile_music=suppress_profile_music,
         profile_music_link=profile_music_link_value(user),
     )
@@ -1201,6 +1203,7 @@ def edit_profile():
         submitted_mood = request.form.get("mood", "")
         current_user.mood = submitted_mood if submitted_mood in VALID_MOODS else ""
         current_user.polls_enabled = request.form.get("polls_enabled") == "on"
+        current_user.show_daily_quote = request.form.get("show_daily_quote") == "on"
         set_updates_opt_in(current_user, request.form.get("updates_opt_in") == "on")
         current_user.song_autoplay = request.form.get("song_autoplay") == "on"
         tc = request.form.get("theme_color", SITE_DEFAULTS["theme_color"])
@@ -3225,6 +3228,22 @@ with app.app_context():
         ]:
             if col not in existing_loc:
                 conn.execute(db.text(f'ALTER TABLE "user" ADD COLUMN {col} {definition}'))
+        conn.commit()
+
+    # show_daily_quote — separate connection (M010 SOP)
+    with db.engine.connect() as conn:
+        if is_pg:
+            existing_qd = {row[0] for row in conn.execute(db.text(
+                "SELECT column_name FROM information_schema.columns WHERE table_name='user'"
+            ))}
+        else:
+            existing_qd = {row[1] for row in conn.execute(db.text("PRAGMA table_info('user')"))}
+        if "show_daily_quote" not in existing_qd:
+            conn.execute(db.text('ALTER TABLE "user" ADD COLUMN show_daily_quote BOOLEAN DEFAULT TRUE'))
+        conn.commit()
+        conn.execute(db.text(
+            'UPDATE "user" SET show_daily_quote = TRUE WHERE show_daily_quote IS NULL'
+        ))
         conn.commit()
 
     # spot_listing + corner_event tables (create_all handles fresh DBs)
