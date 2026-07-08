@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}{{ user.username }}'s Comments - {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="ms-profile">
+    <div class="ms-profile-banner">💬 {{ user.username }}'s Comments</div>
+    <div class="ms-profile-subpage">
+        <p class="ms-back-link"><a href="{{ url_for('profile', username=user.username) }}#comments">← Back to {{ user.username }}'s profile</a></p>
+
+        <div class="ms-box">
+            <div class="ms-box-header">All Comments ({{ total_comments }})</div>
+            <div class="ms-box-body">
+                {% if current_user.is_authenticated %}
+                <form class="ms-form" method="POST" action="{{ url_for('add_comment', username=user.username) }}" style="margin-bottom:12px;">
+                    <textarea name="body" placeholder="Leave a comment for {{ user.username }}…"></textarea>
+                    <input class="btn-primary" type="submit" value="Add Comment">
+                </form>
+                {% endif %}
+
+                {% for comment in comments %}
+                <div class="post-card">
+                    <p class="post-timestamp">
+                        <strong><a href="{{ url_for('profile', username=comment.author.username) }}">{{ comment.author.username }}</a></strong>
+                        — {{ comment.timestamp.strftime('%B %d, %Y at %I:%M %p') }}
+                    </p>
+                    <div class="post-body">{{ comment.body | bbcode }}</div>
+                    {% if current_user.is_authenticated and (current_user.id == comment.profile_id or current_user.id == comment.author_id) %}
+                    <form method="POST" action="{{ url_for('delete_comment', comment_id=comment.id) }}" style="display:inline;" onsubmit="return confirm('Delete this comment?');">
+                        <button type="submit" class="ms-link-btn danger" style="font-size:12px;">🗑️ Delete</button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p class="no-posts">No comments yet. Be the first!</p>
+                {% endfor %}
+
+                {% if total_pages > 1 %}
+                <div class="ms-pagination">
+                    {% if page > 1 %}
+                    <a href="{{ url_for('profile_comments', username=user.username, page=page - 1) }}">← Newer</a>
+                    {% endif %}
+                    <span>Page {{ page }} of {{ total_pages }}</span>
+                    {% if page < total_pages %}
+                    <a href="{{ url_for('profile_comments', username=user.username, page=page + 1) }}">Older →</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% include '_music_float.html' %}
+{% endblock %}

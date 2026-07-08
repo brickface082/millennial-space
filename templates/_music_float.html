@@ -1,0 +1,64 @@
+{% set music_items = user_music_items(user) %}
+{% if music_items %}
+<div class="ms-music-float" id="ms-music-float" aria-label="Profile music player">
+    <div class="ms-music-float-header">
+        <span>🎵 {{ user.username }}'s Song</span>
+        <button type="button" class="ms-music-float-min" onclick="toggleMusicFloat()" title="Minimize player">−</button>
+    </div>
+    <div class="ms-music-float-body ms-media" id="ms-music-float-body">
+        {% if user.song_autoplay %}
+        <p class="ms-music-autoplay-hint" id="ms-music-unmute-hint" style="display:none;font-size:11px;margin:0 0 6px;color:#660066;">
+            🔊 Click play or unmute to hear the profile song
+        </p>
+        {% endif %}
+        {% for item in music_items %}
+        <div class="ms-profile-song">
+            {% if item.kind == 'audio' %}
+            <audio id="ms-profile-audio" controls preload="none" src="{{ song_url(item.raw) }}"
+                {% if user.song_autoplay %}autoplay muted{% endif %}></audio>
+            {% elif item.embed_url %}
+            <iframe width="100%" height="{{ item.height }}" src="{{ item.embed_url }}" frameborder="0"
+                {% if item.kind == 'youtube' %}allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"{% endif %}
+                {% if item.kind == 'spotify' %}allowtransparency="true" allow="encrypted-media"{% endif %}
+                {% if item.kind == 'soundcloud' %}allow="autoplay"{% endif %}
+                {% if item.kind == 'apple' %}allow="autoplay *; encrypted-media *" sandbox="allow-forms allow-popups allow-same-origin allow-scripts"{% endif %}
+            ></iframe>
+            {% else %}
+            <a href="{{ item.link_url }}" class="ms-music-link" target="_blank" rel="noopener noreferrer">
+                ▶ Listen on {{ music_provider_labels.get(item.kind, 'Music') }}
+            </a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<script>
+function toggleMusicFloat() {
+    var body = document.getElementById('ms-music-float-body');
+    var btn = document.querySelector('.ms-music-float-min');
+    if (!body || !btn) return;
+    var hidden = body.style.display === 'none';
+    body.style.display = hidden ? 'block' : 'none';
+    btn.textContent = hidden ? '−' : '+';
+    btn.title = hidden ? 'Minimize player' : 'Expand player';
+}
+(function () {
+    var audio = document.getElementById('ms-profile-audio');
+    var hint = document.getElementById('ms-music-unmute-hint');
+    if (!audio || !{{ user.song_autoplay | tojson }}) return;
+    function showHint() {
+        if (hint) hint.style.display = 'block';
+    }
+    audio.addEventListener('play', function () {
+        if (audio.muted) showHint();
+    });
+    audio.addEventListener('click', function () {
+        if (audio.muted) {
+            audio.muted = false;
+            if (hint) hint.style.display = 'none';
+        }
+    });
+    if (audio.paused) showHint();
+})();
+</script>
+{% endif %}

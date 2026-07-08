@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}{{ listing.title }} — The Spot{% endblock %}
+
+{% block content %}
+<div class="retro-box spot-view-box">
+    <p class="section-note"><a href="{{ url_for('spot_index', tab='marketplace', city=listing.city, state=listing.state) }}">← Marketplace in {{ listing.city }}, {{ listing.state }}</a></p>
+
+    <h1 class="retro-title">{{ listing.title }}</h1>
+    <div class="spot-view-meta">
+        <span class="spot-cat-tag">{{ cat_label }}</span>
+        {% if listing.price %}<span class="spot-price">{{ listing.price }}</span>{% endif %}
+        · {{ listing.city }}, {{ listing.state }}{% if listing.zip_code %} {{ listing.zip_code }}{% endif %}
+        · Posted {{ listing.created_at.strftime('%B %d, %Y') }}
+        · by <a href="{{ url_for('profile', username=listing.poster.username) }}">{{ listing.poster.username }}</a>
+    </div>
+
+    <div class="spot-view-body">{{ listing.body | bbcode }}</div>
+
+    <p class="section-note">Reply via <a href="{{ url_for('chat', username=listing.poster.username) }}">Mail</a> or leave a comment on their profile.</p>
+
+    {% if is_owner %}
+    <form method="POST" action="{{ url_for('spot_listing_delete', listing_id=listing.id) }}" onsubmit="return confirm('Remove this listing?');">
+        <button type="submit" class="btn-danger">Delete Listing</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

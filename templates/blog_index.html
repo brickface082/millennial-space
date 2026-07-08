@@ -1,34 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}{{ user.username }}'s Blog — Millennial Space{% endblock %}
+{% block title %}{{ user.username }}'s Blog — {{ site_name }}{% endblock %}
 
 {% block extra_style %}
 <style>
-    .blog-box {
-        background: rgba(255, 255, 255, 0.92);
-        max-width: 680px;
-        margin: 0 auto;
-        padding: 24px;
-        border: 4px ridge #00ffff;
-        box-shadow: 4px 4px 0px #ff00ff;
-    }
-    .public-banner {
-        background: #006633;
-        color: #e8ffe8;
-        padding: 10px 16px;
-        font-size: 14px;
-        font-weight: bold;
-        margin: -24px -24px 20px -24px;
-        letter-spacing: 0.5px;
-    }
     .blog-title { color: #ff1493; text-shadow: 2px 2px #ffff00; margin: 0 0 4px 0; font-size: 1.5em; }
     .divider { border: none; border-top: 3px dashed #ff66b2; margin: 18px 0; }
-    .entry-card {
-        padding: 14px;
-        border: 2px solid #ff66b2;
+    .blog-box .entry-card {
+        border-color: #ff66b2;
         background: rgba(255, 255, 240, 0.75);
-        margin-bottom: 14px;
-        box-shadow: 2px 2px 0px #ffccee;
+        box-shadow: 2px 2px 0 #ffccee;
     }
     .entry-card h3 { margin: 0 0 6px 0; color: #cc0066; font-size: 1.05em; }
     .entry-card h3 a { color: #cc0066; text-decoration: none; }
@@ -54,7 +35,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="blog-box">
+<div class="retro-box blog-box">
 
     <div class="public-banner">
         🌐 PUBLIC BLOG — Anyone on the internet can read this

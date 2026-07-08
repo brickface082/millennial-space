@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}{{ montage.title }} — {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="retro-box" style="max-width:720px;margin:0 auto;">
+    <p><a href="{{ url_for('profile', username=user.username) }}">← Back to {{ user.username }}'s Space</a></p>
+    <h1 class="retro-title">🎬 {{ montage.title or 'Photo Montage' }}</h1>
+    {% set montage_full_page = true %}
+    {% include '_montage_player.html' %}
+</div>
+{% endblock %}

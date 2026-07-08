@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Montage - {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="retro-box retro-form" style="max-width:760px;">
+    <h1 class="retro-title">🎬 Photo Montage Editor</h1>
+    <p class="section-note">
+        Build a slideshow for your profile. Add or remove photos anytime.
+        <a href="{{ url_for('profile', username=current_user.username) }}">← Back to your profile</a>
+    </p>
+
+    <form method="POST" class="ms-montage-settings">
+        <input type="hidden" name="action" value="save">
+
+        <label>Montage Title</label>
+        <input type="text" name="title" maxlength="100" value="{{ montage.title or 'My Montage' }}">
+
+        <label style="display:flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer;">
+            <input type="checkbox" name="show_on_profile" value="on"
+                   {% if montage.show_on_profile %}checked{% endif %}
+                   style="width:auto;margin:0;">
+            Show montage on my profile
+        </label>
+
+        <label>Seconds per photo</label>
+        <input type="number" name="interval_sec" min="2" max="12" value="{{ montage.interval_sec or 4 }}" style="width:80px;">
+
+        <hr style="border:none;border-top:2px dashed var(--accent,#2b5797);margin:16px 0;">
+
+        <h2 style="font-size:1em;color:var(--accent,#2b5797);margin:0 0 8px;">Soundtrack</h2>
+        <p class="section-note" style="margin-top:0;">
+            Only one music player plays at a time. Montage music lives inside the montage box —
+            it replaces the floating profile song when the montage has music.
+        </p>
+
+        <label style="display:flex;align-items:flex-start;gap:8px;font-weight:normal;cursor:pointer;margin-bottom:8px;">
+            <input type="radio" name="music_mode" value="profile"
+                   {% if montage.music_mode != 'custom' %}checked{% endif %}
+                   style="width:auto;margin-top:4px;" onchange="toggleMontageMusicMode()">
+            <span>
+                <strong>Use my profile song</strong><br>
+                <span style="font-size:12px;color:#666;">
+                    {% if profile_song_preview %}
+                    Current: {{ profile_song_preview[:60] }}{% if profile_song_preview|length > 60 %}…{% endif %}
+                    {% else %}
+                    <em>No profile song set</em> — <a href="{{ url_for('edit_profile') }}">add one in Edit Profile</a>
+                    {% endif %}
+                </span>
+            </span>
+        </label>
+
+        <label style="display:flex;align-items:flex-start;gap:8px;font-weight:normal;cursor:pointer;">
+            <input type="radio" name="music_mode" value="custom"
+                   {% if montage.music_mode == 'custom' %}checked{% endif %}
+                   style="width:auto;margin-top:4px;" onchange="toggleMontageMusicMode()">
+            <span><strong>Custom montage songs</strong> (up to 2) — supersedes profile song</span>
+        </label>
+
+        <div id="montage-custom-songs" style="{% if montage.music_mode != 'custom' %}display:none;{% endif %}margin:10px 0 0 24px;">
+            <label>Montage Song 1</label>
+            <input type="text" name="song_1" value="{{ montage.song_1 or '' }}"
+                   placeholder="YouTube, Spotify, SoundCloud link…">
+            <label>Montage Song 2 <span style="font-weight:normal;">(optional)</span></label>
+            <input type="text" name="song_2" value="{{ montage.song_2 or '' }}"
+                   placeholder="Second track (optional)">
+        </div>
+
+        <p style="margin-top:12px;">
+            <input class="btn-primary" type="submit" value="Save Montage Settings">
+        </p>
+    </form>
+
+    <hr style="border:none;border-top:2px dashed var(--accent,#2b5797);margin:20px 0;">
+
+    <h2 style="font-size:1em;color:var(--accent,#2b5797);">Photos ({{ montage.slides|length }} / {{ max_slides }})</h2>
+
+    {% if montage.slides %}
+    <div class="ms-montage-edit-grid">
+        {% for slide in montage.slides %}
+        <div class="ms-montage-edit-card">
+            <img src="{{ slide.url }}" alt="">
+            {% if slide.caption %}<div class="ms-montage-edit-cap">{{ slide.caption }}</div>{% endif %}
+            <div class="ms-montage-edit-actions">
+                <form method="POST" action="{{ url_for('montage_slide_move', slide_id=slide.id) }}" style="display:inline;">
+                    <input type="hidden" name="direction" value="up">
+                    <button type="submit" class="ms-link-btn" title="Move up">↑</button>
+                </form>
+                <form method="POST" action="{{ url_for('montage_slide_move', slide_id=slide.id) }}" style="display:inline;">
+                    <input type="hidden" name="direction" value="down">
+                    <button type="submit" class="ms-link-btn" title="Move down">↓</button>
+                </form>
+                <form method="POST" action="{{ url_for('montage_slide_delete', slide_id=slide.id) }}"
+                      style="display:inline;" onsubmit="return confirm('Remove this photo from the montage?');">
+                    <button type="submit" class="ms-link-btn danger">Remove</button>
+                </form>
+            </div>
+            {% if slide.source == 'album' %}<span class="ms-montage-source-tag">from album</span>{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="no-posts">No photos yet — upload or pick from your albums below.</p>
+    {% endif %}
+
+    {% if montage.slides|length < max_slides %}
+    <div class="ms-montage-add-section">
+        <h3 style="font-size:0.95em;margin:16px 0 8px;">Upload new photos</h3>
+        <form method="POST" action="{{ url_for('montage_slide_upload') }}" enctype="multipart/form-data">
+            <input type="file" name="photos" accept="image/*" multiple>
+            <input type="text" name="caption" placeholder="Caption for new uploads (optional)" maxlength="200"
+                   style="margin-top:6px;width:100%;box-sizing:border-box;">
+            <input class="btn-primary" type="submit" value="+ Add to Montage" style="margin-top:8px;">
+        </form>
+
+        {% if album_photos %}
+        <h3 style="font-size:0.95em;margin:20px 0 8px;">Or add from your albums</h3>
+        <div class="ms-montage-album-pick">
+            {% for photo in album_photos %}
+            <form method="POST" action="{{ url_for('montage_slide_add_album') }}" class="ms-montage-pick-form">
+                <input type="hidden" name="photo_id" value="{{ photo.id }}">
+                <button type="submit" class="ms-montage-pick-btn" title="Add to montage">
+                    <img src="{{ photo.url }}" alt="">
+                    <span class="ms-montage-pick-plus">+</span>
+                </button>
+            </form>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleMontageMusicMode() {
+    var custom = document.querySelector('input[name="music_mode"][value="custom"]').checked;
+    document.getElementById('montage-custom-songs').style.display = custom ? 'block' : 'none';
+}
+</script>
+{% endblock %}

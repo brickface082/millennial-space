@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}The Spot — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="retro-box spot-box">
+    <h1 class="retro-title">📍 The Spot</h1>
+    <p class="spot-tagline">Local events, a fair marketplace, and your town's Public Corner — no ads on anyone's profile.</p>
+
+    {% if qotd %}
+    <div class="spot-qotd">
+        <span class="spot-qotd-label">Quote of the Day</span>
+        <blockquote>"{{ qotd.text }}"</blockquote>
+        {% if qotd.author %}<cite>— {{ qotd.author }}</cite>{% endif %}
+    </div>
+    {% endif %}
+
+    <div class="spot-tabs">
+        <a href="{{ url_for('spot_index', tab='events', city=city, state=state, zip_code=zip_code) }}"
+           class="spot-tab {% if tab == 'events' %}active{% endif %}">📅 Events Near Me</a>
+        <a href="{{ url_for('spot_index', tab='marketplace', city=city, state=state, zip_code=zip_code, category=category) }}"
+           class="spot-tab {% if tab == 'marketplace' %}active{% endif %}">🛒 Marketplace</a>
+    </div>
+
+    <form class="spot-location-form" method="GET" action="{{ url_for('spot_index') }}">
+        <input type="hidden" name="tab" value="{{ tab }}">
+        {% if tab == 'marketplace' and category %}
+        <input type="hidden" name="category" value="{{ category }}">
+        {% endif %}
+        <label>Location</label>
+        <div class="spot-location-row">
+            <input type="text" name="city" value="{{ city }}" placeholder="City" maxlength="80">
+            <select name="state">
+                <option value="">State</option>
+                {% for code, name in us_states %}
+                <option value="{{ code }}" {% if state == code %}selected{% endif %}>{{ code }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="zip_code" value="{{ zip_code }}" placeholder="ZIP" maxlength="10">
+            <button type="submit" class="btn-primary">Search Area</button>
+        </div>
+        <p class="section-note">
+            {% if location_label %}
+            Showing results for <strong>{{ location_label }}</strong>.
+            {% elif current_user.is_authenticated %}
+            Set your city in <a href="{{ url_for('edit_profile') }}">Edit Profile</a> or search any location above.
+            {% else %}
+            Search any city &amp; state — log in to post.
+            {% endif %}
+        </p>
+    </form>
+
+    <div class="spot-actions">
+        {% if current_user.is_authenticated %}
+        {% if tab == 'events' %}
+        <a href="{{ url_for('spot_event_new') }}" class="btn-primary">+ Post Event</a>
+        {% else %}
+        <a href="{{ url_for('spot_listing_new') }}" class="btn-primary">+ Post Listing</a>
+        {% endif %}
+        {% else %}
+        <a href="{{ url_for('login') }}" class="btn-primary">Log in to post</a>
+        {% endif %}
+    </div>
+
+    {% if tab == 'events' %}
+    <h2 class="spot-section-title">Public Corner — What's Going On</h2>
+    {% if events %}
+    <ul class="spot-list">
+        {% for ev in events %}
+        <li class="spot-item {% if ev.is_promoted %}spot-promoted{% endif %}">
+            <a href="{{ url_for('spot_event_view', event_id=ev.id) }}" class="spot-item-title">{{ ev.title }}</a>
+            <div class="spot-item-meta">
+                {% if ev.is_promoted %}<span class="spot-badge">★ Promoted</span>{% endif %}
+                {{ ev.event_at.strftime('%a %b %d, %Y at %I:%M %p') }}
+                · {{ ev.city }}, {{ ev.state }}
+                {% if ev.venue %}· {{ ev.venue }}{% endif %}
+                · by {{ ev.poster.username }}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="spot-empty">No upcoming events{% if location_label %} in {{ location_label }}{% endif %} yet. Be the first to post!</p>
+    {% endif %}
+
+    {% else %}
+    <div class="spot-cat-filter">
+        <span>Category:</span>
+        <a href="{{ url_for('spot_index', tab='marketplace', city=city, state=state) }}"
+           class="{% if not category %}active{% endif %}">All</a>
+        {% for key, info in marketplace_categories.items() %}
+        <a href="{{ url_for('spot_index', tab='marketplace', city=city, state=state, category=key) }}"
+           class="{% if category == key %}active{% endif %}">{{ info.label }}</a>
+        {% endfor %}
+    </div>
+    <p class="section-note spot-fee-note">
+        Craigslist-style fees: casual for-sale &amp; wanted = free · gigs {{ format_fee(300) }} · services/housing {{ format_fee(500) }} · jobs {{ format_fee(1000) }}.
+        {% if not payments_live %}<em>Beta: fees waived — checkbox confirms you understand future billing.</em>{% endif %}
+    </p>
+    <h2 class="spot-section-title">Marketplace</h2>
+    {% if listings %}
+    <ul class="spot-list">
+        {% for item in listings %}
+        <li class="spot-item">
+            <a href="{{ url_for('spot_listing_view', listing_id=item.id) }}" class="spot-item-title">{{ item.title }}</a>
+            <div class="spot-item-meta">
+                <span class="spot-cat-tag">{{ marketplace_categories.get(item.category, {}).get('label', item.category) }}</span>
+                {% if item.price %}· {{ item.price }}{% endif %}
+                · {{ item.city }}, {{ item.state }}
+                · {{ item.created_at.strftime('%b %d') }}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="spot-empty">No listings{% if location_label %} in {{ location_label }}{% endif %} yet.</p>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Post Listing — The Spot{% endblock %}
+
+{% block content %}
+<div class="retro-box retro-form spot-form-box">
+    <h1 class="retro-title">🛒 Post a Listing</h1>
+    <p class="section-note"><a href="{{ url_for('spot_index', tab='marketplace') }}">← Back to Marketplace</a></p>
+
+    <form method="POST">
+        <label>Category</label>
+        <select name="category" id="listing-category">
+            {% for key, info in marketplace_categories.items() %}
+            <option value="{{ key }}" data-fee="{{ info.fee_cents }}"
+                    {% if category == key %}selected{% endif %}>{{ info.label }} — {{ format_fee(info.fee_cents) }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Title</label>
+        <input type="text" name="title" maxlength="120" required placeholder="What are you selling or offering?">
+
+        <label>Description</label>
+        <textarea name="body" required maxlength="5000" placeholder="Details, condition, pickup info…"></textarea>
+
+        <label>Price <span style="font-weight:normal;color:#666;">(optional)</span></label>
+        <input type="text" name="price" maxlength="40" placeholder="e.g. $50 or Free or Negotiable">
+
+        <label>Location <span style="font-weight:normal;color:#666;">(required)</span></label>
+        <div class="spot-location-row">
+            <input type="text" name="city" value="{{ default_city }}" placeholder="City" maxlength="80" required>
+            <select name="state" required>
+                <option value="">State</option>
+                {% for code, name in us_states %}
+                <option value="{{ code }}" {% if default_state == code %}selected{% endif %}>{{ code }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="zip_code" value="{{ default_zip }}" placeholder="ZIP" maxlength="10">
+        </div>
+
+        <div id="fee-box" class="spot-fee-box" {% if not fee_cents %}style="display:none"{% endif %}>
+            <p>Posting fee for this category: <strong id="fee-display">{{ format_fee(fee_cents) }}</strong></p>
+            {% if not payments_live %}
+            <p class="section-note">Beta: fee waived today. Check below to acknowledge future billing.</p>
+            {% endif %}
+            <label style="display:flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer;">
+                <input type="checkbox" name="accept_fee" value="on" style="width:auto;margin:0;">
+                I understand this category may require a posting fee{% if not payments_live %} when billing goes live{% endif %}.
+            </label>
+        </div>
+
+        <button type="submit" class="btn-primary">Publish Listing</button>
+    </form>
+</div>
+<script>
+(function() {
+    var sel = document.getElementById('listing-category');
+    var box = document.getElementById('fee-box');
+    var disp = document.getElementById('fee-display');
+    function updateFee() {
+        var opt = sel.options[sel.selectedIndex];
+        var cents = parseInt(opt.getAttribute('data-fee') || '0', 10);
+        if (cents > 0) {
+            box.style.display = 'block';
+            disp.textContent = '$' + (cents / 100).toFixed(2);
+        } else {
+            box.style.display = 'none';
+        }
+    }
+    sel.addEventListener('change', updateFee);
+})();
+</script>
+{% endblock %}

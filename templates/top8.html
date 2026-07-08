@@ -1,44 +1,30 @@
 {% extends "base.html" %}
 
-{% block title %}My Top 8 - Millennial Space{% endblock %}
-
-{% block extra_style %}
-<style>
-    .box { background: rgba(255,255,255,0.9); max-width: 600px; margin: 0 auto; padding: 24px; border: 4px ridge #00ffff; box-shadow: 4px 4px 0px #ff00ff; }
-    h1 { color: #ff1493; text-shadow: 2px 2px #ffff00; margin-top: 0; }
-    .crew-list { list-style: none; padding: 0; margin: 0 0 20px 0; }
-    .crew-list li { padding: 10px; border: 2px solid #ff66b2; margin-bottom: 8px; background: rgba(255,255,240,0.75); display: flex; align-items: center; gap: 10px; }
-    .crew-list label { cursor: pointer; font-size: 15px; }
-    .btn { background: #ff1493; color: white; border: none; padding: 10px 24px; font-family: inherit; font-size: 15px; cursor: pointer; font-weight: bold; }
-    .btn:hover { background: #cc0077; }
-    a { color: #0000cc; font-weight: bold; }
-    .note { font-size: 13px; color: #888; margin-bottom: 16px; }
-</style>
-{% endblock %}
+{% block title %}My Top 8 - {{ site_name }}{% endblock %}
 
 {% block content %}
-<div class="box">
-    <h1>⭐ My Top 8</h1>
-    <p class="note">Pick up to 8 crew members to feature on your profile. Check the ones you want.</p>
+<div class="retro-box">
+    <h1 class="retro-title">⭐ My Top 8</h1>
+    <p style="font-size:13px;color:#888;margin-bottom:16px;">Pick up to 8 crew members to feature on your profile sidebar.</p>
 
     {% if crew_members %}
     <form method="POST">
-        <ul class="crew-list">
+        <ul style="list-style:none;padding:0;margin:0 0 20px;">
             {% for member in crew_members %}
-            <li>
+            <li class="member-row" style="margin-bottom:8px;">
                 <input type="checkbox" name="top8" value="{{ member.id }}" id="m{{ member.id }}"
                     {% if member.id|string in current_top8 %}checked{% endif %}>
-                <label for="m{{ member.id }}">{{ member.username }}</label>
+                <label for="m{{ member.id }}" style="cursor:pointer;font-size:15px;flex:1;">{{ member.username }}</label>
             </li>
             {% endfor %}
         </ul>
-        <input class="btn" type="submit" value="Save My Top 8">
+        <input class="btn-primary" type="submit" value="Save My Top 8">
     </form>
     {% else %}
         <p style="color:#888;font-style:italic;">You don't have any crew members yet. Add some crew first!</p>
     {% endif %}
 
     <br>
-    <a href="{{ url_for('profile', username=current_user.username) }}">← Back to My Space</a>
+    <a href="{{ url_for('profile', username=current_user.username) }}" style="color:#003399;font-weight:bold;">← Back to My Space</a>
 </div>
 {% endblock %}

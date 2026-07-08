@@ -1,41 +1,28 @@
 {% extends "base.html" %}
 
-{% block title %}Crew Requests - Millennial Space{% endblock %}
-
-{% block extra_style %}
-<style>
-    .box { background: rgba(255,255,255,0.9); max-width: 600px; margin: 0 auto; padding: 24px; border: 4px ridge #00ffff; box-shadow: 4px 4px 0px #ff00ff; }
-    h1 { color: #ff1493; text-shadow: 2px 2px #ffff00; margin-top: 0; }
-    .request-card { border: 2px solid #ff66b2; padding: 12px; margin-bottom: 12px; background: rgba(255,255,240,0.75); }
-    .request-card a { color: #0000cc; font-weight: bold; }
-    .btn-accept { background: #ff1493; color: white; border: none; padding: 8px 18px; font-family: inherit; font-size: 14px; cursor: pointer; font-weight: bold; margin-right: 8px; }
-    .btn-decline { background: none; border: none; color: #cc0000; font-family: inherit; font-size: 14px; cursor: pointer; font-weight: bold; }
-    .no-requests { color: #aaa; font-style: italic; text-align: center; padding: 20px 0; }
-    a.back { color: #0000cc; font-weight: bold; }
-</style>
-{% endblock %}
+{% block title %}Crew Requests - {{ site_name }}{% endblock %}
 
 {% block content %}
-<div class="box">
-    <h1>👥 Crew Requests</h1>
+<div class="retro-box">
+    <h1 class="retro-title">👥 Crew Requests</h1>
 
     {% if pending %}
         {% for req in pending %}
-        <div class="request-card">
+        <div class="post-card">
             <p style="margin:0 0 8px 0;"><strong><a href="{{ url_for('profile', username=req.from_user.username) }}">{{ req.from_user.username }}</a></strong> wants to join your crew!</p>
             <form method="POST" action="{{ url_for('crew_accept', request_id=req.id) }}" style="display:inline;">
-                <button class="btn-accept" type="submit">👊 Accept</button>
+                <button class="btn-primary" type="submit" style="margin-top:0;margin-right:8px;">👊 Accept</button>
             </form>
             <form method="POST" action="{{ url_for('crew_remove', user_id=req.from_user.id) }}" style="display:inline;">
-                <button class="btn-decline" type="submit">Decline</button>
+                <button type="submit" class="ms-link-btn danger">Decline</button>
             </form>
         </div>
         {% endfor %}
     {% else %}
-        <p class="no-requests">No pending crew requests.</p>
+        <p class="no-posts">No pending crew requests.</p>
     {% endif %}
 
     <br>
-    <a class="back" href="{{ url_for('profile', username=current_user.username) }}">← Back to My Space</a>
+    <a href="{{ url_for('profile', username=current_user.username) }}" style="color:#003399;font-weight:bold;">← Back to My Space</a>
 </div>
 {% endblock %}

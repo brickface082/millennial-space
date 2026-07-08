@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.title }} — The Spot{% endblock %}
+
+{% block content %}
+<div class="retro-box spot-view-box">
+    <p class="section-note"><a href="{{ url_for('spot_index', tab='events', city=event.city, state=event.state) }}">← Events in {{ event.city }}, {{ event.state }}</a></p>
+
+    <h1 class="retro-title">{{ event.title }}{% if event.is_promoted %} <span class="spot-badge">★ Promoted</span>{% endif %}</h1>
+    <div class="spot-view-meta">
+        📅 {{ event.event_at.strftime('%A, %B %d, %Y at %I:%M %p') }}
+        · {{ event.city }}, {{ event.state }}{% if event.zip_code %} {{ event.zip_code }}{% endif %}
+        {% if event.venue %}· {{ event.venue }}{% endif %}
+        · by <a href="{{ url_for('profile', username=event.poster.username) }}">{{ event.poster.username }}</a>
+    </div>
+
+    <div class="spot-view-body">{{ event.body | bbcode }}</div>
+
+    <p class="section-note">Questions? <a href="{{ url_for('chat', username=event.poster.username) }}">Mail {{ event.poster.username }}</a></p>
+
+    {% if is_owner %}
+    <form method="POST" action="{{ url_for('spot_event_delete', event_id=event.id) }}" onsubmit="return confirm('Remove this event?');">
+        <button type="submit" class="btn-danger">Delete Event</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

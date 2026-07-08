@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ user.username }} - Millennial Space{% endblock %}
+{% block title %}{{ user.username }} - {{ site_name }}{% endblock %}
 
 {% block body_style %}
     background-color: {{ user.bg_color }};
@@ -9,360 +9,484 @@
     background-image: url("{{ bg_src }}");
     background-size: cover;
     background-attachment: fixed;
+    background-position: center top;
     {% endif %}
-{% endblock %}
-
-{% block extra_style %}
-<style>
-    .profile-box {
-        background: rgba(255, 255, 255, 0.88);
-        max-width: 680px;
-        margin: 0 auto;
-        padding: 20px;
-        border: 4px ridge #00ffff;
-        box-shadow: 4px 4px 0px #ff00ff;
-    }
-    .profile-header {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        flex-wrap: wrap;
-        margin-bottom: 12px;
-    }
-    .profile-pic {
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        border: 4px solid #ff00ff;
-        object-fit: cover;
-        flex-shrink: 0;
-    }
-    .profile-pic-placeholder {
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        border: 4px solid #ff00ff;
-        background: #ffccee;
-        flex-shrink: 0;
-    }
-    h1 { color: #ff1493; text-shadow: 2px 2px #ffff00; margin: 0; font-size: 1.6em; }
-    .bio { margin: 10px 0 14px 0; font-size: 15px; border-left: 4px solid #ff66b2; padding-left: 10px; }
-    .media-section { margin: 14px 0; }
-    .media-section iframe { max-width: 100%; display: block; margin-bottom: 10px; }
-    .nav-links { margin: 12px 0 6px 0; font-size: 15px; }
-    .nav-links a { color: #0000cc; font-weight: bold; text-decoration: none; margin-right: 8px; }
-    .nav-links a:hover { text-decoration: underline; }
-    .divider { border: none; border-top: 3px dashed #ff66b2; margin: 16px 0; }
-    .divider-cyan { border: none; border-top: 3px dashed #00cccc; margin: 16px 0; }
-    .post-form textarea { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 14px; border: 2px solid #ff66b2; padding: 8px; height: 70px; resize: vertical; }
-    .post-form input[type="submit"] { margin-top: 8px; background: #ff1493; color: white; border: none; padding: 8px 20px; font-family: inherit; font-size: 14px; cursor: pointer; font-weight: bold; }
-    .post-form input[type="submit"]:hover { background: #cc0077; }
-    .post-card { margin-bottom: 14px; padding: 12px; border: 2px solid #ff66b2; background: rgba(255, 255, 240, 0.75); box-shadow: 2px 2px 0px #ffccee; }
-    .post-timestamp { font-size: 12px; color: #999; margin: 0 0 6px 0; }
-    .post-body { margin: 0 0 8px 0; font-size: 15px; line-height: 1.5; }
-    .post-image { max-width: 100%; border: 2px solid #ff00ff; display: block; margin-top: 8px; }
-    .no-posts { color: #aaa; font-style: italic; text-align: center; padding: 20px 0; }
-    .section-label { color: #ff1493; font-size: 1.1em; margin: 0 0 10px 0; text-shadow: 1px 1px #ffff99; }
-    @media (max-width: 500px) {
-        h1 { font-size: 1.3em; }
-        .profile-pic, .profile-pic-placeholder { width: 72px; height: 72px; }
-        .profile-box { padding: 14px; }
-    }
-</style>
 {% endblock %}
 
 {% block content %}
-<div class="profile-box">
+{% if user.custom_css %}
+<style id="profile-custom-css">
+.ms-profile-theme {
+{{ user.custom_css }}
+}
+</style>
+{% endif %}
+<div class="ms-profile ms-profile-theme">
 
-    <div class="profile-header">
+    <header class="ms-profile-sticky-header">
         {% set pic_src = image_url(user.profile_pic, 'profile_pics') %}
         {% if pic_src %}
-            <img class="profile-pic" src="{{ pic_src }}" alt="Profile pic">
+            <img class="ms-header-pic" src="{{ pic_src }}" alt="{{ user.username }}">
         {% else %}
-            <div class="profile-pic-placeholder"></div>
+            <div class="ms-header-pic ms-header-pic-ph"></div>
         {% endif %}
-        <h1>{{ user.username }}'s Space</h1>
-    </div>
-
-    <div style="font-size:12px;color:#888;margin-bottom:10px;">
-        👁 {{ user.profile_views or 0 }} views
-    </div>
-
-    {% if current_user.is_authenticated and current_user.username == user.username %}
-    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
-        <form method="POST" action="{{ url_for('set_status') }}" style="display:flex;align-items:center;gap:6px;">
-            <label style="font-size:13px;font-weight:bold;color:#660066;">Status:</label>
-            <select name="status" onchange="this.form.submit()"
-                    style="font-family:inherit;font-size:13px;border:2px solid #ff66b2;padding:3px 6px;cursor:pointer;color:#660066;">
-                <option value="online" {% if user.status == 'online' %}selected{% endif %}>🟢 Online</option>
-                <option value="away"   {% if user.status == 'away'   %}selected{% endif %}>🌙 Away</option>
-                <option value="dnd"    {% if user.status == 'dnd'    %}selected{% endif %}>🔴 DND</option>
-            </select>
-        </form>
-        <form method="POST" action="{{ url_for('set_mood') }}" style="display:flex;align-items:center;gap:6px;">
-            <label style="font-size:13px;font-weight:bold;color:#660066;">Mood:</label>
-            <select name="mood" onchange="this.form.submit()"
-                    style="font-family:inherit;font-size:13px;border:2px solid #ff66b2;padding:3px 6px;cursor:pointer;color:#660066;">
-                {% for key, label in mood_options %}
-                <option value="{{ key }}" {% if (user.mood or '') == key %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
-        </form>
-    </div>
-    {% elif user.mood and mood_labels.get(user.mood) %}
-    <div style="font-size:13px;color:#660066;margin-bottom:10px;">
-        <strong>Current Mood:</strong> {{ mood_labels[user.mood] }}
-    </div>
-    {% endif %}
-
-    {% if user.status == 'away' and user.away_message %}
-    <div style="background:#fff3cd;border:2px solid #ffcc00;padding:8px 12px;margin-bottom:10px;font-size:14px;">
-        🌙 <strong>Away:</strong> {{ user.away_message }}
-    </div>
-    {% endif %}
-    <p class="bio">{{ user.bio or "No bio yet." }}</p>
-
-    {% if top8_users %}
-    <div style="margin: 12px 0;">
-        <p class="section-label">⭐ Top 8</p>
-        <div style="display:flex;flex-wrap:wrap;gap:12px;">
-            {% for member in top8_users %}
-            <a href="{{ url_for('profile', username=member.username) }}" style="text-align:center;text-decoration:none;">
-                {% set m_pic = image_url(member.profile_pic, 'profile_pics') %}
-                {% if m_pic %}
-                    <img src="{{ m_pic }}" style="width:60px;height:60px;border-radius:50%;border:3px solid #ff00ff;object-fit:cover;display:block;">
-                {% else %}
-                    <div style="width:60px;height:60px;border-radius:50%;border:3px solid #ff00ff;background:#ffccee;"></div>
-                {% endif %}
-                <span style="font-size:12px;color:#0000cc;font-weight:bold;">{{ member.username }}</span>
-            </a>
-            {% endfor %}
+        <div class="ms-header-info">
+            <span class="ms-header-name">{{ user.username }}</span>
+            {% if user.status == 'online' %}
+                <span class="ms-header-status">🟢 Online</span>
+            {% elif user.status == 'away' %}
+                <span class="ms-header-status">🌙 Away</span>
+            {% elif user.status == 'dnd' %}
+                <span class="ms-header-status">🔴 DND</span>
+            {% endif %}
+            {% if user.mood and mood_labels.get(user.mood) %}
+                <span class="ms-header-mood">Mood: {{ mood_labels[user.mood] }}</span>
+            {% endif %}
+            <span class="ms-header-views ms-view-badge">👁 {{ user.profile_views or 0 }} views</span>
         </div>
-    </div>
-    {% endif %}
-
-    {% if user.youtube_url or user.spotify_url %}
-    <div class="media-section">
-        {% if user.youtube_url %}
-            {% if 'v=' in user.youtube_url %}
-                {% set yt_id = user.youtube_url.split('v=')[1].split('&')[0] %}
-            {% else %}
-                {% set yt_id = user.youtube_url.split('/')[-1].split('?')[0] %}
-            {% endif %}
-            <iframe width="100%" height="225" src="https://www.youtube.com/embed/{{ yt_id }}" frameborder="0" allowfullscreen></iframe>
-        {% endif %}
-        {% if user.spotify_url %}
-            {% if '/embed/' in user.spotify_url %}
-                {% set spotify_embed = user.spotify_url %}
-            {% else %}
-                {% set spotify_embed = user.spotify_url.replace('https://open.spotify.com/', 'https://open.spotify.com/embed/') %}
-            {% endif %}
-            <iframe src="{{ spotify_embed }}" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
-        {% endif %}
-    </div>
-    {% endif %}
-
-    <hr class="divider">
-
-    <div class="nav-links">
-        {% if current_user.is_authenticated and current_user.username == user.username %}
-            <a href="/edit">✏️ Edit My Space</a> |
-            <a href="{{ url_for('top8') }}">⭐ Edit Top 8</a> |
-            <a href="{{ url_for('crew_requests') }}">👥 Crew Requests</a>
-        {% elif current_user.is_authenticated %}
-            {% if crew_status == "accepted" %}
-                <form method="POST" action="{{ url_for('crew_remove', user_id=user.id) }}" style="display:inline;">
-                    <button type="submit" style="background:none;border:none;color:#0000cc;font-family:inherit;font-size:15px;font-weight:bold;cursor:pointer;padding:0;">✅ In Your Crew — Remove</button>
-                </form> |
-                <form method="POST" action="{{ url_for('crew_block', user_id=user.id) }}" style="display:inline;" onsubmit="return confirm('Block this person?');">
-                    <button type="submit" style="background:none;border:none;color:#cc0000;font-family:inherit;font-size:15px;font-weight:bold;cursor:pointer;padding:0;">🚫 Block</button>
-                </form>
-            {% elif crew_status == "pending" %}
-                <span style="color:#888;font-size:15px;">⏳ Crew Request Pending</span> |
-                <form method="POST" action="{{ url_for('crew_remove', user_id=user.id) }}" style="display:inline;">
-                    <button type="submit" style="background:none;border:none;color:#cc0000;font-family:inherit;font-size:15px;font-weight:bold;cursor:pointer;padding:0;">Cancel</button>
-                </form>
-            {% elif crew_status == "blocked" %}
-                <span style="color:#cc0000;font-size:15px;">🚫 Blocked</span>
-            {% else %}
-                <form method="POST" action="{{ url_for('crew_add', user_id=user.id) }}" style="display:inline;">
-                    <button type="submit" style="background:#ff1493;color:white;border:none;padding:8px 18px;font-family:inherit;font-size:15px;font-weight:bold;cursor:pointer;">👊 Add to My Crew</button>
-                </form> |
-                <form method="POST" action="{{ url_for('crew_block', user_id=user.id) }}" style="display:inline;" onsubmit="return confirm('Block this person?');">
-                    <button type="submit" style="background:none;border:none;color:#cc0000;font-family:inherit;font-size:15px;font-weight:bold;cursor:pointer;padding:0;">🚫 Block</button>
-                </form>
-            {% endif %}
-            {% if crew_status != 'blocked' %}
-             | <a href="#" onclick="icqOpenChat('{{ user.username }}'); return false;" style="color:#0000cc;font-weight:bold;text-decoration:none;">💬 Message</a>
-            {% endif %}
-        {% endif %}
-    </div>
-
-    {# T023 — Writing section. Owner sees BOTH links, clearly separated.
-       Visitor sees ONLY the public blog. Diary link is never rendered for non-owners. #}
-    <hr class="divider">
-    <div style="margin-bottom: 4px;">
-        <span class="section-label" style="font-size:13px;margin:0 0 10px 0;display:block;">✍️ Writing</span>
-
-        {% if current_user.is_authenticated and current_user.username == user.username %}
-        {# ── PRIVATE DIARY ── deep red, lock icon, "only you" label #}
-        <div style="margin-bottom: 14px;">
-            <a href="{{ url_for('diary_index') }}"
-               style="display:inline-block;background:#8b0000;color:#fff3e0;border:3px solid #5c0000;
-                      padding:9px 18px;font-family:inherit;font-size:14px;
-                      font-weight:bold;text-decoration:none;letter-spacing:0.5px;">
-                🔒 My Private Diary
-            </a>
-            <div style="font-size:11px;color:#8b0000;margin-top:4px;font-style:italic;">
-                Only you can ever see this
-            </div>
-        </div>
-
-        {# ── PUBLIC BLOG ── dark green, globe icon, "anyone can read" label
-           Note: separate div, distinct color — impossible to accidentally click the wrong one #}
-        <div>
-            <a href="{{ url_for('blog_index', username=user.username) }}"
-               style="display:inline-block;background:#006633;color:#e8ffe8;border:3px solid #004422;
-                      padding:9px 18px;font-family:inherit;font-size:14px;
-                      font-weight:bold;text-decoration:none;letter-spacing:0.5px;">
-                🌐 My Public Blog
-            </a>
-            <div style="font-size:11px;color:#006633;margin-top:4px;font-style:italic;">
-                Anyone on the internet can read this
-            </div>
-        </div>
-
-        {% else %}
-        {# Visitor: only the public blog link — diary is not shown at all #}
-        <a href="{{ url_for('blog_index', username=user.username) }}"
-           style="display:inline-block;background:#006633;color:#e8ffe8;border:3px solid #004422;
-                  padding:9px 18px;font-family:inherit;font-size:14px;
-                  font-weight:bold;text-decoration:none;">
-            📓 {{ user.username }}'s Blog
-        </a>
-        {% endif %}
-    </div>
-
-    {% if recent_photos or user.albums %}
-    <hr class="divider">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <span class="section-label" style="margin:0;">📷 Photos</span>
-        <a href="#albums" style="font-size:12px;color:#0000cc;font-weight:bold;text-decoration:none;">
-            View Albums ({{ album_count }}) →
-        </a>
-    </div>
-    {% if recent_photos %}
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px;">
-        {% for photo in recent_photos %}
-        <a href="{{ photo.url }}" target="_blank" title="{{ photo.caption or '' }}">
-            <img src="{{ photo.url }}"
-                 style="width:80px;height:80px;object-fit:cover;border:3px solid #ff66b2;display:block;">
-        </a>
-        {% endfor %}
-    </div>
-    {% else %}
-    <p style="color:#aaa;font-style:italic;font-size:13px;margin:0 0 4px 0;">No photos yet.</p>
-    {% endif %}
-    {% endif %}
-
-    {% if current_user.is_authenticated and current_user.username == user.username %}
-    <hr class="divider">
-    <p class="section-label">📝 New Post</p>
-    <form class="post-form" method="POST" action="/post/create" enctype="multipart/form-data">
-        <textarea name="body" placeholder="What's on your mind?"></textarea>
-        <br>
-        <input type="file" name="post_image" accept="image/*" style="margin-top:6px; font-family:inherit;">
-        <br>
-        <input type="submit" value="Post It!">
-    </form>
-    {% endif %}
-
-    <hr class="divider-cyan">
-    <p class="section-label">📣 Posts</p>
-
-    {% for post in posts %}
-    <div class="post-card">
-        <p class="post-timestamp">{{ post.timestamp.strftime('%B %d, %Y at %I:%M %p') }}</p>
-        <p class="post-body">{{ post.body }}</p>
-        {% set post_img = image_url(post.image, 'post_images') %}
-        {% if post_img %}
-            <img class="post-image" src="{{ post_img }}" alt="Post image">
-        {% endif %}
-        {% if current_user.is_authenticated and current_user.id == post.user_id %}
-        <div style="margin-top:8px;">
-            <a href="{{ url_for('edit_post', post_id=post.id) }}" style="font-size:13px; margin-right:12px;">✏️ Edit</a>
-            <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" style="display:inline;" onsubmit="return confirm('Delete this post?');">
-                <button type="submit" style="background:none; border:none; color:#0000cc; font-family:inherit; font-size:13px; font-weight:bold; cursor:pointer; padding:0;">🗑️ Delete</button>
+        {% if is_owner %}
+        <div class="ms-header-controls">
+            <form method="POST" action="{{ url_for('set_status') }}" class="ms-inline-form">
+                <select name="status" onchange="this.form.submit()" title="Status">
+                    <option value="online" {% if user.status == 'online' %}selected{% endif %}>🟢 Online</option>
+                    <option value="away" {% if user.status == 'away' %}selected{% endif %}>🌙 Away</option>
+                    <option value="dnd" {% if user.status == 'dnd' %}selected{% endif %}>🔴 DND</option>
+                </select>
+            </form>
+            <form method="POST" action="{{ url_for('set_mood') }}" class="ms-inline-form">
+                <label class="ms-mood-label" for="profile-mood-select">Mood:</label>
+                <select name="mood" id="profile-mood-select" onchange="this.form.submit()" title="Mood">
+                    <option value="">Mood…</option>
+                    {% for key, label in mood_options %}
+                    <option value="{{ key }}" {% if (user.mood or '') == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
             </form>
         </div>
         {% endif %}
-    </div>
-    {% else %}
-    <p class="no-posts">No posts yet.</p>
-    {% endfor %}
+    </header>
 
-    <hr class="divider-cyan">
-    <p class="section-label">📣 Shoutouts</p>
+    <div class="ms-profile-body">
 
-    {% if current_user.is_authenticated %}
-    <form method="POST" action="{{ url_for('add_comment', username=user.username) }}" style="margin-bottom:16px;">
-        <textarea name="body" placeholder="Leave a shoutout..." style="width:100%; box-sizing:border-box; font-family:inherit; font-size:14px; border:2px solid #ff66b2; padding:8px; height:60px; resize:vertical;"></textarea>
-        <br>
-        <input type="submit" value="Shout it Out!" style="margin-top:6px; background:#ff1493; color:white; border:none; padding:8px 20px; font-family:inherit; font-size:14px; cursor:pointer; font-weight:bold;">
-    </form>
-    {% endif %}
+        <aside class="ms-sidebar">
 
-    {% for comment in comments %}
-
-    <div class="post-card">
-        <p class="post-timestamp">
-            <strong>{{ comment.author.username }}</strong> — {{ comment.timestamp.strftime('%B %d, %Y at %I:%M %p') }}
-        </p>
-        <p class="post-body">{{ comment.body }}</p>
-        {% if current_user.is_authenticated and (current_user.id == comment.profile_id or current_user.id == comment.author_id) %}
-        <form method="POST" action="{{ url_for('delete_comment', comment_id=comment.id) }}" style="display:inline;" onsubmit="return confirm('Delete this comment?');">
-            <button type="submit" style="background:none; border:none; color:#0000cc; font-family:inherit; font-size:13px; font-weight:bold; cursor:pointer; padding:0;">🗑️ Delete</button>
-        </form>
-        {% endif %}
-    </div>
-    {% else %}
-    <p class="no-posts">No comments yet.</p>
-    {% endfor %}
-
-    <hr class="divider-cyan">
-    <p class="section-label" id="albums">📷 Photo Albums</p>
-
-    {% if current_user.is_authenticated and current_user.username == user.username %}
-    <form method="POST" action="{{ url_for('album_create') }}" style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <input type="text" name="name" placeholder="New album name..." maxlength="100"
-               style="font-family:inherit;font-size:13px;border:2px solid #ff66b2;padding:5px 8px;flex:1;min-width:160px;">
-        <input type="submit" value="+ Create Album"
-               style="background:#ff1493;color:white;border:none;padding:6px 16px;font-family:inherit;font-size:13px;cursor:pointer;font-weight:bold;">
-    </form>
-    {% endif %}
-
-    {% if user.albums %}
-    <div style="display:flex;flex-wrap:wrap;gap:14px;">
-        {% for album in user.albums %}
-        <a href="{{ url_for('album_view', album_id=album.id) }}" style="text-decoration:none;text-align:center;">
-            <div style="width:110px;border:3px solid #ff66b2;background:#fff0f8;overflow:hidden;">
-                {% if album.photos %}
-                    <img src="{{ album.photos[0].url }}" style="width:110px;height:80px;object-fit:cover;display:block;">
-                {% else %}
-                    <div style="width:110px;height:80px;background:#ffccee;display:flex;align-items:center;justify-content:center;font-size:28px;">📷</div>
-                {% endif %}
-                <div style="padding:4px 6px;font-size:11px;font-weight:bold;color:#660066;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                    {{ album.name }}
-                </div>
-                <div style="padding:0 6px 4px;font-size:10px;color:#999;">{{ album.photos|length }} photo(s)</div>
+            {% if user.status == 'away' and user.away_message %}
+            <div class="ms-box">
+                <div class="ms-box-header">Away Message</div>
+                <div class="ms-box-body">{{ user.away_message }}</div>
             </div>
-        </a>
-        {% endfor %}
-    </div>
-    {% else %}
-    <p style="color:#aaa;font-style:italic;text-align:center;padding:12px 0;">No albums yet.</p>
-    {% endif %}
+            {% endif %}
 
+            {% if member_since or last_seen_label %}
+            <div class="ms-box ms-sidebar-stats">
+                <div class="ms-box-body" style="font-size:12px;">
+                    {% if member_since %}<div>Member since: {{ member_since }}</div>{% endif %}
+                    {% if last_seen_label %}<div>Last login: {{ last_seen_label }}</div>{% endif %}
+                    {% if mutual_crew_count > 0 %}
+                    <div class="ms-mutual-crew" style="margin-top:6px;">👥 {{ mutual_crew_count }} crew member{{ 's' if mutual_crew_count != 1 else '' }} in common</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="ms-box">
+                <div class="ms-box-header">Contacting {{ user.username }}</div>
+                <div class="ms-box-body">
+                    <table class="ms-contact-table">
+                        {% if is_owner %}
+                        <tr><td>✏️</td><td><a href="/edit">Edit Profile</a></td></tr>
+                        <tr><td>⭐</td><td><a href="{{ url_for('top8') }}">Edit Top 8</a></td></tr>
+                        <tr><td>👥</td><td><a href="{{ url_for('crew_requests') }}">Crew Requests</a></td></tr>
+                        {% elif current_user.is_authenticated %}
+                            {% if crew_status == "accepted" %}
+                            <tr><td>💬</td><td><a href="#" onclick="icqOpenChat('{{ user.username }}'); return false;">Send Message</a></td></tr>
+                            <tr><td>✅</td><td>
+                                <form method="POST" action="{{ url_for('crew_remove', user_id=user.id) }}" style="display:inline;margin:0;">
+                                    <button type="submit" class="ms-link-btn">Remove from Crew</button>
+                                </form>
+                            </td></tr>
+                            {% elif crew_status == "pending" %}
+                            <tr><td>⏳</td><td><span>Request Pending</span></td></tr>
+                            {% elif crew_status == "blocked" %}
+                            <tr><td>🚫</td><td><span>Blocked</span></td></tr>
+                            {% else %}
+                            <tr><td>👊</td><td>
+                                <form method="POST" action="{{ url_for('crew_add', user_id=user.id) }}" style="display:inline;margin:0;">
+                                    <button type="submit" class="ms-link-btn">Add to Crew</button>
+                                </form>
+                            </td></tr>
+                            <tr><td>💬</td><td><a href="#" onclick="icqOpenChat('{{ user.username }}'); return false;">Send Message</a></td></tr>
+                            {% endif %}
+                        {% else %}
+                        <tr><td>🔑</td><td><a href="{{ url_for('login') }}">Log in to connect</a></td></tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+
+            {% if top8_users %}
+            <div class="ms-box">
+                <div class="ms-box-header">{{ user.username }}'s Top 8</div>
+                <div class="ms-box-body">
+                    <div class="ms-top8-grid">
+                        {% for member in top8_users %}
+                        <a class="ms-top8-item" href="{{ url_for('profile', username=member.username) }}">
+                            {% set m_pic = image_url(member.profile_pic, 'profile_pics') %}
+                            {% if m_pic %}<img src="{{ m_pic }}" alt="{{ member.username }}">
+                            {% else %}<div class="ms-top8-ph"></div>{% endif %}
+                            <span class="ms-top8-name">{{ member.username }}</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if crew_list %}
+            <details class="ms-crew-details ms-box" {% if crew_list|length <= crew_preview_count %}open{% endif %}>
+                <summary class="ms-crew-summary">{{ user.username }}'s Crew ({{ crew_list|length }})</summary>
+                <div class="ms-box-body" style="padding:4px 8px;">
+                    <ul class="ms-crew-list">
+                        {% for member in crew_list %}
+                        <li>
+                            {% set m_pic = image_url(member.profile_pic, 'profile_pics') %}
+                            {% if m_pic %}<img src="{{ m_pic }}" alt="">
+                            {% else %}<div class="ms-crew-ph"></div>{% endif %}
+                            <a href="{{ url_for('profile', username=member.username) }}">{{ member.username }}</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </details>
+            {% endif %}
+
+            {% if is_owner and recent_viewers %}
+            <div class="ms-box">
+                <div class="ms-box-header">👀 Recent Viewers</div>
+                <div class="ms-box-body" style="padding:6px 8px;font-size:12px;">
+                    <ul class="ms-viewer-list">
+                        {% for pv in recent_viewers %}
+                        <li>
+                            {% if pv.viewer %}
+                            <a href="{{ url_for('profile', username=pv.viewer.username) }}">{{ pv.viewer.username }}</a>
+                            {% else %}
+                            <span style="color:#888;">Someone</span>
+                            {% endif %}
+                            <span class="ms-viewer-time">{{ pv.viewed_at.strftime('%b %d') }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if is_owner %}
+            <div class="ms-box">
+                <div class="ms-box-header">Share My Profile</div>
+                <div class="ms-box-body">
+                    <input type="text" readonly id="share-profile-url" value="{{ profile_url }}"
+                           class="ms-share-input" onclick="this.select()">
+                    <button type="button" class="btn-primary ms-share-btn" onclick="copyShareUrl()">Copy Link</button>
+                    <span id="share-copied" class="ms-share-copied">✓ Copied!</span>
+                </div>
+            </div>
+            <div class="ms-box">
+                <div class="ms-box-header">My Links</div>
+                <div class="ms-box-body">
+                    <ul class="ms-quick-links">
+                        <li><a href="{{ url_for('diary_index') }}" class="diary-link">🔒 Private Diary</a></li>
+                        <li><a href="{{ url_for('blog_index', username=user.username) }}" class="blog-link">🌐 Public Blog</a></li>
+                        <li><a href="#photos">📷 Photos</a></li>
+                        {% if user.polls_enabled %}
+                        <li><a href="{{ url_for('polls') }}">📊 Polls</a></li>
+                        {% endif %}
+                        <li><a href="{{ url_for('sounds') }}">🔔 Alert Sounds</a></li>
+                    </ul>
+                </div>
+            </div>
+            {% elif not is_owner %}
+            <div class="ms-box">
+                <div class="ms-box-header">Links</div>
+                <div class="ms-box-body">
+                    <ul class="ms-quick-links">
+                        <li><a href="{{ url_for('blog_index', username=user.username) }}" class="blog-link">📓 {{ user.username }}'s Blog</a></li>
+                        {% if recent_photos or user.albums %}
+                        <li><a href="#photos">📷 Photos</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+        </aside>
+
+        <main class="ms-main">
+
+            <nav class="ms-profile-nav" aria-label="Profile sections">
+                <a href="#about">📋 About</a>
+                <a href="#comments">💬 Comments{% if total_comments %} ({{ total_comments }}){% endif %}</a>
+                <a href="#updates">📌 Updates</a>
+                <a href="#photos">📷 Photos</a>
+            </nav>
+
+            <div class="ms-box" id="about">
+                <div class="ms-box-header">About {{ user.username }}</div>
+                <div class="ms-box-body">
+                    <p class="ms-bio">{{ user.bio or "No bio yet." }}</p>
+                    {% if user.ideal_meet %}
+                    <div class="ms-ideal-meet">
+                        <p class="ms-ideal-meet-label">Who I'd Like to Meet:</p>
+                        <p class="ms-bio">{{ user.ideal_meet }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="ms-box" id="comments">
+                <div class="ms-box-header">💬 Comments{% if total_comments %} ({{ total_comments }}){% endif %}</div>
+                <div class="ms-box-body">
+                    {% if current_user.is_authenticated %}
+                    <form class="ms-form" method="POST" action="{{ url_for('add_comment', username=user.username) }}" style="margin-bottom:12px;">
+                        <textarea name="body" placeholder="Leave a comment… [b]bold[/b] [i]italic[/i] [glitter]sparkle[/glitter]"></textarea>
+                        <input class="btn-primary" type="submit" value="Add Comment">
+                    </form>
+                    {% endif %}
+
+                    {% for comment in comments %}
+                    <div class="post-card">
+                        <p class="post-timestamp">
+                            <strong><a href="{{ url_for('profile', username=comment.author.username) }}">{{ comment.author.username }}</a></strong>
+                            — {{ comment.timestamp.strftime('%B %d, %Y at %I:%M %p') }}
+                        </p>
+                        <div class="post-body">{{ comment.body | bbcode }}</div>
+                        {% if current_user.is_authenticated and (current_user.id == comment.profile_id or current_user.id == comment.author_id) %}
+                        <form method="POST" action="{{ url_for('delete_comment', comment_id=comment.id) }}" style="display:inline;" onsubmit="return confirm('Delete this comment?');">
+                            <button type="submit" class="ms-link-btn danger" style="font-size:12px;">🗑️ Delete</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <p class="no-posts">No comments yet. Be the first!</p>
+                    {% endfor %}
+
+                    {% if comments_has_more %}
+                    <p class="ms-view-all">
+                        <a href="{{ url_for('profile_comments', username=user.username) }}">View all {{ total_comments }} comments →</a>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="ms-box" id="updates">
+                <div class="ms-box-header">📌 Updates</div>
+                <div class="ms-box-body">
+                    <div class="ms-photo-tabs ms-updates-tabs">
+                        <button type="button" class="ms-tab ms-tab-active" data-tab="bulletins" onclick="switchUpdatesTab('bulletins')">Bulletins</button>
+                        <button type="button" class="ms-tab" data-tab="blurbs" onclick="switchUpdatesTab('blurbs')">Blurbs</button>
+                    </div>
+
+                    <div id="updates-panel-bulletins" class="ms-tab-panel">
+                        {% if is_owner %}
+                        <form class="ms-form ms-bulletin-form" method="POST" action="{{ url_for('bulletin_create') }}">
+                            <input type="text" name="body" maxlength="500" placeholder="Bulletin… [b]bold[/b] [glitter]text[/glitter] (500 chars)">
+                            <input class="btn-primary" type="submit" value="Post Bulletin">
+                        </form>
+                        {% endif %}
+
+                        {% for bulletin in bulletins %}
+                        <div class="ms-bulletin-item">
+                            <div class="ms-bulletin-body">{{ bulletin.body | bbcode }}</div>
+                            <p class="ms-bulletin-time">{{ bulletin.timestamp.strftime('%b %d, %Y at %I:%M %p') }}</p>
+                            {% if is_owner %}
+                            <form method="POST" action="{{ url_for('bulletin_delete', bulletin_id=bulletin.id) }}" style="display:inline;" onsubmit="return confirm('Delete this bulletin?');">
+                                <button type="submit" class="ms-link-btn danger" style="font-size:11px;">Delete</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <p class="no-posts">No bulletins yet.</p>
+                        {% endfor %}
+                        {% if bulletins_has_more %}
+                        <p class="ms-view-all">
+                            <a href="{{ url_for('profile_updates', username=user.username, tab='bulletins') }}">View all {{ total_bulletins }} bulletins →</a>
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <div id="updates-panel-blurbs" class="ms-tab-panel" style="display:none;">
+                        {% if is_owner %}
+                        <form class="ms-form" method="POST" action="/post/create" enctype="multipart/form-data" style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed #ccc;">
+                            <textarea name="body" placeholder="What's on your mind? [b]bold[/b] [i]italic[/i]"></textarea>
+                            <input type="file" name="post_image" accept="image/*" style="margin-top:6px;font-size:12px;">
+                            <br>
+                            <input class="btn-primary" type="submit" value="Post Blurb">
+                        </form>
+                        {% endif %}
+
+                        {% for post in posts %}
+                        <div class="post-card">
+                            <p class="post-timestamp">{{ post.timestamp.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                            <div class="post-body">{{ post.body | bbcode }}</div>
+                            {% set post_img = image_url(post.image, 'post_images') %}
+                            {% if post_img %}<img class="post-image" src="{{ post_img }}" alt="Post image">{% endif %}
+                            {% if is_owner and current_user.id == post.user_id %}
+                            <div style="margin-top:6px;">
+                                <a href="{{ url_for('edit_post', post_id=post.id) }}" style="font-size:12px;">✏️ Edit</a>
+                                <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" style="display:inline;" onsubmit="return confirm('Delete this post?');">
+                                    <button type="submit" class="ms-link-btn danger" style="font-size:12px;">🗑️ Delete</button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <p class="no-posts">No blurbs yet.</p>
+                        {% endfor %}
+                        {% if posts_has_more %}
+                        <p class="ms-view-all">
+                            <a href="{{ url_for('profile_updates', username=user.username, tab='blurbs') }}">View all {{ total_posts }} blurbs →</a>
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% if montage %}
+            {% include '_montage_player.html' %}
+            {% endif %}
+
+            <div class="ms-box" id="photos">
+                <div class="ms-box-header">📷 Photos{% if album_count %} ({{ album_count }} album{{ 's' if album_count != 1 else '' }}){% endif %}</div>
+                <div class="ms-box-body">
+                    <div class="ms-photo-tabs">
+                        <button type="button" class="ms-tab ms-tab-active" data-tab="recent" onclick="switchPhotoTab('recent')">Recent</button>
+                        <button type="button" class="ms-tab" data-tab="albums" onclick="switchPhotoTab('albums')">Albums</button>
+                        {% if is_owner %}
+                        <a class="ms-tab ms-tab-link" href="{{ url_for('montage_edit') }}">Montage</a>
+                        {% elif montage %}
+                        <a class="ms-tab ms-tab-link" href="{{ url_for('profile_montage', username=user.username) }}">Montage</a>
+                        {% endif %}
+                    </div>
+
+                    <div id="photo-panel-recent" class="ms-tab-panel">
+                        {% if recent_photos %}
+                        <div class="ms-photo-strip">
+                            {% for photo in recent_photos %}
+                            <a href="#" class="ms-photo-thumb" title="{{ photo.caption or '' }}"
+                               onclick="openPhotoLightbox({{ photo.url | tojson }}, {{ (photo.caption or '') | tojson }}); return false;">
+                                <img src="{{ photo.url }}" alt="">
+                            </a>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="no-posts">No photos yet.</p>
+                        {% endif %}
+                    </div>
+
+                    <div id="photo-panel-albums" class="ms-tab-panel" style="display:none;">
+                        {% if is_owner %}
+                        <form class="ms-form" method="POST" action="{{ url_for('album_create') }}" style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                            <input type="text" name="name" placeholder="New album name…" maxlength="100" style="flex:1;min-width:140px;">
+                            <input class="btn-primary" type="submit" value="+ Create Album" style="margin-top:0;">
+                        </form>
+                        {% endif %}
+                        {% if user.albums %}
+                        <div class="ms-album-grid">
+                            {% for album in user.albums %}
+                            <a class="ms-album-card" href="{{ url_for('album_view', album_id=album.id) }}">
+                                <div class="ms-album-thumb">
+                                    {% if album.photos %}<img src="{{ album.photos[0].url }}" alt="{{ album.name }}">
+                                    {% else %}📷{% endif %}
+                                </div>
+                                <div class="ms-album-name">{{ album.name }}</div>
+                                <div class="ms-album-count">{{ album.photos|length }} photo(s)</div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="no-posts">No albums yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
 </div>
 
+{% if not suppress_profile_music %}
+{% include '_music_float.html' %}
+{% elif montage and is_owner %}
+<div class="ms-music-suppressed-note" title="Profile song plays inside your montage">
+    🎵 Profile song is tied to your montage — <a href="{{ url_for('montage_edit') }}">edit montage</a>
+</div>
+{% endif %}
+
+<div id="ms-photo-lightbox" class="ms-photo-lightbox" style="display:none;" onclick="closePhotoLightbox(event)">
+    <div class="ms-photo-lightbox-inner" onclick="event.stopPropagation()">
+        <button type="button" class="ms-photo-lightbox-close" onclick="closePhotoLightbox()" title="Close">✕</button>
+        <img id="ms-photo-lightbox-img" src="" alt="">
+        <p id="ms-photo-lightbox-caption" class="ms-photo-lightbox-caption"></p>
+    </div>
+</div>
+
+<script>
+function openPhotoLightbox(url, caption) {
+    var box = document.getElementById('ms-photo-lightbox');
+    var img = document.getElementById('ms-photo-lightbox-img');
+    var cap = document.getElementById('ms-photo-lightbox-caption');
+    if (!box || !img) return;
+    img.src = url;
+    if (cap) {
+        cap.textContent = caption || '';
+        cap.style.display = caption ? 'block' : 'none';
+    }
+    box.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+function closePhotoLightbox(e) {
+    if (e && e.target && e.target.classList && e.target.classList.contains('ms-photo-lightbox-inner')) return;
+    var box = document.getElementById('ms-photo-lightbox');
+    if (box) box.style.display = 'none';
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closePhotoLightbox();
+});
+function switchUpdatesTab(tab) {
+    var bulletins = document.getElementById('updates-panel-bulletins');
+    var blurbs = document.getElementById('updates-panel-blurbs');
+    if (!bulletins || !blurbs) return;
+    bulletins.style.display = tab === 'bulletins' ? 'block' : 'none';
+    blurbs.style.display = tab === 'blurbs' ? 'block' : 'none';
+    document.querySelectorAll('.ms-updates-tabs .ms-tab').forEach(function(btn) {
+        btn.classList.toggle('ms-tab-active', btn.getAttribute('data-tab') === tab);
+    });
+}
+function switchPhotoTab(tab) {
+    var recent = document.getElementById('photo-panel-recent');
+    var albums = document.getElementById('photo-panel-albums');
+    if (!recent || !albums) return;
+    recent.style.display = tab === 'recent' ? 'block' : 'none';
+    albums.style.display = tab === 'albums' ? 'block' : 'none';
+    document.querySelectorAll('.ms-photo-tabs .ms-tab').forEach(function(btn) {
+        btn.classList.toggle('ms-tab-active', btn.getAttribute('data-tab') === tab);
+    });
+}
+if (window.location.hash === '#photos' || window.location.hash === '#albums') switchPhotoTab('albums');
+if (new URLSearchParams(window.location.search).get('open') === 'blurbs') switchUpdatesTab('blurbs');
+function copyShareUrl() {
+    var box = document.getElementById('share-profile-url');
+    var msg = document.getElementById('share-copied');
+    if (!box) return;
+    navigator.clipboard.writeText(box.value).then(function() {
+        msg.style.display = 'inline';
+        setTimeout(function() { msg.style.display = 'none'; }, 2000);
+    }).catch(function() {
+        box.select();
+        document.execCommand('copy');
+        msg.style.display = 'inline';
+        setTimeout(function() { msg.style.display = 'none'; }, 2000);
+    });
+}
+</script>
 {% endblock %}

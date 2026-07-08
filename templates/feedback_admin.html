@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Feedback Admin — Millennial Space{% endblock %}
+{% block title %}Feedback Admin — {{ site_name }}{% endblock %}
 
 {% block extra_style %}
 <style>
@@ -38,7 +38,9 @@
 {% block content %}
 <div class="admin-wrap">
     <h1>📋 Feedback Admin</h1>
-    <p style="font-size:13px;color:#666;">Only visible to brickface082.</p>
+    <p style="font-size:13px;color:#666;">Only visible to brickface082.
+        <a href="{{ url_for('admin_updates') }}" style="margin-left:12px;">📧 Send update email →</a>
+    </p>
 
     <!-- Bug Reports -->
     <h2 style="color:#cc0000;border-color:#cc0000;">🐛 Bug Reports ({{ bugs|length }})</h2>

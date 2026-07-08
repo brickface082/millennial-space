@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Post Event — The Spot{% endblock %}
+
+{% block content %}
+<div class="retro-box retro-form spot-form-box">
+    <h1 class="retro-title">📅 Post to Public Corner</h1>
+    <p class="section-note">Free community events. Optional promotion puts your event at the top locally ({{ format_fee(promote_fee) }}).</p>
+    <p class="section-note"><a href="{{ url_for('spot_index', tab='events') }}">← Back to Events Near Me</a></p>
+
+    <form method="POST">
+        <label>Event Title</label>
+        <input type="text" name="title" maxlength="120" required placeholder="Open mic night, yard sale, meetup…">
+
+        <label>What's going on?</label>
+        <textarea name="body" required maxlength="5000" placeholder="Tell people what to expect…"></textarea>
+
+        <label>Venue <span style="font-weight:normal;color:#666;">(optional)</span></label>
+        <input type="text" name="venue" maxlength="120" placeholder="Park name, coffee shop, address…">
+
+        <label>When</label>
+        <div class="spot-location-row">
+            <input type="date" name="event_date" required>
+            <input type="time" name="event_time" value="19:00">
+        </div>
+
+        <label>Location <span style="font-weight:normal;color:#666;">(required — powers Events Near Me)</span></label>
+        <div class="spot-location-row">
+            <input type="text" name="city" value="{{ default_city }}" placeholder="City" maxlength="80" required>
+            <select name="state" required>
+                <option value="">State</option>
+                {% for code, name in us_states %}
+                <option value="{{ code }}" {% if default_state == code %}selected{% endif %}>{{ code }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="zip_code" value="{{ default_zip }}" placeholder="ZIP" maxlength="10">
+        </div>
+
+        <div class="spot-fee-box">
+            <label style="display:flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer;">
+                <input type="checkbox" name="is_promoted" value="on" id="promote-check" style="width:auto;margin:0;">
+                Promote this event locally ({{ format_fee(promote_fee) }}) — appears at top of Events Near Me
+            </label>
+            <div id="promote-fee-ack" style="display:none;margin-top:8px;">
+                {% if not payments_live %}
+                <p class="section-note">Beta: promotion fee waived. Acknowledge future billing:</p>
+                {% endif %}
+                <label style="display:flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer;">
+                    <input type="checkbox" name="accept_fee" value="on" style="width:auto;margin:0;">
+                    I understand promoted events may require a {{ format_fee(promote_fee) }} fee{% if not payments_live %} when billing goes live{% endif %}.
+                </label>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-primary">Publish Event</button>
+    </form>
+</div>
+<script>
+(function() {
+    var chk = document.getElementById('promote-check');
+    var ack = document.getElementById('promote-fee-ack');
+    chk.addEventListener('change', function() {
+        ack.style.display = chk.checked ? 'block' : 'none';
+    });
+})();
+</script>
+{% endblock %}

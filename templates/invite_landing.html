@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}You're Invited — Millennial Space{% endblock %}
+{% block title %}You're Invited — {{ site_name }}{% endblock %}
 
 {% block body_style %}
     background-image: url("/static/desk.png");
@@ -52,7 +52,7 @@
 
 {% block content %}
 <div class="invite-box">
-    <h1>★ Millennial Space</h1>
+    <h1>★ {{ site_name }}</h1>
 
     {% if invite and not invite.used_by %}
         <p style="font-size:18px;color:#660066;font-weight:bold;margin-bottom:6px;">
@@ -73,7 +73,7 @@
 
     <div class="wip-note">
         <strong>🚧 Heads up before you sign up:</strong><br>
-        Millennial Space is a work in progress — things may go down or change while we build it.
+        {{ site_name }} is a work in progress — things may go down or change while we build it.
         But your account and everything you put on it is <strong>permanent</strong>.
         We will never delete your profile.
     </div>

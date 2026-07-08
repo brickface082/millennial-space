@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Help - Millennial Space{% endblock %}
+{% block title %}Help - {{ site_name }}{% endblock %}
 
 {% block content %}
 <div style="max-width:700px;margin:0 auto;padding:24px;">
 
     <div style="background:rgba(255,255,255,0.93);border:4px ridge #cc44aa;box-shadow:4px 4px 0 #888;padding:28px;margin-bottom:20px;">
-        <h1 style="color:var(--accent);margin-top:0;">❓ Millennial Space — Help</h1>
+        <h1 style="color:var(--accent);margin-top:0;">❓ {{ site_name }} — Help</h1>
         <p style="color:#555;margin-top:0;">Everything you can do on the site and how to do it.</p>
     </div>
 
@@ -24,7 +24,7 @@
     {{ section("👤 Your Profile", [
         ("Edit your profile", "Go to My Space → click Edit Profile. You can update your bio, profile picture, background color, links, and more."),
         ("Change accent color", "Edit Profile → Site Accent Color. Pick any color — it changes buttons, borders, and headings just for you."),
-        ("Enable dark mode", "Edit Profile → check the Dark Mode box. Dark background, light text sitewide."),
+        ("Enable dark mode", "Click the 🌙 button in the bottom-right corner of any page. Tap again (☀️) for light mode."),
         ("Change font", "Edit Profile → Font Style dropdown. Choose from Arial, Georgia, Verdana, and more."),
         ("Set your mood", "Edit Profile → Mood dropdown. Shows on your profile."),
         ("Set your status", "Edit Profile → Status (online/away/busy/offline)."),

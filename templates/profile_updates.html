@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}{{ user.username }}'s Updates - {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="ms-profile">
+    <div class="ms-profile-banner">📌 {{ user.username }}'s Updates</div>
+    <div class="ms-profile-subpage">
+        <p class="ms-back-link"><a href="{{ url_for('profile', username=user.username) }}#updates">← Back to {{ user.username }}'s profile</a></p>
+
+        <div class="ms-box">
+            <div class="ms-box-header">
+                {% if tab == 'bulletins' %}All Bulletins ({{ total_items }}){% else %}All Blurbs ({{ total_items }}){% endif %}
+            </div>
+            <div class="ms-box-body">
+                <div class="ms-photo-tabs ms-updates-tabs">
+                    <a href="{{ url_for('profile_updates', username=user.username, tab='bulletins') }}"
+                       class="ms-tab {% if tab == 'bulletins' %}ms-tab-active{% endif %}">Bulletins</a>
+                    <a href="{{ url_for('profile_updates', username=user.username, tab='blurbs') }}"
+                       class="ms-tab {% if tab == 'blurbs' %}ms-tab-active{% endif %}">Blurbs</a>
+                </div>
+
+                {% if tab == 'bulletins' %}
+                    {% if is_owner %}
+                    <form class="ms-form ms-bulletin-form" method="POST" action="{{ url_for('bulletin_create') }}">
+                        <input type="text" name="body" maxlength="250" placeholder="Quick status update… (250 chars max)">
+                        <input class="btn-primary" type="submit" value="Post Bulletin">
+                    </form>
+                    {% endif %}
+                    {% for bulletin in items %}
+                    <div class="ms-bulletin-item">
+                        <div class="ms-bulletin-body">{{ bulletin.body | bbcode }}</div>
+                        <p class="ms-bulletin-time">{{ bulletin.timestamp.strftime('%b %d, %Y at %I:%M %p') }}</p>
+                        {% if is_owner %}
+                        <form method="POST" action="{{ url_for('bulletin_delete', bulletin_id=bulletin.id) }}" style="display:inline;" onsubmit="return confirm('Delete this bulletin?');">
+                            <button type="submit" class="ms-link-btn danger" style="font-size:11px;">Delete</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <p class="no-posts">No bulletins yet.</p>
+                    {% endfor %}
+                {% else %}
+                    {% if is_owner %}
+                    <form class="ms-form" method="POST" action="/post/create" enctype="multipart/form-data" style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed #ccc;">
+                        <textarea name="body" placeholder="What's on your mind?"></textarea>
+                        <input type="file" name="post_image" accept="image/*" style="margin-top:6px;font-size:12px;">
+                        <br>
+                        <input class="btn-primary" type="submit" value="Post Blurb">
+                    </form>
+                    {% endif %}
+                    {% for post in items %}
+                    <div class="post-card">
+                        <p class="post-timestamp">{{ post.timestamp.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                        <div class="post-body">{{ post.body | bbcode }}</div>
+                        {% set post_img = image_url(post.image, 'post_images') %}
+                        {% if post_img %}
+                            <img class="post-image" src="{{ post_img }}" alt="Post image">
+                        {% endif %}
+                        {% if is_owner and current_user.id == post.user_id %}
+                        <div style="margin-top:6px;">
+                            <a href="{{ url_for('edit_post', post_id=post.id) }}" style="font-size:12px;">✏️ Edit</a>
+                            <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" style="display:inline;" onsubmit="return confirm('Delete this post?');">
+                                <button type="submit" class="ms-link-btn danger" style="font-size:12px;">🗑️ Delete</button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <p class="no-posts">No blurbs yet.</p>
+                    {% endfor %}
+                {% endif %}
+
+                {% if total_pages > 1 %}
+                <div class="ms-pagination">
+                    {% if page > 1 %}
+                    <a href="{{ url_for('profile_updates', username=user.username, tab=tab, page=page - 1) }}">← Newer</a>
+                    {% endif %}
+                    <span>Page {{ page }} of {{ total_pages }}</span>
+                    {% if page < total_pages %}
+                    <a href="{{ url_for('profile_updates', username=user.username, tab=tab, page=page + 1) }}">Older →</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% include '_music_float.html' %}
+{% endblock %}

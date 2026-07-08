@@ -1,10 +1,11 @@
 import os
 import sys
+import tempfile
 import pytest
 
 # Must set DATABASE_URL before app.py is imported by the test module.
 # pytest loads conftest.py before collecting/importing test files.
-_TEST_DB = "/tmp/millennial_space_test.db"
+_TEST_DB = os.path.join(tempfile.gettempdir(), "millennial_space_test.db")
 os.environ["DATABASE_URL"] = f"sqlite:///{_TEST_DB}"
 os.environ.setdefault("SECRET_KEY", "test-secret-key-not-for-production")
 
@@ -43,5 +44,13 @@ def seed_database():
 
     yield
 
+    try:
+        db.session.remove()
+        db.engine.dispose()
+    except Exception:
+        pass
     if os.path.exists(_TEST_DB):
-        os.remove(_TEST_DB)
+        try:
+            os.remove(_TEST_DB)
+        except OSError:
+            pass  # Windows may still hold the SQLite lock — harmless

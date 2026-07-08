@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Send Update Email — Admin{% endblock %}
+
+{% block content %}
+<div class="retro-box retro-form" style="max-width:640px;">
+    <h1 class="retro-title">📧 App Update Emails</h1>
+    <p class="section-note">
+        <a href="{{ url_for('feedback_admin') }}">← Back to Feedback Admin</a>
+    </p>
+
+    <p><strong>{{ subscriber_count }}</strong> user(s) opted in to receive update emails.</p>
+
+    <form method="POST">
+        <label>Email subject</label>
+        <input type="text" name="subject" maxlength="200" required
+               placeholder="New on The Spot: Events Near Me is live!">
+
+        <label>Message</label>
+        <textarea name="body" required maxlength="8000" style="height:200px;"
+                  placeholder="Write your update here. We add the greeting and unsubscribe link automatically."></textarea>
+
+        <p class="section-note">Each email includes an unsubscribe link. Only users who checked the opt-in box will receive this.</p>
+
+        <button type="submit" class="btn-primary"
+                onclick="return confirm('Send this update to {{ subscriber_count }} subscriber(s)?');">
+            Send Update Email
+        </button>
+    </form>
+
+    {% if subscribers %}
+    <hr class="divider">
+    <h2 style="font-size:15px;color:#660066;">Recent subscribers</h2>
+    <ul style="font-size:13px;line-height:1.8;">
+        {% for u in subscribers %}
+        <li>{{ u.username }} — {{ u.email }}{% if u.updates_opt_in_at %} (since {{ u.updates_opt_in_at.strftime('%b %d, %Y') }}){% endif %}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+{% endblock %}

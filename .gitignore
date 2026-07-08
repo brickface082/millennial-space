@@ -3,4 +3,6 @@ __pycache__/
 *.pyc 
 *.db 
 .env 
-static/uploads/* 
+static/uploads/*
+static/models/kokoro/
+data/affirmations-plr/

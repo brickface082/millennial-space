@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import app as application
-from app import app, db, User, CrewRequest, DirectMessage, bcrypt, JournalEntry, Poll, PollOption, PollVote, Invite, Feedback, PasswordResetToken
+from app import app, db, User, CrewRequest, DirectMessage, bcrypt, JournalEntry, Poll, PollOption, PollVote, Invite, Feedback, PasswordResetToken, PhotoMontage, MontageSlide, SpotListing, CornerEvent
 
 app.config["TESTING"] = True
 app.config["WTF_CSRF_ENABLED"] = False
@@ -67,7 +67,7 @@ def test_auth():
         check("testbot can log in", b"testbot" in r.data or r.status_code == 200)
 
         r = c.get("/logout", follow_redirects=True)
-        check("Logout redirects to login", b"Millennial Space" in r.data)
+        check("Logout redirects to login", b"Our Millennial Space" in r.data)
 
 def test_profile():
     print("\n-- Profile --")
@@ -227,6 +227,18 @@ def test_sounds():
         r = c.get("/sounds")
         check("Sounds page loads for logged-in user", r.status_code == 200)
         check("Sounds page shows built-in options", b"classic_beep" in r.data or b"Classic Beep" in r.data)
+        check("Sounds page shows ICQ pack", b"ICQ Uh-Oh" in r.data or b"icq_uhoh" in r.data)
+        check("Sounds page shows Movie Quote pack",
+              b"Movie Quote Pack" in r.data and b"quote_ill_be_back" in r.data)
+        check("Sounds page shows Your Soundboard",
+              b"Your Soundboard" in r.data and b"Kokoro" in r.data)
+
+        r = c.post("/sounds", data={"action": "select", "alert_sound": "quote_ill_be_back"},
+                   follow_redirects=True)
+        check("Movie quote alert saves", r.status_code == 200)
+        with app.app_context():
+            u = User.query.filter_by(username="testbot").first()
+            check("quote_ill_be_back in DB", u is not None and u.alert_sound == "quote_ill_be_back")
 
         # Select a valid sound
         r = c.post("/sounds", data={"action": "select", "alert_sound": "rising_tone"},
@@ -246,26 +258,32 @@ def test_sounds():
 
         # Upload oversized file is rejected
         import io
-        big_audio = io.BytesIO(b"\x00" * 70_000)  # 70KB — over the limit
-        r = c.post("/sounds", data={"action": "upload",
-                                     "sound_file": (big_audio, "test.mp3", "audio/mpeg")},
+        from app import UserSound
+        big_audio = io.BytesIO(b"\x00" * 600_000)  # 600KB — over the limit
+        r = c.post("/sounds", data={"action": "library_upload",
+                                     "sound_file": (big_audio, "test.mp3", "audio/mpeg"),
+                                     "label": "Too Big"},
                    content_type="multipart/form-data", follow_redirects=True)
         check("Oversized upload rejected", b"too large" in r.data or r.status_code == 200)
 
-        # Upload valid small file is accepted
+        # Upload valid small file is accepted into soundboard
         small_audio = io.BytesIO(b"\x00" * 1000)  # 1KB — fine
-        r = c.post("/sounds", data={"action": "upload",
-                                     "sound_file": (small_audio, "test.mp3", "audio/mpeg")},
+        r = c.post("/sounds", data={"action": "library_upload",
+                                     "sound_file": (small_audio, "test.mp3", "audio/mpeg"),
+                                     "label": "Test Clip"},
                    content_type="multipart/form-data", follow_redirects=True)
-        check("Small upload accepted", b"uploaded" in r.data or r.status_code == 200)
+        check("Small upload accepted", b"soundboard" in r.data or r.status_code == 200)
         with app.app_context():
             u = User.query.filter_by(username="testbot").first()
-            check("alert_sound set to custom after upload", u is not None and u.alert_sound == "custom")
-            check("custom_sound stored as base64 data URI", u is not None and (u.custom_sound or "").startswith("data:"))
+            snd = UserSound.query.filter_by(user_id=u.id, label="Test Clip").first()
+            check("clip saved to UserSound", snd is not None and (snd.audio_data or "").startswith("data:"))
+            check("alert_sound set to us_* after upload",
+                  u is not None and (u.alert_sound or "").startswith("us_"))
 
-        # Reset testbot back to classic_beep
+        # Reset testbot sounds
         with app.app_context():
             u = User.query.filter_by(username="testbot").first()
+            UserSound.query.filter_by(user_id=u.id).delete()
             u.alert_sound = "classic_beep"
             u.custom_sound = ""
             db.session.commit()
@@ -313,6 +331,11 @@ def test_icq_inbox():
             db.session.commit()
         r = c.post("/inbox/read/testbot")
         check("/inbox/read POST returns ok", r.status_code == 200)
+
+        r = c.get("/icq/buddies")
+        check("/icq/buddies returns JSON", r.status_code == 200)
+        buddies = json.loads(r.data)
+        check("Buddies is a list", isinstance(buddies, list))
         r = c.get("/inbox/unread")
         data3 = json.loads(r.data)
         check("Unread count 0 after /inbox/read", data3["count"] == 0)
@@ -376,7 +399,7 @@ def test_mood():
 
         # Set a valid mood
         r = c.post("/edit", data={
-            "bio": "", "bg_color": "#ff66b2", "youtube_url": "", "spotify_url": "",
+            "bio": "", "bg_color": "#ff66b2", "profile_song": "",
             "away_message": "", "msg_filter": "open", "mood": "happy"
         }, follow_redirects=True)
         check("Valid mood saves successfully", r.status_code == 200)
@@ -390,7 +413,7 @@ def test_mood():
 
         # Invalid mood rejected — falls back to empty string
         r = c.post("/edit", data={
-            "bio": "", "bg_color": "#ff66b2", "youtube_url": "", "spotify_url": "",
+            "bio": "", "bg_color": "#ff66b2", "profile_song": "",
             "away_message": "", "msg_filter": "open", "mood": "HACK_VALUE"
         }, follow_redirects=True)
         with app.app_context():
@@ -440,12 +463,11 @@ def test_script_rendering():
 
         # Extract all <script>...</script> blocks
         script_blocks = re.findall(r'<script[^>]*>(.*?)</script>', html, re.DOTALL)
-        our_scripts = [s for s in script_blocks if 'icqToggle' in s or 'pollInbox' in s]
+        icq_config_blocks = [s for s in script_blocks if 'ICQ_CONFIG' in s]
+        check("ICQ_CONFIG inline script present", len(icq_config_blocks) > 0)
+        check("icq.js loaded", 'icq.js' in html)
 
-        check("Script blocks found in rendered page", len(our_scripts) > 0,
-              f"found {len(our_scripts)} ICQ script block(s)")
-
-        for i, block in enumerate(our_scripts):
+        for i, block in enumerate(icq_config_blocks):
             has_entities = bool(re.search(r'&#\d+;', block))
             check(f"Script block {i+1} contains no HTML entities (&#NNN;)",
                   not has_entities,
@@ -918,6 +940,229 @@ def test_password_reset():
         db.session.commit()
 
 
+def test_montage():
+    print("\n-- Photo Montage --")
+    with app.test_client() as c:
+        r = c.get("/montage/edit", follow_redirects=True)
+        check("Montage editor requires login", "login" in r.request.path.lower())
+
+        login(c, "testbot@millennial-space.com", "testpass123")
+        r = c.get("/montage/edit")
+        check("Montage editor loads", r.status_code == 200)
+        check("Editor explains music conflict", b"replaces" in r.data.lower() or b"profile song" in r.data.lower())
+
+        r = c.post("/montage/edit", data={
+            "action": "save",
+            "title": "Test Montage",
+            "music_mode": "custom",
+            "song_1": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "song_2": "",
+            "interval_sec": "3",
+            "show_on_profile": "on",
+        }, follow_redirects=True)
+        check("Montage settings save", r.status_code == 200)
+
+        with app.app_context():
+            u = User.query.filter_by(username="testbot").first()
+            m = PhotoMontage.query.filter_by(user_id=u.id).first()
+            check("Montage row created", m is not None)
+            check("Custom music mode saved", m is not None and m.music_mode == "custom")
+            if m and not m.slides:
+                db.session.add(MontageSlide(
+                    montage_id=m.id,
+                    url="https://res.cloudinary.com/demo/image/upload/sample.jpg",
+                    public_id="demo/sample",
+                    caption="Test slide",
+                    sort_order=0,
+                    source="upload",
+                ))
+                db.session.commit()
+
+        r = c.get("/profile/testbot")
+        check("Profile shows montage", b"ms-montage-box" in r.data)
+        check("Montage custom soundtrack note", b"replaces profile song" in r.data.lower())
+        check("Profile float suppressed", b"ms-music-float" not in r.data)
+        check("YouTube in montage music", b"autoplay=1" in r.data or b"youtube.com/embed" in r.data)
+
+        r = c.post("/montage/edit", data={
+            "action": "save",
+            "title": "Test Montage",
+            "music_mode": "profile",
+            "song_1": "",
+            "song_2": "",
+            "interval_sec": "4",
+            "show_on_profile": "on",
+        }, follow_redirects=True)
+        with app.app_context():
+            m = PhotoMontage.query.filter_by(user_id=User.query.filter_by(username="testbot").first().id).first()
+            check("Profile music mode saved", m is not None and m.music_mode == "profile")
+
+        r = c.get("/profile/testbot")
+        check("Profile mode uses profile song label", b"profile song" in r.data.lower())
+
+        r = c.get("/profile/testbot/montage")
+        check("Full montage page loads", r.status_code == 200)
+        check("Full montage has slideshow", b"ms-montage-stage" in r.data)
+
+
+def test_spot():
+    print("\n-- The Spot (Public Corner + Marketplace) --")
+    with app.test_client() as c:
+        r = c.get("/spot")
+        check("Spot hub loads", r.status_code == 200)
+        check("Spot shows Quote of the Day", b"Quote of the Day" in r.data)
+        with app.app_context():
+            from app import load_quotes
+            quotes = load_quotes()
+            check("Quote inventory loaded", len(quotes) >= 400)
+            attributed = [q for q in quotes if q.get("author")]
+            check("Famous attributed quotes included", len(attributed) >= 50)
+            check("This too shall pass in pool", any("this too shall pass" in q["text"].lower() for q in quotes))
+        check("Spot has Events Near Me tab", b"Events Near Me" in r.data)
+        check("Spot has Marketplace tab", b"Marketplace" in r.data)
+
+        login(c, "testbot@millennial-space.com", "testpass123")
+
+        r = c.post("/edit", data={
+            "bio": "", "bg_color": "#c5cdd6", "theme_color": "#2b5797",
+            "city": "Springfield", "state": "OH", "zip_code": "45501",
+            "away_message": "", "msg_filter": "open", "mood": "",
+        }, follow_redirects=True)
+        check("Profile location saves", r.status_code == 200)
+        with app.app_context():
+            u = User.query.filter_by(username="testbot").first()
+            check("City stored", u is not None and u.city == "Springfield")
+            check("State stored", u is not None and u.state == "OH")
+
+        future = (datetime.utcnow() + timedelta(days=3)).strftime("%Y-%m-%d")
+        r = c.post("/spot/event/new", data={
+            "title": "Test Block Party",
+            "body": "Bring snacks!",
+            "venue": "Town Square",
+            "city": "Springfield",
+            "state": "OH",
+            "zip_code": "45501",
+            "event_date": future,
+            "event_time": "18:00",
+        }, follow_redirects=True)
+        check("Free event posts", r.status_code == 200)
+        with app.app_context():
+            ev = CornerEvent.query.filter_by(title="Test Block Party").first()
+            check("Event in DB", ev is not None)
+            check("Event geo set", ev is not None and ev.city == "Springfield" and ev.state == "OH")
+            event_id = ev.id if ev else 0
+
+        r = c.get("/spot?tab=events&city=Springfield&state=OH")
+        check("Geo filter shows event", b"Test Block Party" in r.data)
+
+        r = c.get("/spot?tab=events&city=Nowhere&state=WY")
+        check("Wrong geo hides event", b"Test Block Party" not in r.data)
+
+        r = c.post("/spot/listing/new", data={
+            "category": "for_sale",
+            "title": "Vintage Lamp",
+            "body": "Works great.",
+            "price": "$20",
+            "city": "Springfield",
+            "state": "OH",
+        }, follow_redirects=True)
+        check("Free listing posts", r.status_code == 200)
+        with app.app_context():
+            li = SpotListing.query.filter_by(title="Vintage Lamp").first()
+            check("Listing in DB", li is not None and li.fee_cents == 0)
+
+        r = c.post("/spot/listing/new", data={
+            "category": "jobs",
+            "title": "Barista Wanted",
+            "body": "Apply in person.",
+            "city": "Springfield",
+            "state": "OH",
+        }, follow_redirects=True)
+        check("Paid listing blocked without fee ack", b"posting fee" in r.data.lower() or b"fee" in r.data.lower())
+
+        r = c.post("/spot/listing/new", data={
+            "category": "jobs",
+            "title": "Barista Wanted",
+            "body": "Apply in person.",
+            "city": "Springfield",
+            "state": "OH",
+            "accept_fee": "on",
+        }, follow_redirects=True)
+        check("Paid listing posts with fee ack", r.status_code == 200)
+        with app.app_context():
+            job = SpotListing.query.filter_by(title="Barista Wanted").first()
+            check("Job listing fee recorded", job is not None and job.fee_cents == 1000 and job.fee_paid)
+
+        r = c.get(f"/spot/event/{event_id}")
+        check("Event detail page loads", r.status_code == 200 and b"Test Block Party" in r.data)
+
+
+def test_email_updates():
+    print("\n-- Email Updates Opt-in --")
+    with app.test_client() as c:
+        login(c, "testbot@millennial-space.com", "testpass123")
+        r = c.post("/updates/opt-in", follow_redirects=True)
+        check("One-click opt-in works", r.status_code == 200)
+        with app.app_context():
+            u = User.query.filter_by(username="testbot").first()
+            check("Opt-in stored", u is not None and u.updates_opt_in is True)
+            check("Unsub token created", u is not None and bool(u.updates_unsub_token))
+            token = u.updates_unsub_token
+
+        r = c.get(f"/updates/unsubscribe/{token}", follow_redirects=True)
+        check("Unsubscribe works", r.status_code == 200)
+        with app.app_context():
+            u = User.query.filter_by(username="testbot").first()
+            check("Opt-in cleared after unsubscribe", u is not None and u.updates_opt_in is False)
+
+        logout(c)
+        r = c.post("/register", data={
+            "username": "updtest99",
+            "email": "updtest99@millennial-space.com",
+            "password": "testpass123",
+            "updates_opt_in": "on",
+        }, follow_redirects=True)
+        check("Register with opt-in", r.status_code == 200)
+        with app.app_context():
+            u = User.query.filter_by(username="updtest99").first()
+            check("Register opt-in saved", u is not None and u.updates_opt_in is True)
+            if u:
+                db.session.delete(u)
+                db.session.commit()
+
+        login(c, "testbot@millennial-space.com", "testpass123")
+        r = c.get("/admin/updates")
+        check("Non-admin blocked from updates admin", r.status_code == 403)
+
+
+def test_song_autoplay():
+    print("\n-- Profile Song Autoplay --")
+    with app.test_client() as c:
+        login(c, "testbot@millennial-space.com", "testpass123")
+        r = c.post("/edit", data={
+            "bio": "", "bg_color": "#c5cdd6", "theme_color": "#2b5797",
+            "profile_song": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "away_message": "", "msg_filter": "open", "mood": "",
+            "song_autoplay": "on",
+        }, follow_redirects=True)
+        check("Edit with song autoplay saves", r.status_code == 200)
+        with app.app_context():
+            u = User.query.filter_by(username="testbot").first()
+            check("song_autoplay stored in DB", u is not None and u.song_autoplay is True)
+        r = c.get("/profile/testbot")
+        check("Profile shows music player", b"ms-music-float" in r.data)
+        check("YouTube embed includes autoplay", b"autoplay=1" in r.data)
+
+        r = c.post("/edit", data={
+            "bio": "", "bg_color": "#c5cdd6", "theme_color": "#2b5797",
+            "profile_song": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "away_message": "", "msg_filter": "open", "mood": "",
+        }, follow_redirects=True)
+        with app.app_context():
+            u = User.query.filter_by(username="testbot").first()
+            check("song_autoplay off when unchecked", u is not None and u.song_autoplay is False)
+
+
 # ── run all ──────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -933,6 +1178,10 @@ if __name__ == "__main__":
     test_icq_inbox()
     test_profile_views()
     test_mood()
+    test_montage()
+    test_spot()
+    test_email_updates()
+    test_song_autoplay()
     test_script_rendering()
     test_journal()
     test_polls()

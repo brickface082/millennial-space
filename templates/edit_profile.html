@@ -1,47 +1,37 @@
 {% extends "base.html" %}
 
-{% block title %}Edit My Space - Millennial Space{% endblock %}
-
-{% block extra_style %}
-<style>
-    .edit-box {
-        background: rgba(255,255,255,0.9);
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 24px;
-        border: 4px ridge #00ffff;
-    }
-    h1 { color: #ff1493; text-shadow: 2px 2px #ffff00; margin-top: 0; }
-    label { display: block; margin-top: 14px; font-weight: bold; color: #660066; }
-    input[type="text"], input[type="color"], textarea {
-        width: 100%; box-sizing: border-box; padding: 6px;
-        font-family: inherit; font-size: 14px; border: 2px solid #ff66b2; margin-top: 4px;
-    }
-    textarea { height: 80px; resize: vertical; }
-    input[type="color"] { height: 40px; padding: 2px; cursor: pointer; }
-    input[type="submit"] {
-        margin-top: 20px; background: #ff1493; color: white; border: none;
-        padding: 10px 24px; font-family: inherit; font-size: 16px; cursor: pointer; font-weight: bold;
-    }
-    input[type="submit"]:hover { background: #cc0077; }
-    a { color: #0000ff; font-weight: bold; }
-    .section-note { font-size: 12px; color: #888; margin-top: 2px; }
-</style>
-{% endblock %}
+{% block title %}Edit My Space - {{ site_name }}{% endblock %}
 
 {% block content %}
-<div class="edit-box">
-    <h1>Edit My Space ✏️</h1>
+<div class="retro-box retro-form" style="max-width:640px;">
+    <h1 class="retro-title">Edit My Space ✏️</h1>
 
     <form method="POST" enctype="multipart/form-data">
         <label>Bio</label>
         <textarea name="bio">{{ current_user.bio or '' }}</textarea>
 
+        <label>Who I'd Like to Meet</label>
+        <textarea name="ideal_meet" maxlength="500" style="height:60px;">{{ current_user.ideal_meet or '' }}</textarea>
+        <p class="section-note">Classic MySpace field — shown on your profile under About Me.</p>
+
+        <label>Your Location <span style="font-size:12px;font-weight:normal;color:#666;">(for Events Near Me)</span></label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input type="text" name="city" value="{{ current_user.city or '' }}" placeholder="City" maxlength="80" style="flex:2;min-width:120px;">
+            <select name="state" style="flex:1;min-width:90px;">
+                <option value="">State</option>
+                {% for code, name in us_states %}
+                <option value="{{ code }}" {% if (current_user.state or '') == code %}selected{% endif %}>{{ code }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="zip_code" value="{{ current_user.zip_code or '' }}" placeholder="ZIP" maxlength="10" style="flex:1;min-width:70px;">
+        </div>
+        <p class="section-note">Powers <strong>Events Near Me</strong> on The Spot — not shown on your profile unless you want it in your bio.</p>
+
         <label>Background Color</label>
-        <input type="color" name="bg_color" value="{{ current_user.bg_color or '#ff66b2' }}">
+        <input type="color" name="bg_color" value="{{ current_user.bg_color or site_defaults.bg_color }}">
 
         <label>Site Accent Color <span style="font-size:12px;font-weight:normal;color:#666;">(buttons, borders, headings)</span></label>
-        <input type="color" name="theme_color" value="{{ current_user.theme_color or '#cc44aa' }}">
+        <input type="color" name="theme_color" value="{{ current_user.theme_color or site_defaults.theme_color }}">
 
         <label>Font Style</label>
         <select name="font_choice" style="font-size:15px;padding:6px;border:2px solid #ff66b2;width:100%;box-sizing:border-box;">
@@ -53,11 +43,18 @@
             {% endfor %}
         </select>
 
-        <label>Dark Mode</label>
-        <label style="display:flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer;">
-            <input type="checkbox" name="dark_mode" value="on" {% if current_user.dark_mode %}checked{% endif %}>
-            Enable dark mode (dark background, light text)
-        </label>
+        <label>MySpace Theme Preset</label>
+        <select name="theme_preset" id="theme-preset" style="font-size:14px;padding:6px;border:2px solid #ff66b2;width:100%;box-sizing:border-box;">
+            <option value="custom" {% if (current_user.profile_theme or '') == 'custom' or not current_user.profile_theme %}selected{% endif %}>Custom (use colors below)</option>
+            {% for key, preset in theme_presets.items() %}
+            <option value="{{ key }}" {% if current_user.profile_theme == key %}selected{% endif %}>{{ preset.label }}</option>
+            {% endfor %}
+        </select>
+        <p class="section-note">Pick a classic MySpace vibe — applies colors &amp; font on save. Choose Custom to tweak manually.</p>
+
+        <label>Custom Profile CSS <span style="font-size:12px;font-weight:normal;color:#666;">(advanced — scoped to your profile)</span></label>
+        <textarea name="custom_css" maxlength="8000" style="height:100px;font-family:monospace;font-size:12px;" placeholder=".ms-profile-theme .ms-box { border-color: #ff00ff; }">{{ current_user.custom_css or '' }}</textarea>
+        <p class="section-note">MySpace-style layout codes — CSS only, no scripts. Styles apply inside your profile page only. Unsafe CSS is rejected.</p>
 
         <label>Profile Picture</label>
         <p class="section-note">Current: {{ current_user.profile_pic }}</p>
@@ -67,11 +64,18 @@
         <p class="section-note">Current: {{ current_user.bg_image or 'none' }}</p>
         <input type="file" name="bg_image" accept="image/*">
 
-        <label>YouTube URL</label>
-        <input type="text" name="youtube_url" value="{{ current_user.youtube_url or '' }}" placeholder="https://www.youtube.com/watch?v=...">
-
-        <label>Spotify URL</label>
-        <input type="text" name="spotify_url" value="{{ current_user.spotify_url or '' }}" placeholder="https://open.spotify.com/track/...">
+        <label>Profile Song Link</label>
+        <input type="text" name="profile_song" value="{{ profile_music_link }}" placeholder="Paste a YouTube, Spotify, SoundCloud, or Pandora share link">
+        <p class="section-note">
+            Classic MySpace music player — paste any share or embed link from YouTube, Spotify, SoundCloud, Pandora, Apple Music, or Bandcamp.
+            Clear the field to remove your profile song.
+        </p>
+        <label style="display:flex;align-items:center;gap:8px;font-weight:normal;margin-top:8px;cursor:pointer;">
+            <input type="checkbox" name="song_autoplay" value="on"
+                   {% if current_user.song_autoplay %}checked{% endif %}
+                   style="width:auto;margin:0;">
+            Auto-play profile song for visitors (starts muted — classic MySpace style)
+        </label>
 
         <label>Current Mood</label>
         <select name="mood" style="font-family:inherit;font-size:14px;border:2px solid #ff66b2;padding:6px;margin-top:4px;width:100%;">
@@ -82,8 +86,8 @@
         <p class="section-note">Shown on your profile next to your view count.</p>
 
         <label>Away Message</label>
-        <input type="text" name="away_message" value="{{ current_user.away_message or '' }}" placeholder="I'm away right now..." maxlength="200">
-        <p class="section-note">Only shown when your status is set to Away.</p>
+        <textarea name="away_message" maxlength="200" style="height:50px;" placeholder="I'm away right now...">{{ current_user.away_message or '' }}</textarea>
+        <p class="section-note">Shown on your profile when status is Away. Set status from your profile sidebar or here via Edit Profile.</p>
 
         <label>Who can message me?</label>
         <select name="msg_filter" style="font-family:inherit;font-size:14px;border:2px solid #ff66b2;padding:6px;margin-top:4px;width:100%;">
@@ -107,7 +111,23 @@
             crew-only means only crew polls reach you, and verified/math blocks all polls.
         </p>
 
-        <input type="submit" value="Save My Space!">
+        <label>📧 App Updates</label>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
+            <label style="display:flex;align-items:center;gap:8px;font-weight:normal;margin-top:0;cursor:pointer;">
+                <input type="checkbox" name="updates_opt_in" value="on"
+                       {% if current_user.updates_opt_in %}checked{% endif %}
+                       style="width:auto;margin:0;">
+                Email me about new features &amp; reminders
+            </label>
+        </div>
+        <p class="section-note">
+            Uses your account email ({{ current_user.email }}). We'll only send occasional updates — never spam.
+            {% if current_user.updates_opt_in and current_user.updates_unsub_token %}
+            <a href="{{ url_for('updates_unsubscribe', token=current_user.updates_unsub_token) }}">Unsubscribe</a>
+            {% endif %}
+        </p>
+
+        <input class="btn-primary" type="submit" value="Save My Space!" style="margin-top:20px;font-size:16px;padding:10px 24px;">
     </form>
 
     <br>

@@ -1,0 +1,69 @@
+{% if montage and montage.slides %}
+<div class="ms-box ms-montage-box" id="montage">
+    <div class="ms-box-header">🎬 {{ montage.title or 'Photo Montage' }}</div>
+    <div class="ms-box-body">
+        <div class="ms-montage-stage" id="ms-montage-stage"
+             data-interval="{{ montage.interval_sec or 4 }}"
+             data-count="{{ montage.slides|length }}">
+            {% for slide in montage.slides %}
+            <img class="ms-montage-slide{% if loop.first %} active{% endif %}"
+                 src="{{ slide.url }}" alt="{{ slide.caption or 'Montage photo' }}"
+                 data-caption="{{ slide.caption or '' }}">
+            {% endfor %}
+            <div class="ms-montage-caption" id="ms-montage-caption">
+                {{ montage.slides[0].caption or '' }}
+            </div>
+            <div class="ms-montage-controls">
+                <button type="button" onclick="msMontagePrev()" title="Previous">◀</button>
+                <button type="button" onclick="msMontageToggle()" id="ms-montage-play-btn" title="Play/Pause">⏸</button>
+                <button type="button" onclick="msMontageNext()" title="Next">▶</button>
+                <span id="ms-montage-counter">1 / {{ montage.slides|length }}</span>
+            </div>
+        </div>
+        {% include '_montage_music.html' %}
+        {% if not montage_full_page %}
+        <p class="ms-montage-footer">
+            <a href="{{ url_for('profile_montage', username=user.username) }}">View full montage →</a>
+            {% if is_owner %} · <a href="{{ url_for('montage_edit') }}">Edit montage</a>{% endif %}
+        </p>
+        {% elif is_owner %}
+        <p class="ms-montage-footer"><a href="{{ url_for('montage_edit') }}">Edit montage</a></p>
+        {% endif %}
+    </div>
+</div>
+<script>
+(function () {
+    var stage = document.getElementById('ms-montage-stage');
+    if (!stage) return;
+    var slides = stage.querySelectorAll('.ms-montage-slide');
+    var caption = document.getElementById('ms-montage-caption');
+    var counter = document.getElementById('ms-montage-counter');
+    var playBtn = document.getElementById('ms-montage-play-btn');
+    var idx = 0;
+    var playing = true;
+    var timer = null;
+    var interval = (parseInt(stage.getAttribute('data-interval'), 10) || 4) * 1000;
+
+    function show(i) {
+        idx = (i + slides.length) % slides.length;
+        slides.forEach(function (s, n) { s.classList.toggle('active', n === idx); });
+        if (caption) caption.textContent = slides[idx].getAttribute('data-caption') || '';
+        if (counter) counter.textContent = (idx + 1) + ' / ' + slides.length;
+    }
+    window.msMontageNext = function () { show(idx + 1); resetTimer(); };
+    window.msMontagePrev = function () { show(idx - 1); resetTimer(); };
+    window.msMontageToggle = function () {
+        playing = !playing;
+        if (playBtn) playBtn.textContent = playing ? '⏸' : '▶';
+        if (playing) resetTimer(); else clearInterval(timer);
+    };
+    function resetTimer() {
+        clearInterval(timer);
+        if (playing && slides.length > 1) {
+            timer = setInterval(function () { show(idx + 1); }, interval);
+        }
+    }
+    resetTimer();
+})();
+</script>
+{% endif %}

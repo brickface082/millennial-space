@@ -1,0 +1,1920 @@
+/* Millennial Space — shared MySpace-era (2007–2008) styles */
+
+/* ── Retro sharp corners (2007 web) ───────────────────────────────────── */
+.retro-box input, .retro-box textarea, .retro-box select, .retro-box button,
+.ms-form input, .ms-form textarea, .ms-form select,
+.ms-box input, .ms-box textarea, .ms-box select {
+    border-radius: 0;
+}
+
+/* ── Site nav ─────────────────────────────────────────────────────────── */
+.site-nav {
+    background: linear-gradient(to bottom, #3d3d3d 0%, #1a1a1a 100%);
+    border-bottom: 3px solid var(--accent, #2b5797);
+    padding: 0 12px;
+    display: flex;
+    align-items: stretch;
+    flex-wrap: wrap;
+    min-height: 36px;
+}
+
+.site-nav .site-title {
+    color: #fff;
+    font-weight: bold;
+    font-size: 15px;
+    text-decoration: none;
+    text-shadow: 1px 1px #000;
+    padding: 8px 12px 8px 0;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.site-nav .site-title:hover {
+    color: var(--accent, #2b5797);
+}
+
+.nav-primary {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    flex-wrap: wrap;
+}
+
+.nav-primary a,
+.nav-primary .nav-btn {
+    color: #ddd;
+    font-size: 13px;
+    font-weight: bold;
+    text-decoration: none;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    border-left: 1px solid #555;
+    white-space: nowrap;
+    cursor: pointer;
+    background: none;
+    border-top: none;
+    border-right: none;
+    border-bottom: none;
+    font-family: inherit;
+}
+
+.nav-primary a:hover,
+.nav-primary .nav-btn:hover,
+.nav-primary a.nav-active {
+    background: var(--accent, #2b5797);
+    color: #fff;
+}
+
+.search-form {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    margin-left: auto;
+}
+
+.search-form input[type="text"] {
+    font-size: 12px;
+    padding: 4px 8px;
+    border: 1px solid #888;
+    background: #fff;
+    width: 130px;
+}
+
+.search-form button {
+    font-size: 12px;
+    padding: 4px 10px;
+    background: var(--accent, #2b5797);
+    color: white;
+    border: 1px solid #888;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.nav-more {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+}
+
+.nav-more > summary {
+    list-style: none;
+    color: #ddd;
+    font-size: 13px;
+    font-weight: bold;
+    padding: 8px 14px;
+    cursor: pointer;
+    border-left: 1px solid #555;
+    display: flex;
+    align-items: center;
+}
+
+.nav-more > summary::-webkit-details-marker { display: none; }
+
+.nav-more[open] > summary,
+.nav-more > summary:hover {
+    background: #555;
+    color: #fff;
+}
+
+.nav-more-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #2a2a2a;
+    border: 2px solid var(--accent, #2b5797);
+    min-width: 160px;
+    z-index: 1000;
+    box-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+}
+
+.nav-more-menu a {
+    display: block;
+    color: #ddd;
+    font-size: 13px;
+    font-weight: bold;
+    text-decoration: none;
+    padding: 8px 14px;
+    border-bottom: 1px solid #444;
+}
+
+.nav-more-menu a:hover,
+.nav-more-menu .nav-more-link:hover {
+    background: var(--accent, #2b5797);
+    color: #fff;
+}
+
+.nav-more-menu .nav-more-link {
+    display: block;
+    width: 100%;
+    text-align: left;
+    color: #ddd;
+    font-size: 13px;
+    font-weight: bold;
+    padding: 8px 14px;
+    border: none;
+    border-bottom: 1px solid #444;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.nav-badge {
+    display: none;
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    background: #ff0000;
+    color: #fff;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 1px 5px;
+    border-radius: 8px;
+    min-width: 14px;
+    text-align: center;
+}
+
+.nav-item-badge {
+    position: relative;
+}
+
+/* ── WIP banner ─────────────────────────────────────────────────────────── */
+.wip-banner {
+    background: #1a1000;
+    color: #ffcc66;
+    font-size: 11px;
+    text-align: center;
+    padding: 3px 36px 3px 10px;
+    position: relative;
+    border-bottom: 1px solid #7a4f00;
+    line-height: 1.3;
+}
+
+.wip-banner button {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #ffcc66;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.updates-banner {
+    background: linear-gradient(to right, #e8f4ff, #f0e8ff);
+    color: #334;
+    font-size: 13px;
+    text-align: center;
+    padding: 8px 40px 8px 12px;
+    position: relative;
+    border-bottom: 1px solid #aac;
+    line-height: 1.4;
+}
+.updates-banner-btn {
+    background: var(--accent, #2b5797);
+    color: #fff;
+    border: none;
+    padding: 4px 12px;
+    margin-left: 8px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 2px;
+}
+.updates-banner-btn:hover { opacity: 0.9; }
+.updates-banner-dismiss {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* ── Shared page boxes ──────────────────────────────────────────────────── */
+.page-wrap {
+    padding: 10px 12px 24px;
+}
+
+.retro-box {
+    background: rgba(255, 255, 255, 0.92);
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px 24px;
+    border: 2px solid #999;
+    box-shadow: 3px 3px 0 #666;
+}
+
+.retro-title {
+    color: var(--accent, #2b5797);
+    text-shadow: 1px 1px #ffff99;
+    margin: 0 0 12px 0;
+    font-size: 1.4em;
+}
+
+/* ── MySpace profile layout (30% sidebar / 70% main) ───────────────────── */
+.ms-profile {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.ms-profile-sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    background: linear-gradient(to right, var(--accent, #2b5797), #1a3a5c);
+    color: #fff;
+    border: 2px solid #333;
+    border-bottom: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.ms-header-pic {
+    width: 48px;
+    height: 48px;
+    border: 2px solid #fff;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.ms-header-pic-ph {
+    background: #ccc;
+}
+
+.ms-header-info {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    flex: 1;
+    min-width: 0;
+}
+
+.ms-header-name {
+    font-size: 1.25em;
+    font-weight: bold;
+    text-shadow: 1px 1px #000;
+}
+
+.ms-header-status,
+.ms-header-mood,
+.ms-header-views {
+    font-size: 12px;
+    opacity: 0.95;
+}
+
+.ms-header-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.ms-header-controls select {
+    font-size: 12px;
+    padding: 3px 6px;
+    border: 1px inset #888;
+}
+
+.ms-mood-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #fff;
+    margin-right: 2px;
+}
+
+.ms-profile-body {
+    display: grid;
+    grid-template-columns: 30% 1fr;
+    gap: 14px;
+    align-items: start;
+    border: 2px solid #333;
+    border-top: none;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.ms-sidebar {
+    position: sticky;
+    top: 68px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    min-width: 0;
+}
+
+.ms-main {
+    min-width: 0;
+}
+
+.ms-crew-details {
+    margin-bottom: 10px;
+    border: 1px solid #999;
+    background: #fff;
+}
+
+.ms-crew-details .ms-crew-summary {
+    background: linear-gradient(to bottom, #e8e8e8 0%, #c8c8c8 100%);
+    border-bottom: 1px solid #999;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    text-transform: uppercase;
+    cursor: pointer;
+    list-style: none;
+}
+
+.ms-crew-details .ms-crew-summary::-webkit-details-marker {
+    display: none;
+}
+
+.ms-crew-details .ms-crew-summary::before {
+    content: "▶ ";
+    font-size: 10px;
+}
+
+.ms-crew-details[open] .ms-crew-summary::before {
+    content: "▼ ";
+}
+
+.ms-viewer-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.ms-viewer-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px dotted #ddd;
+}
+
+.ms-viewer-list li:last-child {
+    border-bottom: none;
+}
+
+.ms-viewer-time {
+    color: #888;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.ms-glitter {
+    background: linear-gradient(90deg, #ff0080, #ff8c00, #ffff00, #00ff88, #0080ff, #ff0080);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: bold;
+    animation: ms-glitter-shift 2s linear infinite;
+}
+
+@keyframes ms-glitter-shift {
+    to { background-position: 200% center; }
+}
+
+.ms-profile-nav {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+    padding: 6px 8px;
+    background: #ffffcc;
+    border: 2px solid var(--accent, #2b5797);
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.ms-profile-nav a {
+    color: #003399;
+    text-decoration: none;
+    padding: 2px 6px;
+}
+
+.ms-profile-nav a:hover {
+    text-decoration: underline;
+    color: var(--accent, #2b5797);
+}
+
+/* Module boxes — the classic MySpace bordered sections */
+.ms-box {
+    background: #fff;
+    border: 1px solid #999;
+    margin-bottom: 10px;
+}
+
+.ms-box-header {
+    background: linear-gradient(to bottom, #e8e8e8 0%, #c8c8c8 100%);
+    border-bottom: 1px solid #999;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.ms-box-body {
+    padding: 8px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+/* Sidebar identity block */
+.ms-identity {
+    text-align: center;
+    background: #fff;
+    border: 1px solid #999;
+    margin-bottom: 10px;
+    padding: 10px 8px;
+}
+
+.ms-profile-pic {
+    width: 130px;
+    height: 130px;
+    border: 3px solid #333;
+    object-fit: cover;
+    display: block;
+    margin: 0 auto 8px;
+}
+
+.ms-profile-pic-placeholder {
+    width: 130px;
+    height: 130px;
+    border: 3px solid #333;
+    background: #ffccee;
+    margin: 0 auto 8px;
+}
+
+.ms-username {
+    font-size: 14px;
+    font-weight: bold;
+    color: #003399;
+    margin: 0 0 4px;
+}
+
+.ms-status-line {
+    font-size: 12px;
+    color: #333;
+    margin: 2px 0;
+}
+
+.ms-views {
+    font-size: 11px;
+    color: #888;
+    margin-top: 6px;
+}
+
+.ms-last-seen,
+.ms-member-since {
+    font-size: 11px;
+    color: #888;
+    font-style: italic;
+}
+
+.ms-mutual-crew {
+    font-size: 12px;
+    color: #006633;
+    font-weight: bold;
+    background: #e8ffe8;
+    border: 1px solid #99cc99;
+    padding: 4px 6px;
+    margin: 6px 0 0;
+    text-align: center;
+}
+
+.ms-share-input {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 11px;
+    padding: 5px 6px;
+    border: 1px solid #999;
+    font-family: monospace;
+    margin-bottom: 6px;
+}
+
+.ms-share-btn {
+    margin-top: 0 !important;
+    font-size: 12px !important;
+    padding: 5px 12px !important;
+}
+
+.ms-share-copied {
+    display: none;
+    color: #006600;
+    font-size: 11px;
+    font-weight: bold;
+    margin-left: 6px;
+}
+
+.ms-bulletin-form {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #ccc;
+}
+
+.ms-bulletin-form input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 13px;
+    border: 1px solid #999;
+    padding: 6px;
+    margin-bottom: 6px;
+}
+
+.ms-bulletin-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.ms-bulletin-item:last-child {
+    border-bottom: none;
+}
+
+.ms-bulletin-body {
+    margin: 0 0 3px;
+    font-size: 13px;
+    line-height: 1.4;
+    font-weight: bold;
+    color: #330033;
+}
+
+.ms-bulletin-time {
+    margin: 0;
+    font-size: 10px;
+    color: #999;
+}
+
+.ms-ideal-meet {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed #ccc;
+}
+
+.ms-ideal-meet-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #1e3a5f;
+    margin: 0 0 4px;
+}
+
+.ms-pagination {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed #ccc;
+    font-size: 12px;
+}
+
+.ms-pagination a {
+    color: #003399;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.ms-pagination a:hover {
+    text-decoration: underline;
+}
+
+.ms-pagination span {
+    color: #666;
+}
+
+/* Contact table — MySpace "Contacting" box */
+.ms-contact-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.ms-contact-table td {
+    padding: 3px 4px;
+    vertical-align: middle;
+}
+
+.ms-contact-table td:first-child {
+    width: 22px;
+    text-align: center;
+}
+
+.ms-contact-table a,
+.ms-contact-table button.ms-link-btn {
+    color: #003399;
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 12px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.ms-contact-table a:hover,
+.ms-contact-table button.ms-link-btn:hover {
+    text-decoration: underline;
+}
+
+.ms-contact-table button.ms-link-btn.danger {
+    color: #cc0000;
+}
+
+/* Top 8 grid — 4 columns × 2 rows like 2007 MySpace */
+.ms-top8-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+}
+
+.ms-top8-item {
+    text-align: center;
+    text-decoration: none;
+}
+
+.ms-top8-item img,
+.ms-top8-item .ms-top8-ph {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border: 1px solid #999;
+    display: block;
+}
+
+.ms-top8-ph {
+    background: #ffccee;
+}
+
+.ms-top8-name {
+    font-size: 9px;
+    color: #003399;
+    font-weight: bold;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 2px;
+}
+
+/* Crew mini-list in sidebar */
+.ms-crew-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.ms-crew-list li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.ms-crew-list li:last-child { border-bottom: none; }
+
+.ms-crew-list img,
+.ms-crew-list .ms-crew-ph {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #999;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.ms-crew-ph { background: #ffccee; }
+
+.ms-crew-list a {
+    color: #003399;
+    font-size: 12px;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.ms-crew-list a:hover { text-decoration: underline; }
+
+/* Sidebar quick links */
+.ms-quick-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.ms-quick-links li {
+    padding: 4px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 12px;
+}
+
+.ms-quick-links li:last-child { border-bottom: none; }
+
+.ms-quick-links a {
+    color: #003399;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.ms-quick-links a:hover { text-decoration: underline; }
+
+.ms-quick-links .diary-link { color: #8b0000; }
+.ms-quick-links .blog-link { color: #006633; }
+
+/* Main content sections */
+.ms-bio {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.ms-away {
+    background: #fff3cd;
+    border: 1px solid #ffcc00;
+    padding: 6px 10px;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.ms-media iframe {
+    max-width: 100%;
+    display: block;
+    margin-bottom: 6px;
+}
+
+/* Photo strip */
+.ms-photo-strip {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.ms-photo-strip img {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border: 2px solid #999;
+}
+
+.ms-photo-thumb {
+    cursor: zoom-in;
+}
+
+.ms-photo-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 10050;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.ms-photo-lightbox-inner {
+    position: relative;
+    max-width: min(92vw, 900px);
+    max-height: 92vh;
+    text-align: center;
+}
+
+.ms-photo-lightbox-inner img {
+    max-width: 100%;
+    max-height: 80vh;
+    border: 3px solid #fff;
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.6);
+}
+
+.ms-photo-lightbox-close {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    width: 32px;
+    height: 32px;
+    border: 2px outset #ccc;
+    background: #c0c0c0;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.ms-photo-lightbox-caption {
+    color: #fff;
+    margin: 10px 0 0;
+    font-size: 13px;
+}
+
+/* Photo montage */
+.ms-montage-box .ms-box-body {
+    padding: 10px;
+}
+
+.ms-montage-stage {
+    position: relative;
+    background: #111;
+    min-height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 3px ridge var(--accent, #2b5797);
+}
+
+.ms-montage-slide {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
+}
+
+.ms-montage-slide.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.ms-montage-caption {
+    position: absolute;
+    bottom: 36px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: #fff;
+    font-size: 12px;
+    text-shadow: 0 1px 3px #000;
+    padding: 0 8px;
+    min-height: 16px;
+}
+
+.ms-montage-controls {
+    position: absolute;
+    bottom: 6px;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #fff;
+    font-size: 12px;
+}
+
+.ms-montage-controls button {
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    border: 1px solid #888;
+    cursor: pointer;
+    padding: 2px 8px;
+    font-family: inherit;
+}
+
+.ms-montage-music {
+    margin-top: 10px;
+}
+
+.ms-montage-music-note {
+    font-size: 12px;
+    margin: 0 0 8px;
+    padding: 6px 8px;
+    border-left: 3px solid var(--accent, #2b5797);
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.ms-montage-music-note.custom {
+    border-left-color: #cc6600;
+}
+
+.ms-montage-music-note.fallback {
+    border-left-color: #cc0000;
+}
+
+.ms-montage-track-label {
+    font-size: 11px;
+    font-weight: bold;
+    color: #660066;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.ms-montage-footer {
+    font-size: 12px;
+    margin: 10px 0 0;
+    text-align: center;
+}
+
+.ms-montage-edit-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.ms-montage-edit-card {
+    position: relative;
+    width: 120px;
+    border: 2px solid var(--accent, #2b5797);
+    background: #fff;
+}
+
+.ms-montage-edit-card img {
+    width: 120px;
+    height: 90px;
+    object-fit: cover;
+    display: block;
+}
+
+.ms-montage-edit-cap {
+    font-size: 10px;
+    padding: 2px 4px;
+    color: #444;
+}
+
+.ms-montage-edit-actions {
+    display: flex;
+    gap: 2px;
+    padding: 4px;
+    justify-content: center;
+}
+
+.ms-montage-source-tag {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    font-size: 9px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    padding: 1px 4px;
+}
+
+.ms-montage-album-pick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ms-montage-pick-form {
+    margin: 0;
+}
+
+.ms-montage-pick-btn {
+    position: relative;
+    padding: 0;
+    border: 2px solid var(--accent, #2b5797);
+    background: none;
+    cursor: pointer;
+}
+
+.ms-montage-pick-btn img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    display: block;
+}
+
+.ms-montage-pick-plus {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+    color: #fff;
+    font-size: 24px;
+    font-weight: bold;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.ms-montage-pick-btn:hover .ms-montage-pick-plus {
+    opacity: 1;
+}
+
+.ms-tab-link {
+    text-decoration: none;
+    display: inline-block;
+}
+
+.ms-music-suppressed-note {
+    position: fixed;
+    bottom: 12px;
+    left: 12px;
+    z-index: 9990;
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 2px solid var(--accent, #2b5797);
+    padding: 6px 10px;
+    max-width: 220px;
+}
+
+/* Album grid */
+.ms-album-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.ms-album-card {
+    width: 100px;
+    text-decoration: none;
+    text-align: center;
+}
+
+.ms-album-thumb {
+    width: 100px;
+    height: 75px;
+    border: 2px solid #999;
+    overflow: hidden;
+    background: #ffccee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ms-album-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.ms-album-name {
+    font-size: 11px;
+    font-weight: bold;
+    color: #1e3a5f;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 2px 0;
+}
+
+.ms-album-count {
+    font-size: 10px;
+    color: #999;
+}
+
+/* Posts & comments */
+.ms-divider {
+    border: none;
+    border-top: 2px dashed var(--accent, #2b5797);
+    margin: 0;
+}
+
+.post-card {
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background: #fafafa;
+    font-size: 13px;
+}
+
+.post-timestamp {
+    font-size: 11px;
+    color: #888;
+    margin: 0 0 4px 0;
+}
+
+.post-body {
+    margin: 0 0 6px 0;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.post-image {
+    max-width: 100%;
+    border: 2px solid #999;
+    display: block;
+    margin-top: 6px;
+}
+
+.no-posts {
+    color: #aaa;
+    font-style: italic;
+    text-align: center;
+    padding: 12px 0;
+    font-size: 13px;
+}
+
+/* Forms */
+.ms-form textarea,
+.ms-form input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 13px;
+    border: 1px solid #999;
+    padding: 6px;
+}
+
+.ms-form textarea {
+    height: 60px;
+    resize: vertical;
+}
+
+.btn-primary {
+    background: var(--accent, #2b5797);
+    color: white;
+    border: 1px solid #666;
+    padding: 6px 16px;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 6px;
+}
+
+.btn-primary:hover {
+    filter: brightness(0.9);
+}
+
+.ms-inline-form {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 12px;
+}
+
+.ms-inline-form select {
+    font-family: inherit;
+    font-size: 12px;
+    border: 1px solid #999;
+    padding: 2px 4px;
+}
+
+/* Flash messages */
+.flash-success {
+    background: #ccffcc;
+    border: 2px solid #00cc00;
+    color: #005500;
+    padding: 8px 12px;
+    margin: 8px 16px;
+}
+
+.flash-danger {
+    background: #ffcccc;
+    border: 2px solid #cc0000;
+    color: #550000;
+    padding: 8px 12px;
+    margin: 8px 16px;
+}
+
+.flash-info {
+    background: #cceeff;
+    border: 2px solid #0099cc;
+    color: #003355;
+    padding: 8px 12px;
+    margin: 8px 16px;
+}
+
+/* Search / members page */
+.member-row {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.member-row img,
+.member-ph {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid var(--accent, #2b5797);
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.member-ph { background: #ffccee; }
+
+.member-filter {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px;
+    font-size: 15px;
+    border: 2px solid var(--accent, #2b5797);
+    margin-bottom: 14px;
+}
+
+/* ── Dark mode toggle (fixed corner, out of the way) ───────────────────── */
+.theme-toggle-form {
+    position: fixed;
+    bottom: 14px;
+    right: 14px;
+    z-index: 9980;
+    margin: 0;
+}
+
+.theme-toggle-btn {
+    width: 34px;
+    height: 34px;
+    border: 2px outset #666;
+    background: rgba(30, 30, 30, 0.75);
+    color: #eee;
+    font-size: 15px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 32px;
+    opacity: 0.55;
+    transition: opacity 0.15s;
+}
+
+.theme-toggle-btn:hover {
+    opacity: 1;
+    background: rgba(30, 30, 30, 0.95);
+}
+
+body.dark-mode .theme-toggle-btn {
+    background: rgba(60, 60, 60, 0.8);
+    border-color: #888;
+}
+
+/* ── Dark mode ──────────────────────────────────────────────────────────── */
+body.dark-mode {
+    background-color: #1a1a1a !important;
+    color: #e8e8e8 !important;
+}
+
+body.dark-mode .ms-box,
+body.dark-mode .ms-identity,
+body.dark-mode .retro-box,
+body.dark-mode .post-card,
+body.dark-mode .member-row {
+    background: #2a2a2a !important;
+    border-color: #555 !important;
+    color: #e8e8e8 !important;
+}
+
+body.dark-mode .ms-box-header {
+    background: linear-gradient(to bottom, #444 0%, #333 100%) !important;
+    color: #eee !important;
+    border-color: #555 !important;
+}
+
+body.dark-mode .ms-box-body,
+body.dark-mode .ms-bio,
+body.dark-mode .post-body {
+    color: #e8e8e8 !important;
+}
+
+body.dark-mode .ms-username,
+body.dark-mode .ms-contact-table a,
+body.dark-mode .ms-crew-list a,
+body.dark-mode .ms-quick-links a,
+body.dark-mode .ms-top8-name,
+body.dark-mode .member-row a {
+    color: #88ccff !important;
+}
+
+body.dark-mode .ms-away {
+    background: #3d3520 !important;
+    border-color: #7a6500 !important;
+    color: #ffeeaa !important;
+}
+
+body.dark-mode .ms-mutual-crew {
+    background: #1a3320 !important;
+    border-color: #336633 !important;
+    color: #88ffaa !important;
+}
+
+body.dark-mode .ms-bulletin-body {
+    color: #e8e8e8 !important;
+}
+
+body.dark-mode .site-nav {
+    background: linear-gradient(to bottom, #222 0%, #111 100%) !important;
+}
+
+body.dark-mode input[type="text"],
+body.dark-mode input[type="email"],
+body.dark-mode input[type="password"],
+body.dark-mode input[type="search"],
+body.dark-mode input[type="url"],
+body.dark-mode textarea,
+body.dark-mode select {
+    background: #ffffff !important;
+    color: #222222 !important;
+}
+
+body.dark-mode #icq-win {
+    background: #c0c0c0 !important;
+}
+
+/* ── Mobile ───────────────────────────────────────────────────────────────── */
+@media (max-width: 680px) {
+    .ms-profile-body {
+        grid-template-columns: 1fr;
+    }
+
+    .ms-sidebar {
+        position: static;
+        max-height: none;
+        overflow: visible;
+    }
+
+    .ms-profile-sticky-header {
+        position: relative;
+    }
+
+    .ms-music-float {
+        width: calc(100vw - 32px);
+        max-width: 280px;
+        bottom: 12px;
+        left: 12px;
+    }
+
+    .ms-profile-pic,
+    .ms-profile-pic-placeholder {
+        width: 100px;
+        height: 100px;
+    }
+
+    .search-form input[type="text"] {
+        width: 90px;
+    }
+
+    .nav-primary a,
+    .nav-primary .nav-btn {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+}
+
+/* ── Phase 3: view counter, photos tabs, profile song ─────────────────── */
+.ms-view-badge {
+    display: inline-block;
+    background: #ffff99;
+    border: 2px solid #ff6600;
+    color: #660000;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 3px 8px;
+    margin: 4px 0 6px;
+    box-shadow: 1px 1px 0 #cc4400;
+}
+
+.ms-photo-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 10px;
+    border: 1px solid #999;
+}
+
+.ms-tab {
+    flex: 1;
+    background: #e8e8e8;
+    border: none;
+    border-right: 1px solid #999;
+    padding: 6px 10px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    cursor: pointer;
+}
+
+.ms-tab:last-child {
+    border-right: none;
+}
+
+.ms-tab-active {
+    background: var(--accent, #2b5797);
+    color: #fff;
+}
+
+.ms-tab-panel {
+    min-height: 40px;
+}
+
+/* ICQ floating windows */
+.icq-float-win {
+    background: #c0c0c0;
+    border: 2px solid #fff;
+    border-right-color: #808080;
+    border-bottom-color: #808080;
+    box-shadow: 2px 2px 0 #000;
+    font-family: inherit;
+    font-size: 13px;
+}
+
+.icq-titlebar {
+    background: linear-gradient(to right, #000080, #1084d0);
+    color: #fff;
+    padding: 4px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: move;
+    user-select: none;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.icq-titlebar-btns {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.icq-titlebar-btns button {
+    background: #c0c0c0;
+    border: 1px outset #fff;
+    width: 18px;
+    height: 16px;
+    font-size: 10px;
+    cursor: pointer;
+    padding: 0;
+}
+
+.icq-buddy-list-body {
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 4px 0;
+}
+
+.icq-buddy-row {
+    padding: 5px 8px;
+    border-bottom: 1px solid #aaa;
+    cursor: pointer;
+    background: #f0f0f0;
+    font-size: 12px;
+}
+
+.icq-buddy-row:hover {
+    background: #ddeeff;
+}
+
+.icq-panel-footer {
+    margin-top: 6px;
+    padding: 6px;
+    text-align: center;
+    border-top: 1px solid #999;
+}
+
+.icq-panel-footer button {
+    background: #000080;
+    color: #ffff00;
+    border: 2px outset #c0c0c0;
+    font-family: inherit;
+    font-size: 11px;
+    padding: 3px 10px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.icq-chat-win {
+    font-family: inherit;
+    font-size: 13px;
+}
+
+.sound-btn.quote-btn {
+    min-height: 52px;
+    align-items: flex-start;
+}
+
+.ms-music-float {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    width: 260px;
+    z-index: 9990;
+    background: #fff;
+    border: 2px solid #333;
+    box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+.ms-music-float-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: linear-gradient(to bottom, #e8e8e8 0%, #c8c8c8 100%);
+    border-bottom: 1px solid #999;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #333;
+    text-transform: uppercase;
+}
+
+.ms-music-float-min {
+    background: #ddd;
+    border: 1px outset #bbb;
+    width: 20px;
+    height: 20px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+}
+
+.ms-music-float-body {
+    padding: 6px;
+}
+
+.ms-music-float .ms-profile-song {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.ms-music-float .ms-media iframe {
+    height: 118px !important;
+    max-height: 118px;
+}
+
+.ms-music-float .ms-music-link {
+    font-size: 11px;
+    padding: 6px 10px;
+    display: block;
+    text-align: center;
+}
+
+.ms-view-all {
+    text-align: center;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed #ccc;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.ms-view-all a {
+    color: #003399;
+    text-decoration: none;
+}
+
+.ms-view-all a:hover {
+    text-decoration: underline;
+    color: var(--accent, #2b5797);
+}
+
+.ms-profile-subpage {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 8px 24px;
+}
+
+.ms-back-link {
+    margin: 10px 0;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.ms-back-link a {
+    color: #003399;
+}
+
+.ms-updates-tabs .ms-tab {
+    text-align: center;
+    text-decoration: none;
+    color: #333;
+    box-sizing: border-box;
+}
+
+.ms-profile-song {
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed #ccc;
+}
+
+.ms-profile-song-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #1e3a5f;
+    margin: 0 0 4px;
+}
+
+.ms-profile-song audio {
+    width: 100%;
+    height: 32px;
+}
+
+.ms-music-link {
+    display: inline-block;
+    padding: 8px 14px;
+    background: linear-gradient(180deg, #a8b8c8 0%, #7a94aa 100%);
+    border: 2px outset #a8b8c8;
+    color: #1a2a3a;
+    font-size: 13px;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.ms-music-link:hover {
+    background: linear-gradient(180deg, #b8c8d8 0%, #8aa4ba 100%);
+    color: #0f1a28;
+}
+
+body.dark-mode .ms-music-float {
+    background: #2a2a2a !important;
+    border-color: #666 !important;
+}
+
+body.dark-mode .ms-music-float-header {
+    background: linear-gradient(to bottom, #444 0%, #333 100%) !important;
+    color: #eee !important;
+}
+
+body.dark-mode .ms-profile-sticky-header {
+    background: linear-gradient(to right, #333 0%, #1a1a1a 100%) !important;
+    border-color: #555 !important;
+}
+
+body.dark-mode .ms-profile-body {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-color: #555 !important;
+}
+
+body.dark-mode .ms-profile-nav {
+    background: #2a2a10 !important;
+    border-color: var(--accent, #2b5797) !important;
+}
+
+body.dark-mode .ms-profile-nav a {
+    color: #99ccff !important;
+}
+
+body.dark-mode .ms-view-badge {
+    background: #3d3520 !important;
+    border-color: #ff9900 !important;
+    color: #ffeeaa !important;
+}
+
+/* ── Retro page forms (edit, polls, sounds, etc.) ─────────────────────── */
+.retro-form label {
+    display: block;
+    margin-top: 14px;
+    font-weight: bold;
+    color: #1e3a5f;
+}
+
+.retro-form input[type="text"],
+.retro-form input[type="email"],
+.retro-form input[type="password"],
+.retro-form input[type="color"],
+.retro-form input[type="file"],
+.retro-form textarea,
+.retro-form select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px;
+    font-family: inherit;
+    font-size: 14px;
+    border: 2px solid var(--accent, #2b5797);
+    margin-top: 4px;
+    border-radius: 0;
+}
+
+.retro-form textarea {
+    resize: vertical;
+}
+
+.retro-form .section-note {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+}
+
+.retro-form input[type="color"] {
+    height: 40px;
+    padding: 2px;
+    cursor: pointer;
+}
+
+/* ── Polls page ─────────────────────────────────────────────────────────── */
+.polls-box {
+    max-width: 700px;
+}
+
+.poll-card {
+    padding: 14px;
+    border: 2px solid var(--accent, #2b5797);
+    background: #fafafa;
+    margin-bottom: 14px;
+    box-shadow: 2px 2px 0 #ddd;
+}
+
+.poll-question {
+    font-size: 15px;
+    font-weight: bold;
+    color: #330033;
+    margin: 0 0 6px;
+    line-height: 1.4;
+}
+
+.poll-meta {
+    font-size: 11px;
+    color: #999;
+    margin-bottom: 12px;
+}
+
+.vote-option {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    background: #fff0f8;
+    border: 2px solid var(--accent, #2b5797);
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    font-family: inherit;
+    font-size: 14px;
+    color: #330033;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 0;
+}
+
+.vote-option:hover {
+    background: var(--accent, #2b5797);
+    color: #fff;
+}
+
+.result-bar-bg {
+    background: #ffe0f0;
+    border: 1px solid var(--accent, #2b5797);
+    height: 18px;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 0;
+}
+
+.result-bar-fill {
+    background: linear-gradient(to right, #2b5797, #4a7ab0);
+    height: 100%;
+}
+
+/* ── Diary / blog page shells ───────────────────────────────────────────── */
+.diary-box {
+    background: #fdf6e3;
+    max-width: 700px;
+    border: 3px solid #8b0000;
+    box-shadow: 3px 3px 0 #5c0000;
+}
+
+.blog-box {
+    max-width: 700px;
+    border: 3px solid #006633;
+    box-shadow: 3px 3px 0 #004422;
+}
+
+.private-banner {
+    background: #8b0000;
+    color: #fff3e0;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: bold;
+    margin: -20px -24px 20px -24px;
+}
+
+.public-banner {
+    background: #006633;
+    color: #e8ffe8;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: bold;
+    margin: -20px -24px 20px -24px;
+}
+
+.entry-card {
+    padding: 12px;
+    border: 2px solid #ccc;
+    background: #fafafa;
+    margin-bottom: 12px;
+    box-shadow: 2px 2px 0 #ddd;
+}
+
+body.dark-mode .poll-card,
+body.dark-mode .entry-card {
+    background: #2a2a2a !important;
+    border-color: #555 !important;
+}
+
+/* ── The Spot — Public Corner + Marketplace ── */
+.spot-box { max-width: 720px; margin: 0 auto; }
+.spot-tagline { font-size: 14px; color: #555; margin: -8px 0 16px; }
+.spot-qotd {
+    background: linear-gradient(135deg, #fff8e8 0%, #ffe8f4 100%);
+    border: 2px solid var(--accent, #2b5797);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    text-align: center;
+}
+.spot-qotd-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; }
+.spot-qotd blockquote { margin: 8px 0 4px; font-style: italic; font-size: 15px; color: #333; }
+.spot-qotd cite { font-size: 12px; color: #666; }
+.spot-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.spot-tab {
+    padding: 8px 16px;
+    border: 2px solid var(--accent, #2b5797);
+    background: #fff;
+    text-decoration: none;
+    color: var(--accent, #2b5797);
+    font-weight: bold;
+    font-size: 14px;
+}
+.spot-tab.active { background: var(--accent, #2b5797); color: #fff; }
+.spot-location-form { margin-bottom: 16px; }
+.spot-location-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.spot-location-row input, .spot-location-row select { flex: 1; min-width: 80px; }
+.spot-actions { margin-bottom: 16px; }
+.spot-section-title { font-size: 16px; color: var(--accent, #2b5797); margin: 16px 0 8px; }
+.spot-list { list-style: none; padding: 0; margin: 0; }
+.spot-item {
+    border-bottom: 1px solid #ddd;
+    padding: 10px 0;
+}
+.spot-item.spot-promoted { background: #fffde8; padding-left: 8px; margin-left: -8px; padding-right: 8px; }
+.spot-item-title { font-weight: bold; font-size: 15px; color: var(--accent, #2b5797); text-decoration: none; }
+.spot-item-title:hover { text-decoration: underline; }
+.spot-item-meta { font-size: 12px; color: #777; margin-top: 4px; }
+.spot-badge { background: #ffcc00; color: #333; padding: 1px 6px; font-size: 11px; font-weight: bold; }
+.spot-cat-tag { background: #e8e8e8; padding: 1px 6px; font-size: 11px; }
+.spot-cat-filter { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; font-size: 13px; }
+.spot-cat-filter a { padding: 3px 8px; border: 1px solid #ccc; text-decoration: none; color: #444; }
+.spot-cat-filter a.active { background: var(--accent, #2b5797); color: #fff; border-color: var(--accent, #2b5797); }
+.spot-empty { color: #999; font-style: italic; padding: 24px 0; text-align: center; }
+.spot-fee-box { background: #f8f8f8; border: 1px dashed #aaa; padding: 12px; margin: 12px 0; }
+.spot-fee-note { font-size: 12px; }
+.spot-view-box { max-width: 640px; margin: 0 auto; }
+.spot-view-meta { font-size: 13px; color: #666; margin-bottom: 16px; }
+.spot-view-body { line-height: 1.5; margin-bottom: 16px; }
+.spot-price { font-weight: bold; color: #060; }
+.spot-form-box { max-width: 560px; margin: 0 auto; }
+body.dark-mode .spot-qotd { background: #2a2520; border-color: #555; }
+body.dark-mode .spot-qotd blockquote { color: #eee; }
+body.dark-mode .spot-tab { background: #333; }
+body.dark-mode .spot-item.spot-promoted { background: #3d3520; }
+body.dark-mode .spot-fee-box { background: #2a2a2a; }
