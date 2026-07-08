@@ -409,18 +409,29 @@ class CornerEvent(db.Model):
 
 
 class Invite(db.Model):
-    """T026 — single-use invite tokens. Any user can generate one to bring someone new."""
+    """T026 — reusable invite links. Each user gets one permanent link; unlimited signups."""
     __tablename__ = "invite"
     id = db.Column(db.Integer, primary_key=True)
     token = db.Column(db.String(64), unique=True, nullable=False)
     created_by = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    used_by = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
-    used_at = db.Column(db.DateTime, nullable=True)
+    used_by = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)  # legacy; unused
+    used_at = db.Column(db.DateTime, nullable=True)  # legacy; unused
     creator = db.relationship("User", foreign_keys=[created_by],
                               backref=db.backref("invites_sent", lazy=True))
     used_by_user = db.relationship("User", foreign_keys=[used_by],
                                    backref=db.backref("invite_used", uselist=False, lazy=True))
+
+
+class InviteReferral(db.Model):
+    """Signup attributed to an invite link (link stays reusable)."""
+    __tablename__ = "invite_referral"
+    id = db.Column(db.Integer, primary_key=True)
+    invite_id = db.Column(db.Integer, db.ForeignKey("invite.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    referred_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    invite = db.relationship("Invite", backref=db.backref("referrals", lazy=True))
+    user = db.relationship("User", backref=db.backref("referred_via", uselist=False, lazy=True))
 
 class Feedback(db.Model):
     """T027 — bug reports and suggestions. user_id is nullable so anonymous submissions work."""
@@ -991,9 +1002,8 @@ def register():
         db.session.flush()  # get user.id before commit
         if token:
             inv = Invite.query.filter_by(token=token).first()
-            if inv and inv.used_by is None:
-                inv.used_by = user.id
-                inv.used_at = datetime.utcnow()
+            if inv:
+                db.session.add(InviteReferral(invite_id=inv.id, user_id=user.id))
         db.session.commit()
         flash("Account created! You can now log in.", "success")
         return redirect(url_for("login"))
@@ -2729,10 +2739,14 @@ def spot_event_delete(event_id):
 @app.route("/invite/create", methods=["POST"])
 @login_required
 def invite_create():
-    token = secrets.token_urlsafe(32)
-    invite = Invite(token=token, created_by=current_user.id)
-    db.session.add(invite)
-    db.session.commit()
+    existing = Invite.query.filter_by(created_by=current_user.id).order_by(Invite.created_at.asc()).first()
+    if existing:
+        token = existing.token
+    else:
+        token = secrets.token_urlsafe(32)
+        invite = Invite(token=token, created_by=current_user.id)
+        db.session.add(invite)
+        db.session.commit()
     link = url_for("invite_landing", token=token, _external=True)
     return jsonify({"link": link})
 
@@ -2905,7 +2919,11 @@ def account_delete():
     ProfileView.query.filter(
         (ProfileView.profile_id == uid) | (ProfileView.viewer_id == uid)
     ).delete(synchronize_session=False)
-    # 9. Invites created by user (delete), used by user (nullify FK)
+    # 9. Invites and referrals
+    invite_ids = [i.id for i in Invite.query.filter_by(created_by=uid).all()]
+    if invite_ids:
+        InviteReferral.query.filter(InviteReferral.invite_id.in_(invite_ids)).delete(synchronize_session=False)
+    InviteReferral.query.filter_by(user_id=uid).delete(synchronize_session=False)
     Invite.query.filter_by(created_by=uid).delete(synchronize_session=False)
     for inv in Invite.query.filter_by(used_by=uid).all():
         inv.used_by = None

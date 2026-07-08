@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import app as application
-from app import app, db, User, CrewRequest, DirectMessage, bcrypt, JournalEntry, Poll, PollOption, PollVote, Invite, Feedback, PasswordResetToken, PhotoMontage, MontageSlide, SpotListing, CornerEvent
+from app import app, db, User, CrewRequest, DirectMessage, bcrypt, JournalEntry, Poll, PollOption, PollVote, Invite, InviteReferral, Feedback, PasswordResetToken, PhotoMontage, MontageSlide, SpotListing, CornerEvent
 
 app.config["TESTING"] = True
 app.config["WTF_CSRF_ENABLED"] = False
@@ -707,7 +707,7 @@ def test_invites():
         r = c.get("/invite/totallybadtoken999")
         check("Invalid invite token shows landing (not 500)", r.status_code == 200)
 
-    # 5. Register with invite token marks invite used
+    # 5. Register with invite token records referral (link stays reusable)
     with app.test_client() as c:
         login(c, "testbot@millennial-space.com", "testpass123")
         r = c.post("/invite/create")
@@ -723,11 +723,36 @@ def test_invites():
         check("Registration with invite token succeeds", r.status_code == 200)
         with app.app_context():
             inv = Invite.query.filter_by(token=token2).first()
-            check("Invite marked as used", inv is not None and inv.used_by is not None)
-            new_user = User.query.filter_by(username="invitetestuser").first()
-            if new_user:
-                db.session.delete(new_user)
-                db.session.commit()
+            check("Invite referral recorded", inv is not None and len(inv.referrals) == 1)
+            check("Invite link not consumed", inv.used_by is None)
+
+    # 6. Same invite link works for a second signup
+    with app.test_client() as c:
+        r = c.post("/register", data={
+            "username": "invitetestuser2",
+            "email": "invitetestuser2@test.com",
+            "password": "testpass123",
+            "invite_token": token2
+        }, follow_redirects=True)
+        check("Second registration with same invite succeeds", r.status_code == 200)
+        with app.app_context():
+            inv = Invite.query.filter_by(token=token2).first()
+            check("Second referral recorded", inv is not None and len(inv.referrals) == 2)
+            for username in ("invitetestuser", "invitetestuser2"):
+                u = User.query.filter_by(username=username).first()
+                if u:
+                    InviteReferral.query.filter_by(user_id=u.id).delete()
+                    db.session.delete(u)
+            db.session.commit()
+
+    # 7. Invite create returns same permanent link
+    with app.test_client() as c:
+        login(c, "testbot@millennial-space.com", "testpass123")
+        r1 = c.post("/invite/create")
+        r2 = c.post("/invite/create")
+        link1 = json.loads(r1.data)["link"]
+        link2 = json.loads(r2.data)["link"]
+        check("Repeated invite create returns same link", link1 == link2)
 
 
 def test_feedback():

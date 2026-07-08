@@ -136,10 +136,10 @@
     <!-- T026 — Invite Links -->
     <hr style="border:none;border-top:2px dashed #cc99cc;margin:24px 0;">
     <h2 style="color:#660066;font-size:16px;margin-bottom:8px;">📨 Invite Someone</h2>
-    <p class="section-note" style="margin-bottom:10px;">Generate a link to share — when they click it they'll land on a page that explains the site, then go to register. Each link is single-use.</p>
+    <p class="section-note" style="margin-bottom:10px;">Get your personal invite link and share it anywhere — friends, group chats, social media. Anyone with the link can sign up, and you can use the same link forever.</p>
     <button id="gen-invite-btn" onclick="generateInvite()"
             style="background:#000080;color:#ffff00;border:2px outset #c0c0c0;font-family:inherit;font-size:13px;padding:6px 16px;cursor:pointer;font-weight:bold;">
-        ✉ Generate Invite Link
+        ✉ Get My Invite Link
     </button>
     <div id="invite-result" style="display:none;margin-top:10px;">
         <input id="invite-link-box" type="text" readonly
@@ -157,14 +157,14 @@
         <p style="font-size:13px;color:#660066;font-weight:bold;margin-bottom:6px;">Your invites:</p>
         {% for inv in invites %}
         <div style="font-size:12px;color:#444;padding:4px 0;border-bottom:1px solid #ddd;">
-            {% if inv.used_by %}
-                ✅ Used by <strong>{{ inv.used_by_user.username if inv.used_by_user else '(deleted user)' }}</strong>
-                on {{ inv.used_at.strftime('%b %d, %Y') if inv.used_at else '' }}
+            🔗
+            <span style="font-family:monospace;font-size:11px;color:#000080;">
+                {{ request.host_url }}invite/{{ inv.token }}
+            </span>
+            {% if inv.referrals %}
+                — {{ inv.referrals|length }} friend{{ 's' if inv.referrals|length != 1 else '' }} joined
             {% else %}
-                ⏳ Pending —
-                <span style="font-family:monospace;font-size:11px;color:#000080;">
-                    {{ request.host_url }}invite/{{ inv.token }}
-                </span>
+                — no signups yet
             {% endif %}
         </div>
         {% endfor %}
@@ -186,7 +186,7 @@
             })
             .catch(() => {
                 btn.disabled = false;
-                btn.textContent = '✉ Generate Invite Link';
+                btn.textContent = '✉ Get My Invite Link';
                 alert('Could not generate invite. Try again.');
             });
     }

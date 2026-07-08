@@ -54,16 +54,12 @@
 <div class="invite-box">
     <h1>★ {{ site_name }}</h1>
 
-    {% if invite and not invite.used_by %}
+    {% if invite %}
         <p style="font-size:18px;color:#660066;font-weight:bold;margin-bottom:6px;">
             <strong>{{ invite.creator.username }}</strong> invited you to join!
         </p>
         <p style="font-size:13px;color:#888;margin-top:0;">
             The retro social network for people who remember when the internet was fun.
-        </p>
-    {% elif invite and invite.used_by %}
-        <p style="font-size:15px;color:#666;">
-            This invite link has already been used — but you can still make an account!
         </p>
     {% else %}
         <p style="font-size:15px;color:#666;">
