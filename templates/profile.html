@@ -23,6 +23,26 @@
 {% endif %}
 <div class="ms-profile ms-profile-theme">
 
+    {% if daily_quote %}
+    <section class="ms-daily-inspiration" role="complementary" aria-labelledby="daily-inspiration-heading">
+        <header class="ms-daily-inspiration-header">
+            <h2 id="daily-inspiration-heading" class="ms-daily-inspiration-title">
+                ★ {{ daily_quote_heading(daily_quote) }} ★
+            </h2>
+            <p class="ms-daily-inspiration-sub">One positive thought for everyone today</p>
+        </header>
+        <div class="ms-daily-inspiration-body">
+            <blockquote class="ms-daily-inspiration-text">"{{ daily_quote.text }}"</blockquote>
+            {% if daily_quote.author %}
+            <cite class="ms-daily-inspiration-author">— {{ daily_quote.author }}</cite>
+            {% endif %}
+            {% if is_owner %}
+            <a href="{{ url_for('edit_profile') }}#quote-settings" class="ms-daily-inspiration-hide">Turn off on my profile</a>
+            {% endif %}
+        </div>
+    </section>
+    {% endif %}
+
     <header class="ms-profile-sticky-header">
         {% set pic_src = image_url(user.profile_pic, 'profile_pics') %}
         {% if pic_src %}
@@ -65,21 +85,6 @@
         </div>
         {% endif %}
     </header>
-
-    {% if daily_quote %}
-    <div class="ms-daily-quote-banner" role="complementary" aria-label="Daily positive quote">
-        <div class="ms-daily-quote-inner">
-            <span class="ms-daily-quote-label">✨ Today's Vibe</span>
-            <blockquote class="ms-daily-quote-text">"{{ daily_quote.text }}"</blockquote>
-            {% if daily_quote.author %}
-            <cite class="ms-daily-quote-author">— {{ daily_quote.author }}</cite>
-            {% endif %}
-        </div>
-        {% if is_owner %}
-        <a href="{{ url_for('edit_profile') }}#quote-settings" class="ms-daily-quote-hide-link" title="Turn off on your profile">Hide quote on my page</a>
-        {% endif %}
-    </div>
-    {% endif %}
 
     <div class="ms-profile-body">
 

@@ -136,6 +136,7 @@ def utility_processor():
         site_name=SITE_NAME,
         format_fee=format_fee,
         quote_of_the_day=quote_of_the_day,
+        daily_quote_heading=daily_quote_heading,
     )
 
 class User(db.Model, UserMixin):
@@ -823,6 +824,13 @@ def quote_of_the_day():
         return None
     day_num = int(datetime.utcnow().strftime("%Y%m%d"))
     return quotes[day_num % len(quotes)]
+
+
+def daily_quote_heading(quote):
+    """Explicit label: famous attributed lines vs affirmations."""
+    if not quote:
+        return ""
+    return "Quote of the Day" if quote.get("author") else "Affirmation of the Day"
 
 
 def normalize_state(state):

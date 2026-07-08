@@ -75,7 +75,9 @@ def test_profile():
         r = c.get("/profile/brickface082")
         check("Profile page loads unauthenticated", r.status_code == 200)
         check("Profile shows username", b"brickface082" in r.data)
-        check("Profile shows prominent daily quote", b"ms-daily-quote-banner" in r.data and b"Today's Vibe" in r.data)
+        check("Profile shows daily inspiration billboard", b"ms-daily-inspiration" in r.data)
+        check("Profile labels affirmation or quote of the day",
+              b"Affirmation of the Day" in r.data or b"Quote of the Day" in r.data)
 
     with app.test_client() as c:
         login(c, "testbot@millennial-space.com", "testpass123")
@@ -85,14 +87,14 @@ def test_profile():
         }, follow_redirects=True)
         check("Edit profile saves quote preference", r.status_code == 200)
         r = c.get("/profile/testbot")
-        check("Quote visible when enabled", b"ms-daily-quote-banner" in r.data)
+        check("Quote visible when enabled", b"ms-daily-inspiration" in r.data)
 
         with app.app_context():
             u = User.query.filter_by(username="testbot").first()
             u.show_daily_quote = False
             db.session.commit()
         r = c.get("/profile/testbot")
-        check("Quote hidden when disabled", b"ms-daily-quote-banner" not in r.data)
+        check("Quote hidden when disabled", b"ms-daily-inspiration" not in r.data)
         with app.app_context():
             u = User.query.filter_by(username="testbot").first()
             u.show_daily_quote = True
@@ -1057,7 +1059,8 @@ def test_spot():
     with app.test_client() as c:
         r = c.get("/spot")
         check("Spot hub loads", r.status_code == 200)
-        check("Spot shows Quote of the Day", b"Quote of the Day" in r.data)
+        check("Spot shows daily inspiration label",
+              b"Affirmation of the Day" in r.data or b"Quote of the Day" in r.data)
         with app.app_context():
             from app import load_quotes
             quotes = load_quotes()

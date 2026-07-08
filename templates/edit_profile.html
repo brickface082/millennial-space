@@ -127,18 +127,18 @@
             {% endif %}
         </p>
 
-        <label id="quote-settings">✨ Daily Quote</label>
+        <label id="quote-settings">✨ Affirmation / Quote of the Day</label>
         <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
             <label style="display:flex;align-items:center;gap:8px;font-weight:normal;margin-top:0;cursor:pointer;">
                 <input type="checkbox" name="show_daily_quote" value="on"
                        {% if current_user.show_daily_quote %}checked{% endif %}
                        style="width:auto;margin:0;">
-                Show today's positive quote on my profile
+                Show Affirmation or Quote of the Day at the top of my profile
             </label>
         </div>
         <p class="section-note">
-            Everyone who visits your page sees one uplifting affirmation or famous quote at the top.
-            Uncheck to hide it on your profile only — other people's pages still show theirs.
+            A big labeled banner at the very top of your page — affirmations and famous quotes rotate daily.
+            Uncheck to hide it on your profile only.
         </p>
 
         <input class="btn-primary" type="submit" value="Save My Space!" style="margin-top:20px;font-size:16px;padding:10px 24px;">

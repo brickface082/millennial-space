@@ -8,11 +8,15 @@
     <p class="spot-tagline">Local events, a fair marketplace, and your town's Public Corner — no ads on anyone's profile.</p>
 
     {% if qotd %}
-    <div class="spot-qotd">
-        <span class="spot-qotd-label">Quote of the Day</span>
-        <blockquote>"{{ qotd.text }}"</blockquote>
-        {% if qotd.author %}<cite>— {{ qotd.author }}</cite>{% endif %}
-    </div>
+    <section class="ms-daily-inspiration ms-daily-inspiration--compact" aria-labelledby="spot-daily-heading">
+        <header class="ms-daily-inspiration-header">
+            <h2 id="spot-daily-heading" class="ms-daily-inspiration-title">★ {{ daily_quote_heading(qotd) }} ★</h2>
+        </header>
+        <div class="ms-daily-inspiration-body">
+            <blockquote class="ms-daily-inspiration-text">"{{ qotd.text }}"</blockquote>
+            {% if qotd.author %}<cite class="ms-daily-inspiration-author">— {{ qotd.author }}</cite>{% endif %}
+        </div>
+    </section>
     {% endif %}
 
     <div class="spot-tabs">
