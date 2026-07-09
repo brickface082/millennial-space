@@ -2,7 +2,7 @@
 
 ## Right now
 
-1. **Finish Yahoo signup** — click through Terms, complete account. Check MillennialSpace@yahoo.com inbox for verification.
+1. **Finish Yahoo signup** — click through Terms, complete account. Check the outreach Yahoo inbox for verification.
 2. **Tell Grok or Az "Yahoo is live"** when you can log in at mail.yahoo.com.
 
 ## What Az will do (no Bluesky, no Reddit)
