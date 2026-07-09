@@ -1228,36 +1228,54 @@ body.dark-mode .ms-daily-inspiration-hide { color: #aaa; }
     word-break: break-word;
 }
 
-.comment-row {
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
+/* Text-link buttons — no white browser button chrome */
+.ms-link-btn {
+    color: #003399;
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 12px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
 }
 
-.comment-main {
-    flex: 1;
-    min-width: 0;
+.ms-link-btn:hover {
+    text-decoration: underline;
+}
+
+.ms-link-btn.danger {
+    color: #cc0000;
 }
 
 .comment-main .post-body {
-    margin-bottom: 0;
+    margin-bottom: 4px;
 }
 
 .comment-actions {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 0;
+    margin-top: 2px;
+    font-size: 11px;
 }
 
 .comment-actions form {
+    display: inline;
     margin: 0;
 }
 
 .comment-actions .ms-link-btn {
     font-size: 11px;
     white-space: nowrap;
+}
+
+.comment-actions .comment-action-sep {
+    color: #aaa;
+    margin: 0 5px;
+    user-select: none;
 }
 
 .comment-reply {
@@ -1459,6 +1477,20 @@ body.dark-mode .member-row {
 body.dark-mode .comment-reply {
     background: #1e2a35 !important;
     border-left-color: var(--accent, #6a9fd8) !important;
+}
+
+body.dark-mode .ms-link-btn {
+    color: #88ccff !important;
+    background: none !important;
+    border: none !important;
+}
+
+body.dark-mode .ms-link-btn.danger {
+    color: #ff8888 !important;
+}
+
+body.dark-mode .comment-actions .comment-action-sep {
+    color: #666 !important;
 }
 
 body.dark-mode .ms-box-header {
