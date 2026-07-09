@@ -7,7 +7,7 @@
     <h1 class="retro-title">🛒 Post a Listing</h1>
     <p class="section-note"><a href="{{ url_for('spot_index', tab='marketplace') }}">← Back to {{ spot_board_label }}</a></p>
 
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data">
         <label>Category</label>
         <select name="category" id="listing-category">
             {% for key, info in marketplace_categories.items() %}
@@ -24,6 +24,9 @@
 
         <label>Price <span style="font-weight:normal;color:#666;">(optional)</span></label>
         <input type="text" name="price" maxlength="40" placeholder="e.g. $50 or Free or Negotiable">
+
+        <label>Photos <span style="font-weight:normal;color:#666;">(optional, up to {{ listing_max_photos }})</span></label>
+        <input type="file" name="photos" accept="image/*" multiple>
 
         <label>Location <span style="font-weight:normal;color:#666;">(required)</span></label>
         <div class="spot-location-row">

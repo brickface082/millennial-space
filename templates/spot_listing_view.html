@@ -15,6 +15,16 @@
         · by <a href="{{ url_for('profile', username=listing.poster.username) }}">{{ listing.poster.username }}</a>
     </div>
 
+    {% if listing.photos %}
+    <div class="spot-listing-photos">
+        {% for photo in listing.photos %}
+        <a href="{{ photo.url }}" target="_blank" rel="noopener">
+            <img src="{{ photo.url }}" alt="{{ listing.title }} photo {{ loop.index }}" class="spot-listing-photo">
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="spot-view-body">{{ listing.body | bbcode }}</div>
 
     <p class="section-note">Reply via <a href="{{ url_for('chat', username=listing.poster.username) }}">Mail</a> or leave a comment on their profile.</p>

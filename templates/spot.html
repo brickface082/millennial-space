@@ -108,12 +108,19 @@
     <ul class="spot-list">
         {% for item in listings %}
         <li class="spot-item">
+            {% if item.photos %}
+            <a href="{{ url_for('spot_listing_view', listing_id=item.id) }}" class="spot-item-thumb-link">
+                <img src="{{ item.photos[0].url }}" alt="" class="spot-item-thumb">
+            </a>
+            {% endif %}
+            <div class="spot-item-content">
             <a href="{{ url_for('spot_listing_view', listing_id=item.id) }}" class="spot-item-title">{{ item.title }}</a>
             <div class="spot-item-meta">
                 <span class="spot-cat-tag">{{ marketplace_categories.get(item.category, {}).get('label', item.category) }}</span>
                 {% if item.price %}· {{ item.price }}{% endif %}
                 · {{ item.city }}, {{ item.state }}
                 · {{ item.created_at.strftime('%b %d') }}
+            </div>
             </div>
         </li>
         {% endfor %}

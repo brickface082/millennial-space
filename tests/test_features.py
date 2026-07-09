@@ -4,10 +4,12 @@
 import sys
 import os
 from datetime import datetime, timedelta
+from io import BytesIO
+from unittest.mock import patch
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import app as application
-from app import app, db, User, CrewRequest, DirectMessage, bcrypt, JournalEntry, Poll, PollOption, PollVote, Invite, InviteReferral, Feedback, PasswordResetToken, PhotoMontage, MontageSlide, SpotListing, CornerEvent, Comment
+from app import app, db, User, CrewRequest, DirectMessage, bcrypt, JournalEntry, Poll, PollOption, PollVote, Invite, InviteReferral, Feedback, PasswordResetToken, PhotoMontage, MontageSlide, SpotListing, SpotListingPhoto, CornerEvent, Comment
 
 app.config["TESTING"] = True
 app.config["WTF_CSRF_ENABLED"] = False
@@ -1150,6 +1152,32 @@ def test_spot():
         r = c.get(f"/spot/event/{event_id}")
         check("Event detail page loads", r.status_code == 200 and b"Test Block Party" in r.data)
 
+        fake_jpeg = b"\xff\xd8\xff\xe0" + b"\x00" * 100
+        with patch("app.upload_to_cloudinary", return_value=("https://res.cloudinary.com/test/lamp.jpg", "spot/test/lamp")):
+            r = c.post("/spot/listing/new", data={
+                "category": "for_sale",
+                "title": "Photo Lamp",
+                "body": "With picture.",
+                "price": "$15",
+                "city": "Springfield",
+                "state": "OH",
+                "photos": (BytesIO(fake_jpeg), "lamp.jpg"),
+            }, content_type="multipart/form-data", follow_redirects=True)
+        check("Listing with photo posts", r.status_code == 200)
+        photo_listing_id = None
+        with app.app_context():
+            photo_li = SpotListing.query.filter_by(title="Photo Lamp").first()
+            check("Photo listing in DB", photo_li is not None)
+            if photo_li:
+                photo_listing_id = photo_li.id
+                photo_count = SpotListingPhoto.query.filter_by(listing_id=photo_li.id).count()
+                check("Listing photo saved", photo_count == 1)
+        if photo_listing_id:
+            r = c.get(f"/spot/listing/{photo_listing_id}")
+            check("Listing detail shows photo", b"spot-listing-photo" in r.data)
+            r = c.get("/spot?tab=marketplace&city=Springfield&state=OH")
+            check("Listing board shows thumbnail", b"spot-item-thumb" in r.data)
+
 
 def test_email_updates():
     print("\n-- Email Updates Opt-in --")
@@ -1226,6 +1254,13 @@ def test_profile_comments():
             comment_id = top.id if top else None
         check("comment saved in DB", comment_id is not None)
 
+        edited_marker = "pytest-edited-marker-8842"
+        r = c.post(f"/comment/{comment_id}/edit", data={
+            "body": f"Updated comment {edited_marker}",
+        }, follow_redirects=True)
+        check("author can edit comment", r.status_code == 200)
+        check("edited comment appears", edited_marker.encode() in r.data)
+
         login(c, "testreceiver@millennial-space.com", "testpass123")
         r = c.post(f"/comment/{comment_id}/reply", data={
             "body": f"Thanks testbot! {reply_marker}",
@@ -1246,9 +1281,11 @@ def test_profile_comments():
         check("owner still sees hidden comment", marker.encode() in r.data)
         check("owner sees hidden badge", b"Hidden" in r.data)
 
+        logout(c)
+        login(c, "testbot@millennial-space.com", "testpass123")
         r = c.post(f"/comment/{comment_id}/delete", follow_redirects=True)
-        check("owner can delete comment", r.status_code == 200)
-        check("comment removed after delete", marker.encode() not in r.data)
+        check("author can delete own comment", r.status_code == 200)
+        check("comment removed after delete", edited_marker.encode() not in r.data)
         with app.app_context():
             gone = db.session.get(Comment, comment_id)
             replies_left = Comment.query.filter(

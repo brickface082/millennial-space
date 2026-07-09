@@ -390,6 +390,18 @@ class SpotListing(db.Model):
     expires_at = db.Column(db.DateTime, nullable=False)
     poster = db.relationship("User", backref=db.backref("spot_listings", lazy=True,
                              order_by="SpotListing.created_at.desc()"))
+    photos = db.relationship("SpotListingPhoto", backref="listing", lazy=True,
+                             cascade="all, delete-orphan",
+                             order_by="SpotListingPhoto.position.asc()")
+
+
+class SpotListingPhoto(db.Model):
+    __tablename__ = "spot_listing_photo"
+    id = db.Column(db.Integer, primary_key=True)
+    listing_id = db.Column(db.Integer, db.ForeignKey("spot_listing.id"), nullable=False)
+    url = db.Column(db.Text, nullable=False)
+    public_id = db.Column(db.String(300), nullable=False)
+    position = db.Column(db.Integer, default=0)
 
 
 class CornerEvent(db.Model):
@@ -466,6 +478,7 @@ UPDATES_PER_PAGE = 10
 PROFILE_PREVIEW_COUNT = 3
 
 LISTING_LIFESPAN_DAYS = 30
+LISTING_MAX_PHOTOS = 4
 EVENT_LIFESPAN_DAYS = 60
 EVENT_PROMOTE_FEE_CENTS = 500
 SPOT_BOARD_LABEL = "Listing Space"
@@ -990,6 +1003,35 @@ def profile_music_link_value(user):
 
 def _is_local_profile_song(stored):
     return bool(stored) and not stored.startswith("http") and stored.endswith(".mp3")
+
+def _destroy_spot_listing_photos(listing):
+    """Remove Cloudinary assets for a listing's photos."""
+    for photo in list(listing.photos):
+        try:
+            cloudinary.uploader.destroy(photo.public_id)
+        except Exception:
+            pass
+
+
+def _save_listing_photos(listing, file_list):
+    """Upload up to LISTING_MAX_PHOTOS images for a listing. Returns count saved."""
+    saved = 0
+    for i, f in enumerate(file_list[:LISTING_MAX_PHOTOS]):
+        if not f or not f.filename:
+            continue
+        try:
+            url, public_id = upload_to_cloudinary(f, f"spot_listings/{listing.user_id}")
+            db.session.add(SpotListingPhoto(
+                listing_id=listing.id,
+                url=url,
+                public_id=public_id,
+                position=i,
+            ))
+            saved += 1
+        except Exception:
+            pass
+    return saved
+
 
 def upload_to_cloudinary(file_obj, folder, resize=None):
     """Upload a file to Cloudinary. Returns (secure_url, public_id).
@@ -2572,6 +2614,22 @@ def reply_comment(comment_id):
     db.session.commit()
     return redirect(url_for("profile", username=profile_username) + "#comments")
 
+@app.route("/comment/<int:comment_id>/edit", methods=["POST"])
+@login_required
+def edit_comment(comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    profile_username = comment.profile_user.username
+    if current_user.id != comment.author_id:
+        return "Access denied.", 403
+    body = request.form.get("body", "").strip()
+    if not body:
+        flash("Comment cannot be empty.", "danger")
+        return redirect(url_for("profile", username=profile_username) + "#comments")
+    comment.body = body
+    db.session.commit()
+    flash("Comment updated.", "success")
+    return redirect(url_for("profile", username=profile_username) + "#comments")
+
 @app.route("/comment/<int:comment_id>/private", methods=["POST"])
 @login_required
 def toggle_comment_private(comment_id):
@@ -2704,7 +2762,12 @@ def spot_listing_new():
                 expires_at=datetime.utcnow() + timedelta(days=LISTING_LIFESPAN_DAYS),
             )
             db.session.add(listing)
+            db.session.flush()
+            photo_files = request.files.getlist("photos")
+            photos_saved = _save_listing_photos(listing, photo_files) if photo_files else 0
             db.session.commit()
+            if photos_saved and photos_saved < len([f for f in photo_files if f and f.filename]):
+                flash("Some photos failed to upload.", "danger")
             if fee_cents and waived:
                 flash(f"Listing posted! {format_fee(fee_cents)} fee waived during beta.", "success")
             elif fee_cents:
@@ -2725,6 +2788,7 @@ def spot_listing_new():
         default_zip=default_zip,
         us_states=US_STATES,
         payments_live=spot_payments_live(),
+        listing_max_photos=LISTING_MAX_PHOTOS,
     )
 
 
@@ -2750,6 +2814,7 @@ def spot_listing_delete(listing_id):
     listing = SpotListing.query.get_or_404(listing_id)
     if listing.user_id != current_user.id:
         return "Access denied.", 403
+    _destroy_spot_listing_photos(listing)
     listing.status = "deleted"
     db.session.commit()
     flash("Listing removed.", "info")
@@ -3011,6 +3076,8 @@ def account_delete():
     # 8. Bulletins + Posts + Spot
     Bulletin.query.filter_by(user_id=uid).delete(synchronize_session=False)
     Post.query.filter_by(user_id=uid).delete(synchronize_session=False)
+    for listing in SpotListing.query.filter_by(user_id=uid).all():
+        _destroy_spot_listing_photos(listing)
     SpotListing.query.filter_by(user_id=uid).delete(synchronize_session=False)
     CornerEvent.query.filter_by(user_id=uid).delete(synchronize_session=False)
     UserSound.query.filter_by(user_id=uid).delete(synchronize_session=False)

@@ -7,22 +7,32 @@
         <span class="comment-private-badge" title="Only you can see this">🔒 Hidden</span>
         {% endif %}
     </p>
-    <div class="post-body">{{ comment.body | bbcode }}</div>
+    <div class="post-body" id="comment-body-{{ comment.id }}">{{ comment.body | bbcode }}</div>
     <div class="comment-actions">
         {% if current_user.is_authenticated %}
         <button type="button" class="ms-link-btn comment-reply-btn" onclick="toggleReplyForm({{ comment.id }})">↩️ Reply</button>
+        {% endif %}
+        {% if current_user.is_authenticated and current_user.id == comment.author_id %}
+        <button type="button" class="ms-link-btn" onclick="toggleEditForm({{ comment.id }})">✏️ Edit</button>
         {% endif %}
         {% if is_owner %}
         <form method="POST" action="{{ url_for('toggle_comment_private', comment_id=comment.id) }}" style="display:inline;">
             <button type="submit" class="ms-link-btn">{% if comment.is_private %}👁️ Unhide{% else %}🔒 Hide{% endif %}</button>
         </form>
         {% endif %}
-        {% if current_user.is_authenticated and (current_user.id == comment.profile_id or current_user.id == comment.author_id) %}
+        {% if current_user.is_authenticated and (is_owner or current_user.id == comment.author_id) %}
         <form method="POST" action="{{ url_for('delete_comment', comment_id=comment.id) }}" style="display:inline;" onsubmit="return confirm('Delete this comment?');">
             <button type="submit" class="ms-link-btn danger">🗑️ Delete</button>
         </form>
         {% endif %}
     </div>
+    {% if current_user.is_authenticated and current_user.id == comment.author_id %}
+    <form id="edit-form-{{ comment.id }}" class="ms-form comment-edit-form" method="POST" action="{{ url_for('edit_comment', comment_id=comment.id) }}" style="display:none;">
+        <textarea name="body" rows="2">{{ comment.body }}</textarea>
+        <input class="btn-primary" type="submit" value="Save Edit">
+        <button type="button" class="ms-link-btn" onclick="toggleEditForm({{ comment.id }})">Cancel</button>
+    </form>
+    {% endif %}
     {% if current_user.is_authenticated %}
     <form id="reply-form-{{ comment.id }}" class="ms-form comment-reply-form" method="POST" action="{{ url_for('reply_comment', comment_id=comment.id) }}" style="display:none;">
         <textarea name="body" placeholder="Reply to {{ comment.author.username }}…" rows="2"></textarea>
@@ -39,22 +49,32 @@
             <span class="comment-private-badge" title="Only you can see this">🔒 Hidden</span>
             {% endif %}
         </p>
-        <div class="post-body">{{ reply.body | bbcode }}</div>
+        <div class="post-body" id="comment-body-{{ reply.id }}">{{ reply.body | bbcode }}</div>
         <div class="comment-actions">
             {% if current_user.is_authenticated %}
             <button type="button" class="ms-link-btn comment-reply-btn" onclick="toggleReplyForm({{ reply.id }})">↩️ Reply</button>
+            {% endif %}
+            {% if current_user.is_authenticated and current_user.id == reply.author_id %}
+            <button type="button" class="ms-link-btn" onclick="toggleEditForm({{ reply.id }})">✏️ Edit</button>
             {% endif %}
             {% if is_owner %}
             <form method="POST" action="{{ url_for('toggle_comment_private', comment_id=reply.id) }}" style="display:inline;">
                 <button type="submit" class="ms-link-btn">{% if reply.is_private %}👁️ Unhide{% else %}🔒 Hide{% endif %}</button>
             </form>
             {% endif %}
-            {% if current_user.is_authenticated and (current_user.id == reply.profile_id or current_user.id == reply.author_id) %}
+            {% if current_user.is_authenticated and (is_owner or current_user.id == reply.author_id) %}
             <form method="POST" action="{{ url_for('delete_comment', comment_id=reply.id) }}" style="display:inline;" onsubmit="return confirm('Delete this reply?');">
                 <button type="submit" class="ms-link-btn danger">🗑️ Delete</button>
             </form>
             {% endif %}
         </div>
+        {% if current_user.is_authenticated and current_user.id == reply.author_id %}
+        <form id="edit-form-{{ reply.id }}" class="ms-form comment-edit-form" method="POST" action="{{ url_for('edit_comment', comment_id=reply.id) }}" style="display:none;">
+            <textarea name="body" rows="2">{{ reply.body }}</textarea>
+            <input class="btn-primary" type="submit" value="Save Edit">
+            <button type="button" class="ms-link-btn" onclick="toggleEditForm({{ reply.id }})">Cancel</button>
+        </form>
+        {% endif %}
         {% if current_user.is_authenticated %}
         <form id="reply-form-{{ reply.id }}" class="ms-form comment-reply-form" method="POST" action="{{ url_for('reply_comment', comment_id=reply.id) }}" style="display:none;">
             <textarea name="body" placeholder="Reply to {{ reply.author.username }}…" rows="2"></textarea>
@@ -71,6 +91,14 @@
 if (typeof window.toggleReplyForm !== 'function') {
     window.toggleReplyForm = function(id) {
         var form = document.getElementById('reply-form-' + id);
+        if (form) {
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+    };
+}
+if (typeof window.toggleEditForm !== 'function') {
+    window.toggleEditForm = function(id) {
+        var form = document.getElementById('edit-form-' + id);
         if (form) {
             form.style.display = form.style.display === 'none' ? 'block' : 'none';
         }

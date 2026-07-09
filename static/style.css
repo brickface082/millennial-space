@@ -2010,9 +2010,52 @@ body.dark-mode .entry-card {
 .spot-section-title { font-size: 16px; color: var(--accent, #2b5797); margin: 16px 0 8px; }
 .spot-list { list-style: none; padding: 0; margin: 0; }
 .spot-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
     border-bottom: 1px solid #ddd;
     padding: 10px 0;
 }
+
+.spot-item-thumb-link {
+    flex-shrink: 0;
+}
+
+.spot-item-thumb {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border: 2px solid #ccc;
+    display: block;
+}
+
+.spot-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.spot-listing-photos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.spot-listing-photo {
+    max-width: 100%;
+    max-height: 280px;
+    border: 2px solid #ccc;
+    object-fit: cover;
+}
+
+.comment-edit-form {
+    margin-top: 8px;
+}
+
+.comment-edit-form textarea {
+    font-size: 12px;
+}
+
 .spot-item.spot-promoted { background: #fffde8; padding-left: 8px; margin-left: -8px; padding-right: 8px; }
 .spot-item-title { font-weight: bold; font-size: 15px; color: var(--accent, #2b5797); text-decoration: none; }
 .spot-item-title:hover { text-decoration: underline; }
