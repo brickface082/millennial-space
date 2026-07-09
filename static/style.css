@@ -1980,6 +1980,17 @@ body.dark-mode .entry-card {
 .spot-empty { color: #999; font-style: italic; padding: 24px 0; text-align: center; }
 .spot-fee-box { background: #f8f8f8; border: 1px dashed #aaa; padding: 12px; margin: 12px 0; }
 .spot-fee-note { font-size: 12px; }
+.spot-terms-box { max-width: 720px; }
+.spot-terms-intro { font-size: 14px; color: #444; margin-bottom: 16px; line-height: 1.5; }
+.spot-terms-table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 14px; }
+.spot-terms-table th, .spot-terms-table td { border: 1px solid #ccc; padding: 8px 10px; text-align: left; vertical-align: top; }
+.spot-terms-table th { background: #eee; font-weight: bold; }
+.spot-terms-list { margin: 8px 0 16px 20px; font-size: 14px; line-height: 1.55; }
+.spot-terms-disclaimer { font-size: 13px; color: #555; line-height: 1.55; }
+body.dark-mode .spot-terms-table th { background: #333; }
+body.dark-mode .spot-terms-table td { border-color: #555; }
+body.dark-mode .spot-terms-intro,
+body.dark-mode .spot-terms-disclaimer { color: #ccc; }
 .spot-view-box { max-width: 640px; margin: 0 auto; }
 .spot-view-meta { font-size: 13px; color: #666; margin-bottom: 16px; }
 .spot-view-body { line-height: 1.5; margin-bottom: 16px; }

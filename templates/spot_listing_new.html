@@ -5,14 +5,14 @@
 {% block content %}
 <div class="retro-box retro-form spot-form-box">
     <h1 class="retro-title">🛒 Post a Listing</h1>
-    <p class="section-note"><a href="{{ url_for('spot_index', tab='marketplace') }}">← Back to Marketplace</a></p>
+    <p class="section-note"><a href="{{ url_for('spot_index', tab='marketplace') }}">← Back to {{ spot_board_label }}</a></p>
 
     <form method="POST">
         <label>Category</label>
         <select name="category" id="listing-category">
             {% for key, info in marketplace_categories.items() %}
             <option value="{{ key }}" data-fee="{{ info.fee_cents }}"
-                    {% if category == key %}selected{% endif %}>{{ info.label }} — {{ format_fee(info.fee_cents) }}</option>
+                    {% if category == key %}selected{% endif %}>{{ info.label }}</option>
             {% endfor %}
         </select>
 
@@ -38,13 +38,14 @@
         </div>
 
         <div id="fee-box" class="spot-fee-box" {% if not fee_cents %}style="display:none"{% endif %}>
-            <p>Posting fee for this category: <strong id="fee-display">{{ format_fee(fee_cents) }}</strong></p>
+            <p>This category has a posting fee: <strong id="fee-display">{{ format_fee(fee_cents) }}</strong>.
+            See <a href="{{ url_for('spot_terms') }}">Spot terms &amp; fees</a> for all rates.</p>
             {% if not payments_live %}
             <p class="section-note">Beta: fee waived today. Check below to acknowledge future billing.</p>
             {% endif %}
             <label style="display:flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer;">
                 <input type="checkbox" name="accept_fee" value="on" style="width:auto;margin:0;">
-                I understand this category may require a posting fee{% if not payments_live %} when billing goes live{% endif %}.
+                I agree to the <a href="{{ url_for('spot_terms') }}">Spot terms &amp; fees</a>{% if not payments_live %} when billing goes live{% endif %}.
             </label>
         </div>
 

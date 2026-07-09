@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="retro-box spot-view-box">
-    <p class="section-note"><a href="{{ url_for('spot_index', tab='marketplace', city=listing.city, state=listing.state) }}">← Marketplace in {{ listing.city }}, {{ listing.state }}</a></p>
+    <p class="section-note"><a href="{{ url_for('spot_index', tab='marketplace', city=listing.city, state=listing.state) }}">← {{ spot_board_label }} in {{ listing.city }}, {{ listing.state }}</a></p>
 
     <h1 class="retro-title">{{ listing.title }}</h1>
     <div class="spot-view-meta">

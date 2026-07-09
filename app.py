@@ -137,6 +137,7 @@ def utility_processor():
         format_fee=format_fee,
         quote_of_the_day=quote_of_the_day,
         daily_quote_heading=daily_quote_heading,
+        spot_board_label=SPOT_BOARD_LABEL,
     )
 
 class User(db.Model, UserMixin):
@@ -368,7 +369,7 @@ class MontageSlide(db.Model):
 
 
 class SpotListing(db.Model):
-    """Craigslist-style marketplace listing — paid categories only."""
+    """Community Board listing — some commercial categories carry a posting fee."""
     __tablename__ = "spot_listing"
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
@@ -464,6 +465,7 @@ PROFILE_PREVIEW_COUNT = 3
 LISTING_LIFESPAN_DAYS = 30
 EVENT_LIFESPAN_DAYS = 60
 EVENT_PROMOTE_FEE_CENTS = 500
+SPOT_BOARD_LABEL = "Community Board"
 
 MARKETPLACE_CATEGORIES = {
     "for_sale": {"label": "For Sale — By Owner", "fee_cents": 0},
@@ -2562,6 +2564,18 @@ def spot_index():
         marketplace_categories=MARKETPLACE_CATEGORIES,
         us_states=US_STATES,
         qotd=quote_of_the_day(),
+        payments_live=spot_payments_live(),
+    )
+
+
+@app.route("/spot/terms")
+def spot_terms():
+    return render_template(
+        "spot_terms.html",
+        marketplace_categories=MARKETPLACE_CATEGORIES,
+        promote_fee=EVENT_PROMOTE_FEE_CENTS,
+        listing_lifespan_days=LISTING_LIFESPAN_DAYS,
+        event_lifespan_days=EVENT_LIFESPAN_DAYS,
         payments_live=spot_payments_live(),
     )
 

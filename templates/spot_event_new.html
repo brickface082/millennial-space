@@ -47,7 +47,7 @@
                 {% endif %}
                 <label style="display:flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer;">
                     <input type="checkbox" name="accept_fee" value="on" style="width:auto;margin:0;">
-                    I understand promoted events may require a {{ format_fee(promote_fee) }} fee{% if not payments_live %} when billing goes live{% endif %}.
+                    I agree to the <a href="{{ url_for('spot_terms') }}">Spot terms &amp; fees</a>{% if not payments_live %} when billing goes live{% endif %}.
                 </label>
             </div>
         </div>

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}The Spot — Terms &amp; Fees — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="retro-box spot-box spot-terms-box">
+    <h1 class="retro-title">📍 The Spot — Terms &amp; Fees</h1>
+    <p class="section-note"><a href="{{ url_for('spot_index') }}">← Back to The Spot</a></p>
+
+    <p class="spot-terms-intro">
+        The Spot is our local board for community events and {{ spot_board_label|lower }} posts.
+        Profiles stay ad-free — listings and events live here only.
+    </p>
+
+    <h2 class="spot-section-title">Posting Fees</h2>
+    <p class="section-note">
+        Casual person-to-person posts are free. Commercial categories help keep the board useful
+        and cover hosting. Events are always free; optional promotion is available.
+        {% if not payments_live %}
+        <strong>Beta:</strong> all fees below are waived while we launch. Checking the fee box
+        when you post means you agree to these rates when billing goes live.
+        {% endif %}
+    </p>
+
+    <table class="spot-terms-table">
+        <thead>
+            <tr>
+                <th>Service</th>
+                <th>Price</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for key, info in marketplace_categories.items() %}
+            <tr>
+                <td>{{ info.label }}</td>
+                <td>{{ format_fee(info.fee_cents) }}{% if info.fee_cents == 0 %} (free){% endif %}</td>
+                <td>Listing on {{ spot_board_label }}, active {{ listing_lifespan_days }} days</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td>Community event</td>
+                <td>Free</td>
+                <td>Public Corner — active {{ event_lifespan_days }} days</td>
+            </tr>
+            <tr>
+                <td>Promoted local event</td>
+                <td>{{ format_fee(promote_fee) }}</td>
+                <td>Optional — appears at top of Events Near Me in your area</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 class="spot-section-title">What You Agree To</h2>
+    <ul class="spot-terms-list">
+        <li>You are responsible for the accuracy and legality of anything you post.</li>
+        <li>No spam, scams, hate, harassment, or illegal goods and services.</li>
+        <li>We may remove posts or suspend accounts that break these rules — no refund obligation for removed content.</li>
+        <li>Meet in public places for local transactions; {{ site_name }} does not verify users, items, or events.</li>
+        <li>Fees are for posting visibility on The Spot, not for brokering sales or ticket sales.</li>
+        <li>Prices and fee schedules may change; active posts keep the terms in effect when they were published.</li>
+    </ul>
+
+    <h2 class="spot-section-title">Disclaimer</h2>
+    <p class="spot-terms-disclaimer">
+        {{ site_name }} provides The Spot as a community bulletin board. We do not guarantee outcomes
+        from any listing or event, and we are not a party to deals between users. Use common sense,
+        follow local laws, and report problems via <a href="{{ url_for('feedback_new') }}">Feedback</a>.
+    </p>
+
+    <p class="section-note" style="margin-top:20px;">
+        Questions? <a href="{{ url_for('help_page') }}">Help</a> ·
+        <a href="{{ url_for('spot_index', tab='marketplace') }}">Browse {{ spot_board_label }}</a> ·
+        <a href="{{ url_for('spot_index', tab='events') }}">Events Near Me</a>
+    </p>
+</div>
+{% endblock %}

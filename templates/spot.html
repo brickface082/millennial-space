@@ -5,7 +5,7 @@
 {% block content %}
 <div class="retro-box spot-box">
     <h1 class="retro-title">📍 The Spot</h1>
-    <p class="spot-tagline">Local events, a fair marketplace, and your town's Public Corner — no ads on anyone's profile.</p>
+    <p class="spot-tagline">Local events, {{ spot_board_label|lower }}, and your town's Public Corner — no ads on anyone's profile.</p>
 
     {% if qotd %}
     <section class="ms-daily-inspiration ms-daily-inspiration--compact" aria-labelledby="spot-daily-heading">
@@ -23,7 +23,7 @@
         <a href="{{ url_for('spot_index', tab='events', city=city, state=state, zip_code=zip_code) }}"
            class="spot-tab {% if tab == 'events' %}active{% endif %}">📅 Events Near Me</a>
         <a href="{{ url_for('spot_index', tab='marketplace', city=city, state=state, zip_code=zip_code, category=category) }}"
-           class="spot-tab {% if tab == 'marketplace' %}active{% endif %}">🛒 Marketplace</a>
+           class="spot-tab {% if tab == 'marketplace' %}active{% endif %}">📋 {{ spot_board_label }}</a>
     </div>
 
     <form class="spot-location-form" method="GET" action="{{ url_for('spot_index') }}">
@@ -98,10 +98,11 @@
         {% endfor %}
     </div>
     <p class="section-note spot-fee-note">
-        Craigslist-style fees: casual for-sale &amp; wanted = free · gigs {{ format_fee(300) }} · services/housing {{ format_fee(500) }} · jobs {{ format_fee(1000) }}.
-        {% if not payments_live %}<em>Beta: fees waived — checkbox confirms you understand future billing.</em>{% endif %}
+        <a href="{{ url_for('spot_terms') }}">Posting fees &amp; terms</a>
+        — casual listings are free; some commercial categories have a fee.
+        {% if not payments_live %}<em> Beta: fees waived at launch.</em>{% endif %}
     </p>
-    <h2 class="spot-section-title">Marketplace</h2>
+    <h2 class="spot-section-title">{{ spot_board_label }}</h2>
     {% if listings %}
     <ul class="spot-list">
         {% for item in listings %}
