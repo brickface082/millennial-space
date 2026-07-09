@@ -1,9 +1,17 @@
 # What to do next (Chris)
 
+## Quick-launch shortcuts
+
+Desktop folder: **`Millennial Space Outreach`** (pinned to Start menu)
+
+- OpenClaw Dashboard · Yahoo Mail · Hacker News · Indie Hackers · AlternativeTo · Millennial Space
+
+Right-click any shortcut → **Pin to taskbar** if you want them on the taskbar too (Windows blocks auto-pin from scripts).
+
 ## Right now
 
-1. **Finish Yahoo signup** — click through Terms, complete account. Check the outreach Yahoo inbox for verification.
-2. **Tell Grok or Az "Yahoo is live"** when you can log in at mail.yahoo.com.
+1. **Approve OpenClaw scopes** at OpenClaw Dashboard shortcut (browser control for Az).
+2. Az handles HN posting — you only paste verification codes if asked.
 
 ## What Az will do (no Bluesky, no Reddit)
 
