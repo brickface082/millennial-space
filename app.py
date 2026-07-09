@@ -369,7 +369,7 @@ class MontageSlide(db.Model):
 
 
 class SpotListing(db.Model):
-    """Community Board listing — some commercial categories carry a posting fee."""
+    """Listing Space post — some commercial categories carry a posting fee."""
     __tablename__ = "spot_listing"
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
@@ -465,7 +465,7 @@ PROFILE_PREVIEW_COUNT = 3
 LISTING_LIFESPAN_DAYS = 30
 EVENT_LIFESPAN_DAYS = 60
 EVENT_PROMOTE_FEE_CENTS = 500
-SPOT_BOARD_LABEL = "Community Board"
+SPOT_BOARD_LABEL = "Listing Space"
 
 MARKETPLACE_CATEGORIES = {
     "for_sale": {"label": "For Sale — By Owner", "fee_cents": 0},

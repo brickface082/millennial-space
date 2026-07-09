@@ -1069,7 +1069,7 @@ def test_spot():
             check("Famous attributed quotes included", len(attributed) >= 50)
             check("This too shall pass in pool", any("this too shall pass" in q["text"].lower() for q in quotes))
         check("Spot has Events Near Me tab", b"Events Near Me" in r.data)
-        check("Spot has Community Board tab", b"Community Board" in r.data)
+        check("Spot has Listing Space tab", b"Listing Space" in r.data)
         check("Spot has no Craigslist reference", b"Craigslist" not in r.data)
         r = c.get("/spot/terms")
         check("Spot terms page loads", r.status_code == 200)

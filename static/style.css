@@ -1979,6 +1979,8 @@ body.dark-mode .entry-card {
 .spot-cat-filter a.active { background: var(--accent, #2b5797); color: #fff; border-color: var(--accent, #2b5797); }
 .spot-empty { color: #999; font-style: italic; padding: 24px 0; text-align: center; }
 .spot-fee-box { background: #f8f8f8; border: 1px dashed #aaa; padding: 12px; margin: 12px 0; }
+.spot-listing-sub { font-size: 13px; color: #555; margin: 0 0 8px; font-style: italic; }
+body.dark-mode .spot-listing-sub { color: #bbb; }
 .spot-fee-note { font-size: 12px; }
 .spot-terms-box { max-width: 720px; }
 .spot-terms-intro { font-size: 14px; color: #444; margin-bottom: 16px; line-height: 1.5; }
