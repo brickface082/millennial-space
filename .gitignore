@@ -6,3 +6,6 @@ __pycache__/
 static/uploads/*
 static/models/kokoro/
 data/affirmations-plr/
+marketing/credentials.local.md
+marketing/*.local.md
+**/credentials.local.md
