@@ -1,29 +1,33 @@
 {% for comment, replies in comment_threads %}
 <div class="post-card{% if comment.is_private %} comment-private{% endif %}">
-    <p class="post-timestamp">
-        <strong><a href="{{ url_for('profile', username=comment.author.username) }}">{{ comment.author.username }}</a></strong>
-        — {{ comment.timestamp.strftime('%B %d, %Y at %I:%M %p') }}
-        {% if comment.is_private and is_owner %}
-        <span class="comment-private-badge" title="Only you can see this">🔒 Hidden</span>
-        {% endif %}
-    </p>
-    <div class="post-body" id="comment-body-{{ comment.id }}">{{ comment.body | bbcode }}</div>
-    <div class="comment-actions">
+    <div class="comment-row">
+        <div class="comment-main">
+            <p class="post-timestamp">
+                <strong><a href="{{ url_for('profile', username=comment.author.username) }}">{{ comment.author.username }}</a></strong>
+                — {{ comment.timestamp.strftime('%B %d, %Y at %I:%M %p') }}
+                {% if comment.is_private and is_owner %}
+                <span class="comment-private-badge" title="Only you can see this">🔒 Hidden</span>
+                {% endif %}
+            </p>
+            <div class="post-body" id="comment-body-{{ comment.id }}">{{ comment.body | bbcode }}</div>
+        </div>
         {% if current_user.is_authenticated %}
-        <button type="button" class="ms-link-btn comment-reply-btn" onclick="toggleReplyForm({{ comment.id }})">↩️ Reply</button>
-        {% endif %}
-        {% if current_user.is_authenticated and current_user.id == comment.author_id %}
-        <button type="button" class="ms-link-btn" onclick="toggleEditForm({{ comment.id }})">✏️ Edit</button>
-        {% endif %}
-        {% if is_owner %}
-        <form method="POST" action="{{ url_for('toggle_comment_private', comment_id=comment.id) }}" style="display:inline;">
-            <button type="submit" class="ms-link-btn">{% if comment.is_private %}👁️ Unhide{% else %}🔒 Hide{% endif %}</button>
-        </form>
-        {% endif %}
-        {% if current_user.is_authenticated and (is_owner or current_user.id == comment.author_id) %}
-        <form method="POST" action="{{ url_for('delete_comment', comment_id=comment.id) }}" style="display:inline;" onsubmit="return confirm('Delete this comment?');">
-            <button type="submit" class="ms-link-btn danger">🗑️ Delete</button>
-        </form>
+        <div class="comment-actions">
+            <button type="button" class="ms-link-btn comment-reply-btn" onclick="toggleReplyForm({{ comment.id }})">↩️ Reply</button>
+            {% if current_user.id == comment.author_id %}
+            <button type="button" class="ms-link-btn" onclick="toggleEditForm({{ comment.id }})">✏️ Edit</button>
+            {% endif %}
+            {% if is_owner %}
+            <form method="POST" action="{{ url_for('toggle_comment_private', comment_id=comment.id) }}">
+                <button type="submit" class="ms-link-btn">{% if comment.is_private %}👁️ Unhide{% else %}🔒 Hide{% endif %}</button>
+            </form>
+            {% endif %}
+            {% if is_owner or current_user.id == comment.author_id %}
+            <form method="POST" action="{{ url_for('delete_comment', comment_id=comment.id) }}" onsubmit="return confirm('Delete this comment?');">
+                <button type="submit" class="ms-link-btn danger">🗑️ Delete</button>
+            </form>
+            {% endif %}
+        </div>
         {% endif %}
     </div>
     {% if current_user.is_authenticated and current_user.id == comment.author_id %}
@@ -42,30 +46,34 @@
 
     {% for reply in replies %}
     <div class="comment-reply{% if reply.is_private %} comment-private{% endif %}">
-        <p class="post-timestamp">
-            <strong><a href="{{ url_for('profile', username=reply.author.username) }}">{{ reply.author.username }}</a></strong>
-            — {{ reply.timestamp.strftime('%B %d, %Y at %I:%M %p') }}
-            {% if reply.is_private and is_owner %}
-            <span class="comment-private-badge" title="Only you can see this">🔒 Hidden</span>
-            {% endif %}
-        </p>
-        <div class="post-body" id="comment-body-{{ reply.id }}">{{ reply.body | bbcode }}</div>
-        <div class="comment-actions">
+        <div class="comment-row">
+            <div class="comment-main">
+                <p class="post-timestamp">
+                    <strong><a href="{{ url_for('profile', username=reply.author.username) }}">{{ reply.author.username }}</a></strong>
+                    — {{ reply.timestamp.strftime('%B %d, %Y at %I:%M %p') }}
+                    {% if reply.is_private and is_owner %}
+                    <span class="comment-private-badge" title="Only you can see this">🔒 Hidden</span>
+                    {% endif %}
+                </p>
+                <div class="post-body" id="comment-body-{{ reply.id }}">{{ reply.body | bbcode }}</div>
+            </div>
             {% if current_user.is_authenticated %}
-            <button type="button" class="ms-link-btn comment-reply-btn" onclick="toggleReplyForm({{ reply.id }})">↩️ Reply</button>
-            {% endif %}
-            {% if current_user.is_authenticated and current_user.id == reply.author_id %}
-            <button type="button" class="ms-link-btn" onclick="toggleEditForm({{ reply.id }})">✏️ Edit</button>
-            {% endif %}
-            {% if is_owner %}
-            <form method="POST" action="{{ url_for('toggle_comment_private', comment_id=reply.id) }}" style="display:inline;">
-                <button type="submit" class="ms-link-btn">{% if reply.is_private %}👁️ Unhide{% else %}🔒 Hide{% endif %}</button>
-            </form>
-            {% endif %}
-            {% if current_user.is_authenticated and (is_owner or current_user.id == reply.author_id) %}
-            <form method="POST" action="{{ url_for('delete_comment', comment_id=reply.id) }}" style="display:inline;" onsubmit="return confirm('Delete this reply?');">
-                <button type="submit" class="ms-link-btn danger">🗑️ Delete</button>
-            </form>
+            <div class="comment-actions">
+                <button type="button" class="ms-link-btn comment-reply-btn" onclick="toggleReplyForm({{ reply.id }})">↩️ Reply</button>
+                {% if current_user.id == reply.author_id %}
+                <button type="button" class="ms-link-btn" onclick="toggleEditForm({{ reply.id }})">✏️ Edit</button>
+                {% endif %}
+                {% if is_owner %}
+                <form method="POST" action="{{ url_for('toggle_comment_private', comment_id=reply.id) }}">
+                    <button type="submit" class="ms-link-btn">{% if reply.is_private %}👁️ Unhide{% else %}🔒 Hide{% endif %}</button>
+                </form>
+                {% endif %}
+                {% if is_owner or current_user.id == reply.author_id %}
+                <form method="POST" action="{{ url_for('delete_comment', comment_id=reply.id) }}" onsubmit="return confirm('Delete this reply?');">
+                    <button type="submit" class="ms-link-btn danger">🗑️ Delete</button>
+                </form>
+                {% endif %}
+            </div>
             {% endif %}
         </div>
         {% if current_user.is_authenticated and current_user.id == reply.author_id %}

@@ -1228,16 +1228,36 @@ body.dark-mode .ms-daily-inspiration-hide { color: #aaa; }
     word-break: break-word;
 }
 
+.comment-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.comment-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.comment-main .post-body {
+    margin-bottom: 0;
+}
+
 .comment-actions {
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-items: center;
-    margin-top: 4px;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.comment-actions form {
+    margin: 0;
 }
 
 .comment-actions .ms-link-btn {
-    font-size: 12px;
+    font-size: 11px;
+    white-space: nowrap;
 }
 
 .comment-reply {
