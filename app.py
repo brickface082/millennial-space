@@ -253,8 +253,11 @@ class Comment(db.Model):
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     author_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     profile_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    parent_id = db.Column(db.Integer, db.ForeignKey("comment.id"), nullable=True)
+    is_private = db.Column(db.Boolean, default=False, nullable=False)
     author = db.relationship("User", foreign_keys=[author_id], backref=db.backref("comments_made", lazy=True))
     profile_user = db.relationship("User", foreign_keys=[profile_id], backref=db.backref("comments_received", lazy=True))
+    parent = db.relationship("Comment", remote_side=[id], backref=db.backref("replies", lazy=True))
 
 class JournalEntry(db.Model):
     """T023 — private diary entries and public blog posts.
@@ -589,6 +592,39 @@ def _paginate_query(query, page, per_page):
         page = total_pages
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, page, total_pages, total
+
+def _profile_comments_base_query(profile_id, is_owner):
+    """Top-level comments on a profile, respecting privacy for non-owners."""
+    q = Comment.query.filter_by(profile_id=profile_id, parent_id=None)
+    if not is_owner:
+        q = q.filter_by(is_private=False)
+    return q.order_by(Comment.timestamp.desc())
+
+def _comment_count_for_viewer(profile_id, is_owner):
+    q = Comment.query.filter_by(profile_id=profile_id)
+    if not is_owner:
+        q = q.filter_by(is_private=False)
+    return q.count()
+
+def _comment_replies_for_viewer(parent_id, profile_id, is_owner):
+    q = Comment.query.filter_by(profile_id=profile_id, parent_id=parent_id)
+    if not is_owner:
+        q = q.filter_by(is_private=False)
+    return q.order_by(Comment.timestamp.asc()).all()
+
+def build_comment_threads(profile_id, is_owner, limit=None, offset=0):
+    """Return (threads, total_top_level) where each thread is (comment, replies)."""
+    base = _profile_comments_base_query(profile_id, is_owner)
+    total_top_level = base.count()
+    q = base
+    if limit is not None:
+        q = q.offset(offset).limit(limit)
+    top_level = q.all()
+    threads = [
+        (comment, _comment_replies_for_viewer(comment.id, profile_id, is_owner))
+        for comment in top_level
+    ]
+    return threads, total_top_level
 
 def format_last_seen(dt):
     """Human-readable last activity for profile sidebar."""
@@ -1057,10 +1093,11 @@ def profile(username):
     posts = posts_query.limit(PROFILE_PREVIEW_COUNT).all()
     posts_has_more = total_posts > PROFILE_PREVIEW_COUNT
 
-    comments_query = Comment.query.filter_by(profile_id=user.id).order_by(Comment.timestamp.desc())
-    total_comments = comments_query.count()
-    comments = comments_query.limit(PROFILE_PREVIEW_COUNT).all()
-    comments_has_more = total_comments > PROFILE_PREVIEW_COUNT
+    total_comments = _comment_count_for_viewer(user.id, is_owner)
+    comment_threads, total_top_level = build_comment_threads(
+        user.id, is_owner, limit=PROFILE_PREVIEW_COUNT
+    )
+    comments_has_more = total_top_level > PROFILE_PREVIEW_COUNT
     crew_status = None
     crew_request_id = None
     if current_user.is_authenticated and current_user.id != user.id:
@@ -1115,7 +1152,7 @@ def profile(username):
         recent_viewers=recent_viewers,
         crew_preview_count=CREW_PREVIEW_COUNT,
         posts=posts,
-        comments=comments,
+        comment_threads=comment_threads,
         crew_status=crew_status,
         crew_request_id=crew_request_id,
         top8_users=top8_users,
@@ -1149,14 +1186,22 @@ def profile_comments(username):
     user = User.query.filter_by(username=username).first_or_404()
     is_owner = current_user.is_authenticated and current_user.id == user.id
     page = request.args.get("page", 1, type=int)
-    comments_query = Comment.query.filter_by(profile_id=user.id).order_by(Comment.timestamp.desc())
-    comments, page, total_pages, total_comments = _paginate_query(
-        comments_query, page, COMMENTS_PER_PAGE
+    base = _profile_comments_base_query(user.id, is_owner)
+    total_top_level = base.count()
+    if page < 1:
+        page = 1
+    total_pages = max(1, (total_top_level + COMMENTS_PER_PAGE - 1) // COMMENTS_PER_PAGE)
+    if page > total_pages:
+        page = total_pages
+    offset = (page - 1) * COMMENTS_PER_PAGE
+    comment_threads, _ = build_comment_threads(
+        user.id, is_owner, limit=COMMENTS_PER_PAGE, offset=offset
     )
+    total_comments = _comment_count_for_viewer(user.id, is_owner)
     return render_template(
         "profile_comments.html",
         user=user,
-        comments=comments,
+        comment_threads=comment_threads,
         is_owner=is_owner,
         page=page,
         total_pages=total_pages,
@@ -2507,6 +2552,41 @@ def entry_photo_delete(photo_id):
         return redirect(url_for("diary_edit", entry_id=entry.id))
     return redirect(url_for("blog_edit", username=entry.author.username, entry_id=entry.id))
 
+@app.route("/comment/<int:comment_id>/reply", methods=["POST"])
+@login_required
+def reply_comment(comment_id):
+    parent = Comment.query.get_or_404(comment_id)
+    profile_username = parent.profile_user.username
+    body = request.form.get("body", "").strip()
+    if not body:
+        flash("Reply cannot be empty.", "danger")
+        return redirect(url_for("profile", username=profile_username) + "#comments")
+    top_level_id = parent.id if parent.parent_id is None else parent.parent_id
+    reply = Comment(
+        body=body,
+        author_id=current_user.id,
+        profile_id=parent.profile_id,
+        parent_id=top_level_id,
+    )
+    db.session.add(reply)
+    db.session.commit()
+    return redirect(url_for("profile", username=profile_username) + "#comments")
+
+@app.route("/comment/<int:comment_id>/private", methods=["POST"])
+@login_required
+def toggle_comment_private(comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    if current_user.id != comment.profile_id:
+        return "Access denied.", 403
+    comment.is_private = not comment.is_private
+    db.session.commit()
+    profile_username = comment.profile_user.username
+    if comment.is_private:
+        flash("Comment hidden from public view. Only you can see it now.", "success")
+    else:
+        flash("Comment is visible to everyone again.", "success")
+    return redirect(url_for("profile", username=profile_username) + "#comments")
+
 @app.route("/comment/<int:comment_id>/delete", methods=["POST"])
 @login_required
 def delete_comment(comment_id):
@@ -2514,9 +2594,11 @@ def delete_comment(comment_id):
     profile_username = comment.profile_user.username
     if current_user.id != comment.profile_id and current_user.id != comment.author_id:
         return redirect(url_for("profile", username=profile_username))
+    if comment.parent_id is None:
+        Comment.query.filter_by(parent_id=comment.id).delete()
     db.session.delete(comment)
     db.session.commit()
-    return redirect(url_for("profile", username=profile_username))
+    return redirect(url_for("profile", username=profile_username) + "#comments")
 
 # ── The Spot — Public Corner, Marketplace, Events Near Me ─────────────────────
 
@@ -3265,6 +3347,24 @@ with app.app_context():
         conn.commit()
         conn.execute(db.text(
             'UPDATE "user" SET show_daily_quote = TRUE WHERE show_daily_quote IS NULL'
+        ))
+        conn.commit()
+
+    # comment parent_id + is_private — separate connection (M010 SOP)
+    with db.engine.connect() as conn:
+        if is_pg:
+            existing_cm = {row[0] for row in conn.execute(db.text(
+                "SELECT column_name FROM information_schema.columns WHERE table_name='comment'"
+            ))}
+        else:
+            existing_cm = {row[1] for row in conn.execute(db.text("PRAGMA table_info('comment')"))}
+        if "parent_id" not in existing_cm:
+            conn.execute(db.text("ALTER TABLE comment ADD COLUMN parent_id INTEGER"))
+        if "is_private" not in existing_cm:
+            conn.execute(db.text("ALTER TABLE comment ADD COLUMN is_private BOOLEAN DEFAULT FALSE"))
+        conn.commit()
+        conn.execute(db.text(
+            "UPDATE comment SET is_private = FALSE WHERE is_private IS NULL"
         ))
         conn.commit()
 

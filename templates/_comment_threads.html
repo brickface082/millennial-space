@@ -1,0 +1,79 @@
+{% for comment, replies in comment_threads %}
+<div class="post-card{% if comment.is_private %} comment-private{% endif %}">
+    <p class="post-timestamp">
+        <strong><a href="{{ url_for('profile', username=comment.author.username) }}">{{ comment.author.username }}</a></strong>
+        — {{ comment.timestamp.strftime('%B %d, %Y at %I:%M %p') }}
+        {% if comment.is_private and is_owner %}
+        <span class="comment-private-badge" title="Only you can see this">🔒 Hidden</span>
+        {% endif %}
+    </p>
+    <div class="post-body">{{ comment.body | bbcode }}</div>
+    <div class="comment-actions">
+        {% if current_user.is_authenticated %}
+        <button type="button" class="ms-link-btn comment-reply-btn" onclick="toggleReplyForm({{ comment.id }})">↩️ Reply</button>
+        {% endif %}
+        {% if is_owner %}
+        <form method="POST" action="{{ url_for('toggle_comment_private', comment_id=comment.id) }}" style="display:inline;">
+            <button type="submit" class="ms-link-btn">{% if comment.is_private %}👁️ Unhide{% else %}🔒 Hide{% endif %}</button>
+        </form>
+        {% endif %}
+        {% if current_user.is_authenticated and (current_user.id == comment.profile_id or current_user.id == comment.author_id) %}
+        <form method="POST" action="{{ url_for('delete_comment', comment_id=comment.id) }}" style="display:inline;" onsubmit="return confirm('Delete this comment?');">
+            <button type="submit" class="ms-link-btn danger">🗑️ Delete</button>
+        </form>
+        {% endif %}
+    </div>
+    {% if current_user.is_authenticated %}
+    <form id="reply-form-{{ comment.id }}" class="ms-form comment-reply-form" method="POST" action="{{ url_for('reply_comment', comment_id=comment.id) }}" style="display:none;">
+        <textarea name="body" placeholder="Reply to {{ comment.author.username }}…" rows="2"></textarea>
+        <input class="btn-primary" type="submit" value="Post Reply">
+    </form>
+    {% endif %}
+
+    {% for reply in replies %}
+    <div class="comment-reply{% if reply.is_private %} comment-private{% endif %}">
+        <p class="post-timestamp">
+            <strong><a href="{{ url_for('profile', username=reply.author.username) }}">{{ reply.author.username }}</a></strong>
+            — {{ reply.timestamp.strftime('%B %d, %Y at %I:%M %p') }}
+            {% if reply.is_private and is_owner %}
+            <span class="comment-private-badge" title="Only you can see this">🔒 Hidden</span>
+            {% endif %}
+        </p>
+        <div class="post-body">{{ reply.body | bbcode }}</div>
+        <div class="comment-actions">
+            {% if current_user.is_authenticated %}
+            <button type="button" class="ms-link-btn comment-reply-btn" onclick="toggleReplyForm({{ reply.id }})">↩️ Reply</button>
+            {% endif %}
+            {% if is_owner %}
+            <form method="POST" action="{{ url_for('toggle_comment_private', comment_id=reply.id) }}" style="display:inline;">
+                <button type="submit" class="ms-link-btn">{% if reply.is_private %}👁️ Unhide{% else %}🔒 Hide{% endif %}</button>
+            </form>
+            {% endif %}
+            {% if current_user.is_authenticated and (current_user.id == reply.profile_id or current_user.id == reply.author_id) %}
+            <form method="POST" action="{{ url_for('delete_comment', comment_id=reply.id) }}" style="display:inline;" onsubmit="return confirm('Delete this reply?');">
+                <button type="submit" class="ms-link-btn danger">🗑️ Delete</button>
+            </form>
+            {% endif %}
+        </div>
+        {% if current_user.is_authenticated %}
+        <form id="reply-form-{{ reply.id }}" class="ms-form comment-reply-form" method="POST" action="{{ url_for('reply_comment', comment_id=reply.id) }}" style="display:none;">
+            <textarea name="body" placeholder="Reply to {{ reply.author.username }}…" rows="2"></textarea>
+            <input class="btn-primary" type="submit" value="Post Reply">
+        </form>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="no-posts">No comments yet. Be the first!</p>
+{% endfor %}
+<script>
+if (typeof window.toggleReplyForm !== 'function') {
+    window.toggleReplyForm = function(id) {
+        var form = document.getElementById('reply-form-' + id);
+        if (form) {
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+    };
+}
+</script>

@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import app as application
-from app import app, db, User, CrewRequest, DirectMessage, bcrypt, JournalEntry, Poll, PollOption, PollVote, Invite, InviteReferral, Feedback, PasswordResetToken, PhotoMontage, MontageSlide, SpotListing, CornerEvent
+from app import app, db, User, CrewRequest, DirectMessage, bcrypt, JournalEntry, Poll, PollOption, PollVote, Invite, InviteReferral, Feedback, PasswordResetToken, PhotoMontage, MontageSlide, SpotListing, CornerEvent, Comment
 
 app.config["TESTING"] = True
 app.config["WTF_CSRF_ENABLED"] = False
@@ -1189,6 +1189,75 @@ def test_email_updates():
         check("Non-admin blocked from updates admin", r.status_code == 403)
 
 
+def test_profile_comments():
+    print("\n-- Profile Comments --")
+    marker = "pytest-comment-marker-8842"
+    reply_marker = "pytest-reply-marker-8842"
+    profile_username = "testreceiver"
+
+    with app.app_context():
+        owner = User.query.filter_by(username=profile_username).first()
+        owner_id = owner.id if owner else None
+        if owner_id:
+            for cm in Comment.query.filter(
+                Comment.profile_id == owner_id,
+                Comment.body.like(f"%{marker}%"),
+            ).all():
+                Comment.query.filter_by(parent_id=cm.id).delete()
+                db.session.delete(cm)
+            Comment.query.filter(Comment.body.like(f"%{reply_marker}%")).delete(
+                synchronize_session=False
+            )
+            db.session.commit()
+
+    with app.test_client() as c:
+        login(c, "testbot@millennial-space.com", "testpass123")
+        r = c.post(f"/profile/{profile_username}/comment", data={
+            "body": f"Hello crew! {marker}",
+        }, follow_redirects=True)
+        check("testbot can post profile comment", r.status_code == 200)
+        check("comment appears on profile", marker.encode() in r.data)
+
+        with app.app_context():
+            top = Comment.query.filter(
+                Comment.profile_id == owner_id,
+                Comment.body.like(f"%{marker}%"),
+            ).first()
+            comment_id = top.id if top else None
+        check("comment saved in DB", comment_id is not None)
+
+        login(c, "testreceiver@millennial-space.com", "testpass123")
+        r = c.post(f"/comment/{comment_id}/reply", data={
+            "body": f"Thanks testbot! {reply_marker}",
+        }, follow_redirects=True)
+        check("profile owner can reply", r.status_code == 200)
+        check("reply appears on profile", reply_marker.encode() in r.data)
+
+        r = c.post(f"/comment/{comment_id}/private", follow_redirects=True)
+        check("owner can hide comment", r.status_code == 200)
+
+        logout(c)
+        r = c.get(f"/profile/{profile_username}")
+        check("hidden comment not visible to public", marker.encode() not in r.data)
+        check("hidden reply not visible to public", reply_marker.encode() not in r.data)
+
+        login(c, "testreceiver@millennial-space.com", "testpass123")
+        r = c.get(f"/profile/{profile_username}")
+        check("owner still sees hidden comment", marker.encode() in r.data)
+        check("owner sees hidden badge", b"Hidden" in r.data)
+
+        r = c.post(f"/comment/{comment_id}/delete", follow_redirects=True)
+        check("owner can delete comment", r.status_code == 200)
+        check("comment removed after delete", marker.encode() not in r.data)
+        with app.app_context():
+            gone = db.session.get(Comment, comment_id)
+            replies_left = Comment.query.filter(
+                Comment.body.like(f"%{reply_marker}%")
+            ).count()
+            check("comment deleted from DB", gone is None)
+            check("replies cascade-deleted", replies_left == 0)
+
+
 def test_song_autoplay():
     print("\n-- Profile Song Autoplay --")
     with app.test_client() as c:
@@ -1222,6 +1291,7 @@ def test_song_autoplay():
 if __name__ == "__main__":
     test_auth()
     test_profile()
+    test_profile_comments()
     test_search()
     test_messaging_open()
     test_messaging_crew_only()

@@ -18,22 +18,7 @@
                 </form>
                 {% endif %}
 
-                {% for comment in comments %}
-                <div class="post-card">
-                    <p class="post-timestamp">
-                        <strong><a href="{{ url_for('profile', username=comment.author.username) }}">{{ comment.author.username }}</a></strong>
-                        — {{ comment.timestamp.strftime('%B %d, %Y at %I:%M %p') }}
-                    </p>
-                    <div class="post-body">{{ comment.body | bbcode }}</div>
-                    {% if current_user.is_authenticated and (current_user.id == comment.profile_id or current_user.id == comment.author_id) %}
-                    <form method="POST" action="{{ url_for('delete_comment', comment_id=comment.id) }}" style="display:inline;" onsubmit="return confirm('Delete this comment?');">
-                        <button type="submit" class="ms-link-btn danger" style="font-size:12px;">🗑️ Delete</button>
-                    </form>
-                    {% endif %}
-                </div>
-                {% else %}
-                <p class="no-posts">No comments yet. Be the first!</p>
-                {% endfor %}
+                {% include '_comment_threads.html' %}
 
                 {% if total_pages > 1 %}
                 <div class="ms-pagination">

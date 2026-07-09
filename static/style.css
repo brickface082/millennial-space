@@ -1228,6 +1228,46 @@ body.dark-mode .ms-daily-inspiration-hide { color: #aaa; }
     word-break: break-word;
 }
 
+.comment-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.comment-actions .ms-link-btn {
+    font-size: 12px;
+}
+
+.comment-reply {
+    margin-top: 8px;
+    margin-left: 16px;
+    padding: 8px 10px;
+    border-left: 3px solid var(--accent, #2b5797);
+    background: #f0f4f8;
+}
+
+.comment-reply-form {
+    margin-top: 8px;
+}
+
+.comment-reply-form textarea {
+    font-size: 12px;
+}
+
+.comment-private {
+    opacity: 0.92;
+    border-style: dashed;
+}
+
+.comment-private-badge {
+    font-size: 10px;
+    color: #996600;
+    font-weight: bold;
+    margin-left: 6px;
+}
+
 .post-image {
     max-width: 100%;
     border: 2px solid #999;
@@ -1394,6 +1434,11 @@ body.dark-mode .member-row {
     background: #2a2a2a !important;
     border-color: #555 !important;
     color: #e8e8e8 !important;
+}
+
+body.dark-mode .comment-reply {
+    background: #1e2a35 !important;
+    border-left-color: var(--accent, #6a9fd8) !important;
 }
 
 body.dark-mode .ms-box-header {
