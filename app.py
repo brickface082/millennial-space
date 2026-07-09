@@ -6,7 +6,7 @@ from io import BytesIO
 from PIL import Image
 from datetime import datetime
 import random
-from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, session
+from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, session, Response
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, current_user, logout_user, login_required
@@ -73,6 +73,8 @@ SITE_DEFAULTS = {
 }
 SITE_BRAND = "OurMillennialSpace"
 SITE_NAME = "Our Millennial Space"
+SITE_TAGLINE = "MySpace-era social network rebuilt for 2026 — profiles, Top 8, bulletins, photos, ICQ-style mail, and The Spot."
+SITE_URL = os.environ.get("SITE_URL", "https://web-production-2e69f.up.railway.app").rstrip("/")
 
 def _ensure_cloudinary():
     """Apply Cloudinary credentials before each upload."""
@@ -134,6 +136,8 @@ def utility_processor():
         site_defaults=SITE_DEFAULTS,
         site_brand=SITE_BRAND,
         site_name=SITE_NAME,
+        site_tagline=SITE_TAGLINE,
+        site_url=SITE_URL,
         format_fee=format_fee,
         quote_of_the_day=quote_of_the_day,
         daily_quote_heading=daily_quote_heading,
@@ -3119,9 +3123,34 @@ def account_delete():
 
 # ── T029 — Password reset ─────────────────────────────────────────────────────
 
+@app.route("/about")
+def about_page():
+    return render_template("about.html")
+
 @app.route("/help")
 def help_page():
     return render_template("help.html")
+
+@app.route("/robots.txt")
+def robots_txt():
+    return Response(
+        "User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /edit\n"
+        f"Sitemap: {SITE_URL}/sitemap.xml\n",
+        mimetype="text/plain",
+    )
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    pages = ["/about", "/login", "/register", "/help", "/spot", "/spot/terms"]
+    urls = "\n".join(
+        f"  <url><loc>{SITE_URL}{path}</loc></url>" for path in pages
+    )
+    body = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"{urls}\n</urlset>"
+    )
+    return Response(body, mimetype="application/xml")
 
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():

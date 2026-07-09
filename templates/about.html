@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}About — {{ site_name }}{% endblock %}
+{% block og_title %}{{ site_name }} — MySpace for 2026{% endblock %}
+{% block og_url %}{{ site_url }}/about{% endblock %}
+
+{% block body_style %}
+    background-color: var(--site-bg, #c5cdd6);
+{% endblock %}
+
+{% block extra_style %}
+<style>
+    .site-nav { display: flex; }
+    .about-wrap { max-width: 720px; margin: 24px auto; padding: 0 16px 40px; }
+    .about-hero {
+        background: rgba(255,255,255,0.93);
+        border: 4px ridge var(--accent, #cc44aa);
+        box-shadow: 4px 4px 0 #888;
+        padding: 28px;
+        margin-bottom: 20px;
+    }
+    .about-hero h1 { color: var(--accent); margin-top: 0; font-size: 1.8em; }
+    .about-hero .tagline { color: #444; font-size: 1.05em; line-height: 1.5; }
+    .about-section {
+        background: rgba(255,255,255,0.93);
+        border: 2px solid #ccc;
+        padding: 20px;
+        margin-bottom: 16px;
+        font-size: 14px;
+        line-height: 1.55;
+    }
+    .about-section h2 { color: var(--accent); margin-top: 0; font-size: 1.1em; }
+    .about-features { margin: 0; padding-left: 20px; }
+    .about-features li { margin-bottom: 6px; }
+    .about-cta { margin-top: 20px; }
+    .about-cta a.btn-primary {
+        display: inline-block;
+        text-decoration: none;
+        padding: 10px 20px;
+        margin-right: 10px;
+        font-weight: bold;
+    }
+    body.dark-mode .about-hero,
+    body.dark-mode .about-section {
+        background: #2a2a2a !important;
+        color: #e8e8e8 !important;
+        border-color: #555 !important;
+    }
+    body.dark-mode .about-hero .tagline { color: #ccc !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="about-wrap">
+    <div class="about-hero">
+        <h1>✨ {{ site_name }}</h1>
+        <p class="tagline">{{ site_tagline }}</p>
+        <p>Custom profiles. Top 8. Bulletins and blurbs. Photo albums and montages. ICQ-style mail. Crew (friends). The Spot — local listings and events. Polls. Daily quotes on every profile. Dark mode. BBCode glitter optional.</p>
+        <div class="about-cta">
+            <a class="btn-primary" href="{{ url_for('login') }}">Log In</a>
+            <a class="btn-primary" href="{{ url_for('register') }}">Sign Up</a>
+            <a href="{{ url_for('help_page') }}" style="font-weight:bold;">Help &amp; features →</a>
+        </div>
+    </div>
+
+    <div class="about-section">
+        <h2>Why we built it</h2>
+        <p>Social feeds got loud. We wanted the old internet back — a place that feels like <em>yours</em>. Decorate your page, pick your song, curate your Top 8, and actually talk to people.</p>
+    </div>
+
+    <div class="about-section">
+        <h2>What's included</h2>
+        <ul class="about-features">
+            <li><strong>Profiles</strong> — bio, colors, fonts, moods, profile song, custom CSS</li>
+            <li><strong>Crew</strong> — friend requests, mutual crew, Top 8 grid</li>
+            <li><strong>Mail</strong> — direct messages with ICQ-style buddy list</li>
+            <li><strong>Comments</strong> — shoutouts on profiles with replies</li>
+            <li><strong>Photos</strong> — albums, montage slideshows</li>
+            <li><strong>The Spot</strong> — geo-filtered listings and local events</li>
+            <li><strong>Invites</strong> — share your permanent invite link</li>
+        </ul>
+    </div>
+
+    <div class="about-section">
+        <h2>Join</h2>
+        <p>Sign-up uses invite links from existing members — ask a friend on the site, or reach out to the team. Your account and content are permanent.</p>
+        <p><a href="{{ url_for('spot_index') }}">Browse The Spot</a> (listings &amp; events) without logging in.</p>
+    </div>
+</div>
+{% endblock %}
