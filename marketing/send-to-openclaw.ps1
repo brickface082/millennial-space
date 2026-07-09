@@ -2,7 +2,6 @@
 # Usage:
 #   .\send-to-openclaw.ps1 -Message "Execute step 2.1 from GROWTH-PLAN.md"
 #   .\send-to-openclaw.ps1 -File "C:\path\to\brief.md"
-#   Get-Content ACTIVE.md -Raw | .\send-to-openclaw.ps1
 
 param(
     [string]$Message = "",
@@ -12,7 +11,6 @@ param(
     [int]$TimeoutSec = 900
 )
 
-$ErrorActionPreference = "Stop"
 $MarketingDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $StatusFile = Join-Path $MarketingDir "STATUS.md"
 
@@ -29,7 +27,30 @@ $stamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 Write-Host "Sending to OpenClaw agent '$Agent' (session: $SessionKey)..." -ForegroundColor Cyan
 
 $outFile = Join-Path $env:TEMP "openclaw-growth-$(Get-Date -Format 'yyyyMMdd-HHmmss').txt"
-openclaw agent --agent $Agent --session-key $SessionKey --message $Message --timeout $TimeoutSec 2>&1 | Tee-Object -FilePath $outFile
+$msgFile = Join-Path $env:TEMP "openclaw-growth-msg-$(Get-Date -Format 'yyyyMMdd-HHmmss').txt"
+Set-Content -Path $msgFile -Value $Message -Encoding UTF8
 
-"`n### Response ($stamp)`n``````n$(Get-Content $outFile -Raw)`n``````n" | Add-Content $StatusFile -Encoding UTF8
+$prevEap = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+try {
+    # Plugin warnings go to stderr — must not terminate the script.
+    $output = & openclaw agent --agent $Agent --session-key $SessionKey --message $Message --timeout $TimeoutSec 2>&1
+    $exitCode = $LASTEXITCODE
+    $output | Out-File -FilePath $outFile -Encoding UTF8
+} finally {
+    $ErrorActionPreference = $prevEap
+}
+
+$response = ""
+if (Test-Path $outFile) {
+    $response = Get-Content $outFile -Raw -ErrorAction SilentlyContinue
+}
+
+"`n### Response ($stamp) exit=$exitCode`n``````n$response`n``````n" | Add-Content $StatusFile -Encoding UTF8
+
+if ($exitCode -ne 0) {
+    Write-Host "OpenClaw exited with code $exitCode (see $StatusFile)" -ForegroundColor Yellow
+    exit $exitCode
+}
+
 Write-Host "Logged to $StatusFile" -ForegroundColor Green
