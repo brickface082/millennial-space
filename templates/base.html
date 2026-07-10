@@ -174,5 +174,26 @@ window.ICQ_CONFIG = {
 <script src="{{ url_for('static', filename='alert-sounds.js') }}"></script>
 <script src="{{ url_for('static', filename='icq.js') }}"></script>
 {% endif %}
+<script>
+(function () {
+  var nav = document.querySelector('.site-nav');
+  if (!nav) return;
+  nav.addEventListener('click', function (e) {
+    var el = e.target.closest('a[href], button.nav-btn');
+    if (!el || el.getAttribute('href') === '#') return;
+    var label = (el.dataset.metric || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 64);
+    if (!label) return;
+    try {
+      fetch('{{ url_for("metrics_nav_click") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feature: label }),
+        keepalive: true,
+        credentials: 'same-origin'
+      });
+    } catch (err) { /* ignore */ }
+  });
+})();
+</script>
 </body>
 </html>

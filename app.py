@@ -477,6 +477,41 @@ class PasswordResetToken(db.Model):
     used = db.Column(db.Boolean, nullable=False, default=False)
     user = db.relationship("User", backref=db.backref("reset_tokens", lazy=True))
 
+
+class AnalyticsEvent(db.Model):
+    """Lightweight event log for admin metrics (page views, signups, nav clicks)."""
+    __tablename__ = "analytics_event"
+    id = db.Column(db.Integer, primary_key=True)
+    event_type = db.Column(db.String(32), nullable=False, index=True)
+    feature_key = db.Column(db.String(64), nullable=False, default="", index=True)
+    path = db.Column(db.String(256), default="")
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
+    user = db.relationship("User", backref=db.backref("analytics_events", lazy="dynamic"))
+
+METRICS_PAGE_ENDPOINTS = {
+    "about": "about",
+    "register": "signup_page",
+    "login": "login_page",
+    "profile": "profile",
+    "search": "search",
+    "spot_index": "spot",
+    "spot_listing_new": "spot_new_listing",
+    "spot_event_new": "spot_new_event",
+    "spot_terms": "spot_terms",
+    "crew_requests": "crew",
+    "polls": "polls",
+    "sounds": "sounds",
+    "montage_edit": "montage",
+    "help_page": "help",
+    "edit_profile": "edit_profile",
+    "top8": "top8",
+    "feedback_new": "feedback",
+    "forgot_password": "forgot_password",
+}
+
+SITE_ADMIN_USERNAME = os.environ.get("SITE_ADMIN_USERNAME", "brickface082")
+
 COMMENTS_PER_PAGE = 10
 UPDATES_PER_PAGE = 10
 PROFILE_PREVIEW_COUNT = 3
@@ -1098,6 +1133,12 @@ def register():
             if inv:
                 db.session.add(InviteReferral(invite_id=inv.id, user_id=user.id))
         db.session.commit()
+        track_event(
+            "signup",
+            "invite" if token else "organic",
+            path="/register",
+            user_id=user.id,
+        )
         flash("Account created! You can now log in.", "success")
         return redirect(url_for("login"))
     return render_template("register.html", invited_by=invited_by, invite_token=invite_token)
@@ -1110,6 +1151,7 @@ def login():
         user = User.query.filter_by(email=email).first()
         if user and bcrypt.check_password_hash(user.password_hash, password):
             login_user(user)
+            track_event("login", "password", path="/login", user_id=user.id)
             flash("Welcome back!", "success")
             return redirect(url_for("profile", username=user.username))
         else:
@@ -1543,6 +1585,48 @@ def update_last_seen():
             db.session.commit()
         except Exception:
             db.session.rollback()
+
+
+def is_site_admin():
+    return current_user.is_authenticated and current_user.username == SITE_ADMIN_USERNAME
+
+
+def track_event(event_type, feature_key="", path="", user_id=None):
+    """Record a metrics event; never raises to callers."""
+    try:
+        uid = user_id
+        if uid is None and current_user.is_authenticated:
+            uid = current_user.id
+        ev = AnalyticsEvent(
+            event_type=event_type[:32],
+            feature_key=(feature_key or "")[:64],
+            path=(path or "")[:256],
+            user_id=uid,
+        )
+        db.session.add(ev)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+
+@app.after_request
+def metrics_after_request(response):
+    try:
+        if (
+            request.method == "GET"
+            and response.status_code < 400
+            and request.endpoint in METRICS_PAGE_ENDPOINTS
+            and not request.endpoint.startswith("admin_")
+        ):
+            track_event(
+                "page_view",
+                METRICS_PAGE_ENDPOINTS[request.endpoint],
+                path=request.path,
+            )
+    except Exception:
+        pass
+    return response
+
 
 @app.route("/search")
 @login_required
@@ -2954,10 +3038,29 @@ def feedback_new():
     return render_template("feedback_form.html",
                            referrer=request.referrer or "")
 
+@app.route("/api/metrics/nav", methods=["POST"])
+def metrics_nav_click():
+    data = request.get_json(silent=True) or {}
+    feature = str(data.get("feature") or "").strip()[:64]
+    if feature:
+        track_event("nav_click", feature, path=request.referrer or "")
+    return jsonify(ok=True)
+
+
+@app.route("/admin/metrics")
+@login_required
+def admin_metrics():
+    if not is_site_admin():
+        return "Access denied.", 403
+    from analytics_helpers import build_metrics_report
+    report = build_metrics_report()
+    return render_template("admin_metrics.html", report=report)
+
+
 @app.route("/admin/feedback")
 @login_required
 def feedback_admin():
-    if current_user.username != "brickface082":
+    if not is_site_admin():
         return "Access denied.", 403
     bugs = Feedback.query.filter_by(category="bug").order_by(Feedback.created_at.desc()).all()
     suggestions = Feedback.query.filter_by(category="suggestion").order_by(Feedback.created_at.desc()).all()
@@ -2966,7 +3069,7 @@ def feedback_admin():
 @app.route("/admin/feedback/<int:fb_id>/review", methods=["POST"])
 @login_required
 def feedback_review(fb_id):
-    if current_user.username != "brickface082":
+    if not is_site_admin():
         return "Access denied.", 403
     fb = Feedback.query.get_or_404(fb_id)
     fb.status = "reviewed" if fb.status == "open" else "open"
@@ -3001,7 +3104,7 @@ def updates_unsubscribe(token):
 @app.route("/admin/updates", methods=["GET", "POST"])
 @login_required
 def admin_updates():
-    if current_user.username != "brickface082":
+    if not is_site_admin():
         return "Access denied.", 403
     subscriber_count = User.query.filter_by(updates_opt_in=True).count()
     if request.method == "POST":

@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Site Metrics — Admin{% endblock %}
+
+{% block extra_style %}
+<style>
+    .metrics-wrap { max-width: 960px; margin: 0 auto; }
+    h1 { color: #ff1493; text-shadow: 2px 2px #ffff00; margin-top: 0; }
+    h2 { color: #660066; border-bottom: 2px solid #cc99cc; padding-bottom: 4px; margin-top: 28px; font-size: 1.05em; }
+    .metrics-nav { font-size: 13px; margin-bottom: 16px; }
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 10px;
+        margin: 12px 0;
+    }
+    .stat-card {
+        background: rgba(255,255,255,0.92);
+        border: 2px solid #aaa;
+        padding: 12px;
+        text-align: center;
+    }
+    .stat-card .num { font-size: 1.6em; font-weight: bold; color: #000080; }
+    .stat-card .lbl { font-size: 11px; color: #666; margin-top: 4px; }
+    table.metrics-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        background: rgba(255,255,255,0.92);
+    }
+    table.metrics-table th, table.metrics-table td {
+        border: 1px solid #ccc;
+        padding: 8px 10px;
+        text-align: left;
+    }
+    table.metrics-table th { background: #eee; color: #660066; }
+    .bar-cell { min-width: 120px; }
+    .bar {
+        display: inline-block;
+        height: 10px;
+        background: linear-gradient(to right, #000080, #1084d0);
+        min-width: 2px;
+        vertical-align: middle;
+        margin-right: 6px;
+    }
+    .muted { color: #888; font-size: 12px; }
+    .least { background: #fff5f5; }
+    .most { background: #f5fff5; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="metrics-wrap">
+    <h1>📊 Site Metrics</h1>
+    <p class="metrics-nav">
+        <a href="{{ url_for('feedback_admin') }}">← Feedback Admin</a>
+        · <a href="{{ url_for('admin_updates') }}">Update emails</a>
+        · Generated {{ report.generated_at.strftime('%Y-%m-%d %H:%M UTC') }}
+    </p>
+
+    <h2>Overview</h2>
+    <div class="stat-grid">
+        <div class="stat-card"><div class="num">{{ report.overview.total_users }}</div><div class="lbl">Total members</div></div>
+        <div class="stat-card"><div class="num">{{ report.overview.signups_7d }}</div><div class="lbl">Signups (7d)</div></div>
+        <div class="stat-card"><div class="num">{{ report.overview.signups_30d }}</div><div class="lbl">Signups (30d)</div></div>
+        <div class="stat-card"><div class="num">{{ report.overview.active_7d }}</div><div class="lbl">Active (7d)</div></div>
+        <div class="stat-card"><div class="num">{{ report.overview.logins_7d }}</div><div class="lbl">Logins tracked (7d)</div></div>
+        <div class="stat-card"><div class="num">{{ report.overview.profile_views_7d }}</div><div class="lbl">Profile views (7d)</div></div>
+        <div class="stat-card"><div class="num">{{ report.overview.organic_signups }}</div><div class="lbl">Organic signups</div></div>
+        <div class="stat-card"><div class="num">{{ report.overview.referred_signups }}</div><div class="lbl">Invite referrals</div></div>
+    </div>
+
+    <h2>Feature adoption (who uses what)</h2>
+    <p class="muted">Sorted by number of unique users. Use the bottom of the list to find features to simplify or promote.</p>
+    {% set max_users = report.features[0].users if report.features else 1 %}
+    <table class="metrics-table">
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Users</th>
+                <th>% of members</th>
+                <th>Total actions</th>
+                <th class="bar-cell">Adoption</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for f in report.features %}
+            <tr class="{{ 'most' if loop.index <= 3 else ('least' if f.users == 0 else '') }}">
+                <td>{{ f.label }}</td>
+                <td>{{ f.users }}</td>
+                <td>{{ f.pct }}%</td>
+                <td>{{ f.actions if f.actions is not none else '—' }}</td>
+                <td class="bar-cell">
+                    <span class="bar" style="width:{{ (100 * f.users / max_users)|round(0, 'floor') }}px;"></span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Least used (streamline candidates)</h2>
+    <ul style="font-size:13px;line-height:1.7;">
+        {% for f in report.least_used %}
+        <li><strong>{{ f.label }}</strong> — {{ f.users }} user(s), {{ f.pct }}% adoption{% if f.actions is not none %}, {{ f.actions }} total action(s){% endif %}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Page traffic (7 days, tracked)</h2>
+    {% if report.page_views_7d %}
+    <table class="metrics-table">
+        <thead><tr><th>Section</th><th>Views</th></tr></thead>
+        <tbody>
+            {% for row in report.page_views_7d %}
+            <tr><td>{{ row.key }}</td><td>{{ row.count }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No page views recorded yet — data fills in as people browse after this deploy.</p>
+    {% endif %}
+
+    <h2>Nav clicks (7 days)</h2>
+    {% if report.nav_clicks_7d %}
+    <table class="metrics-table">
+        <thead><tr><th>Nav item</th><th>Clicks</th></tr></thead>
+        <tbody>
+            {% for row in report.nav_clicks_7d %}
+            <tr><td>{{ row.key }}</td><td>{{ row.count }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="muted">Nav click tracking starts after deploy.</p>
+    {% endif %}
+
+    <h2>Signups by day (30 days)</h2>
+    {% if report.signups_by_day %}
+    <table class="metrics-table">
+        <thead><tr><th>Date</th><th>New members</th></tr></thead>
+        <tbody>
+            {% for row in report.signups_by_day %}
+            <tr><td>{{ row.day }}</td><td>{{ row.count }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No dated signups in the last 30 days.</p>
+    {% endif %}
+
+    <h2>Recent signups</h2>
+    {% if report.recent_signups %}
+    <table class="metrics-table">
+        <thead><tr><th>Username</th><th>Joined</th></tr></thead>
+        <tbody>
+            {% for u in report.recent_signups %}
+            <tr>
+                <td><a href="{{ url_for('profile', username=u.username) }}">{{ u.username }}</a></td>
+                <td>{{ u.joined_at.strftime('%Y-%m-%d %H:%M UTC') if u.joined_at else '—' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No members yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
