@@ -47,7 +47,7 @@
             {% if location_label %}
             Showing results for <strong>{{ location_label }}</strong>.
             {% elif current_user.is_authenticated %}
-            Set your city in <a href="{{ url_for('edit_profile') }}">Edit Profile</a> or search any location above.
+            Set your city on <a href="{{ url_for('profile', username=current_user.username) }}#location">your profile</a> or search any location above.
             {% else %}
             Search any city &amp; state — log in to post.
             {% endif %}

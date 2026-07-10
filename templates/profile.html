@@ -37,7 +37,9 @@
             <cite class="ms-daily-inspiration-author">— {{ daily_quote.author }}</cite>
             {% endif %}
             {% if is_owner %}
-            <a href="{{ url_for('edit_profile') }}#quote-settings" class="ms-daily-inspiration-hide">Turn off on my profile</a>
+            <form method="POST" action="{{ url_for('profile_save_section', section='privacy') }}" class="ms-daily-inspiration-hide-form">
+                <button type="submit" name="show_daily_quote" value="" class="ms-daily-inspiration-hide">Turn off on my profile</button>
+            </form>
             {% endif %}
         </div>
     </section>
@@ -45,10 +47,24 @@
 
     <header class="ms-profile-sticky-header">
         {% set pic_src = image_url(user.profile_pic, 'profile_pics') %}
+        {% if is_owner %}
+        <form method="POST" action="{{ url_for('profile_save_section', section='look') }}" enctype="multipart/form-data" class="ms-pic-edit-form">
+            <label class="ms-pic-edit-label" title="Change profile picture">
+                {% if pic_src %}
+                    <img class="ms-header-pic" src="{{ pic_src }}" alt="{{ user.username }}">
+                {% else %}
+                    <div class="ms-header-pic ms-header-pic-ph"></div>
+                {% endif %}
+                <span class="ms-pic-edit-overlay">📷</span>
+                <input type="file" name="profile_pic" accept="image/*" onchange="this.form.submit()">
+            </label>
+        </form>
+        {% else %}
         {% if pic_src %}
             <img class="ms-header-pic" src="{{ pic_src }}" alt="{{ user.username }}">
         {% else %}
             <div class="ms-header-pic ms-header-pic-ph"></div>
+        {% endif %}
         {% endif %}
         <div class="ms-header-info">
             <span class="ms-header-name">{{ user.username }}</span>
@@ -90,11 +106,15 @@
 
         <aside class="ms-sidebar">
 
-            {% if user.status == 'away' and user.away_message %}
+            {% if user.status == 'away' and user.away_message and not is_owner %}
             <div class="ms-box">
                 <div class="ms-box-header">Away Message</div>
                 <div class="ms-box-body">{{ user.away_message }}</div>
             </div>
+            {% endif %}
+
+            {% if is_owner %}
+            {% include '_profile_owner_tools.html' %}
             {% endif %}
 
             {% if member_since or last_seen_label %}
@@ -110,13 +130,13 @@
             {% endif %}
 
             <div class="ms-box">
-                <div class="ms-box-header">Contacting {{ user.username }}</div>
+                <div class="ms-box-header">{% if is_owner %}My Space{% else %}Contacting {{ user.username }}{% endif %}</div>
                 <div class="ms-box-body">
                     <table class="ms-contact-table">
                         {% if is_owner %}
-                        <tr><td>✏️</td><td><a href="/edit">Edit Profile</a></td></tr>
                         <tr><td>⭐</td><td><a href="{{ url_for('top8') }}">Edit Top 8</a></td></tr>
                         <tr><td>👥</td><td><a href="{{ url_for('crew_requests') }}">Crew Requests</a></td></tr>
+                        <tr><td>⚙️</td><td><a href="{{ url_for('settings') }}">Account Settings</a></td></tr>
                         {% elif current_user.is_authenticated %}
                             {% if crew_status == "accepted" %}
                             <tr><td>💬</td><td><a href="#" onclick="icqOpenChat('{{ user.username }}'); return false;">Send Message</a></td></tr>
@@ -217,10 +237,10 @@
                         <li><a href="{{ url_for('diary_index') }}" class="diary-link">🔒 Private Diary</a></li>
                         <li><a href="{{ url_for('blog_index', username=user.username) }}" class="blog-link">🌐 Public Blog</a></li>
                         <li><a href="#photos">📷 Photos</a></li>
-                        {% if user.polls_enabled %}
+                        <li><a href="{{ url_for('montage_edit') }}">🎬 Photo Montage</a></li>
                         <li><a href="{{ url_for('polls') }}">📊 Polls</a></li>
-                        {% endif %}
                         <li><a href="{{ url_for('sounds') }}">🔔 Alert Sounds</a></li>
+                        <li><a href="{{ url_for('help_page') }}">❓ Help</a></li>
                     </ul>
                 </div>
             </div>
@@ -250,14 +270,27 @@
             </nav>
 
             <div class="ms-box" id="about">
-                <div class="ms-box-header">About {{ user.username }}</div>
+                <div class="ms-box-header">
+                    About {{ user.username }}
+                    {% if is_owner %}<span class="ms-box-edit-hint">— edit below</span>{% endif %}
+                </div>
                 <div class="ms-box-body">
+                    {% if is_owner %}
+                    <form class="ms-form ms-about-form" method="POST" action="{{ url_for('profile_save_section', section='about') }}">
+                        <label>Bio</label>
+                        <textarea name="bio" placeholder="Tell the world about you…">{{ user.bio or '' }}</textarea>
+                        <label>Who I'd Like to Meet</label>
+                        <textarea name="ideal_meet" maxlength="500" placeholder="Classic MySpace field…">{{ user.ideal_meet or '' }}</textarea>
+                        <input class="btn-primary" type="submit" value="Save About">
+                    </form>
+                    {% else %}
                     <p class="ms-bio">{{ user.bio or "No bio yet." }}</p>
                     {% if user.ideal_meet %}
                     <div class="ms-ideal-meet">
                         <p class="ms-ideal-meet-label">Who I'd Like to Meet:</p>
                         <p class="ms-bio">{{ user.ideal_meet }}</p>
                     </div>
+                    {% endif %}
                     {% endif %}
                 </div>
             </div>
@@ -479,6 +512,12 @@ function switchPhotoTab(tab) {
 }
 if (window.location.hash === '#photos' || window.location.hash === '#albums') switchPhotoTab('albums');
 if (new URLSearchParams(window.location.search).get('open') === 'blurbs') switchUpdatesTab('blurbs');
+(function () {
+    var hash = window.location.hash.replace('#', '');
+    if (!hash) return;
+    var panel = document.getElementById(hash);
+    if (panel && panel.tagName === 'DETAILS') panel.open = true;
+})();
 function copyShareUrl() {
     var box = document.getElementById('share-profile-url');
     var msg = document.getElementById('share-copied');

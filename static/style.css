@@ -541,6 +541,150 @@
     text-decoration: underline;
 }
 .ms-daily-inspiration-hide:hover { color: #333; }
+.ms-daily-inspiration-hide-form {
+    display: inline;
+    margin: 0;
+}
+.ms-daily-inspiration-hide-form button.ms-daily-inspiration-hide {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+}
+
+/* Inline profile editing (owner) */
+.ms-pic-edit-form {
+    margin: 0;
+    flex-shrink: 0;
+}
+.ms-pic-edit-label {
+    position: relative;
+    display: block;
+    cursor: pointer;
+}
+.ms-pic-edit-label input[type="file"] {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+.ms-pic-edit-overlay {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    background: #ffff00;
+    border: 1px solid #333;
+    font-size: 11px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 2px;
+}
+.ms-edit-details {
+    margin-bottom: 10px;
+    border: 1px solid #999;
+    background: #fff;
+}
+.ms-edit-details > summary {
+    background: linear-gradient(to bottom, #e8e8e8 0%, #c8c8c8 100%);
+    border-bottom: 1px solid #999;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    cursor: pointer;
+    list-style: none;
+}
+.ms-edit-details > summary::-webkit-details-marker { display: none; }
+.ms-edit-details > summary::before {
+    content: "▶ ";
+    font-size: 10px;
+}
+.ms-edit-details[open] > summary::before { content: "▼ "; }
+.ms-edit-details[open] > summary { border-bottom: 1px solid #999; }
+.ms-edit-body {
+    padding: 8px;
+    font-size: 12px;
+}
+.ms-edit-body label {
+    display: block;
+    font-weight: bold;
+    margin-top: 8px;
+    font-size: 11px;
+}
+.ms-edit-body label:first-child { margin-top: 0; }
+.ms-edit-hint {
+    font-weight: normal;
+    color: #666;
+    font-size: 10px;
+}
+.ms-color-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+.ms-color-row label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: normal;
+    margin-top: 0;
+}
+.ms-location-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.ms-location-row input,
+.ms-location-row select {
+    flex: 1;
+    min-width: 60px;
+    font-size: 12px;
+    padding: 4px;
+}
+.ms-check-label {
+    display: flex !important;
+    align-items: center;
+    gap: 6px;
+    font-weight: normal !important;
+    margin-top: 6px !important;
+    cursor: pointer;
+}
+.ms-check-label input { width: auto; margin: 0; }
+.ms-edit-nested {
+    margin-top: 8px;
+    font-size: 11px;
+}
+.ms-edit-nested summary { cursor: pointer; color: #666; }
+.ms-edit-nested textarea {
+    width: 100%;
+    box-sizing: border-box;
+    height: 60px;
+    font-family: monospace;
+    font-size: 11px;
+    margin-top: 4px;
+}
+.ms-box-edit-hint {
+    font-weight: normal;
+    text-transform: none;
+    font-size: 10px;
+    color: #666;
+    letter-spacing: 0;
+}
+.ms-about-form textarea {
+    height: 70px;
+}
+body.dark-mode .ms-edit-details {
+    background: #2a2a2a;
+    border-color: #555;
+}
+body.dark-mode .ms-edit-details > summary {
+    background: linear-gradient(to bottom, #3a3a3a 0%, #2a2a2a 100%);
+    color: #e8e8e8;
+    border-color: #555;
+}
 .ms-daily-inspiration--compact {
     margin-bottom: 18px;
     border-width: 3px;

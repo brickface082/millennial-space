@@ -44,7 +44,7 @@
                     {% if profile_song_preview %}
                     Current: {{ profile_song_preview[:60] }}{% if profile_song_preview|length > 60 %}…{% endif %}
                     {% else %}
-                    <em>No profile song set</em> — <a href="{{ url_for('edit_profile') }}">add one in Edit Profile</a>
+                    <em>No profile song set</em> — <a href="{{ url_for('profile', username=current_user.username) }}#music">add one on your profile</a>
                     {% endif %}
                 </span>
             </span>

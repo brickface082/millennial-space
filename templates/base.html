@@ -61,17 +61,8 @@
             </span>
             <button type="button" class="nav-btn" onclick="icqBuddyToggle()" title="Buddy List">Buddies</button>
             <a href="{{ url_for('crew_requests') }}">Crew</a>
-            <details class="nav-more">
-                <summary>More ▾</summary>
-                <div class="nav-more-menu">
-                    <a href="{{ url_for('polls') }}" id="polls-nav-btn">Polls <span id="polls-badge" class="nav-badge" style="position:static;display:none;margin-left:4px;"></span></a>
-                    <a href="{{ url_for('sounds') }}">Alert Sounds</a>
-                    <a href="{{ url_for('montage_edit') }}">Photo Montage</a>
-                    <a href="{{ url_for('help_page') }}">Help</a>
-                    <a href="{{ url_for('feedback_new') }}">Report a Bug</a>
-                    <a href="{{ url_for('logout') }}">Log Out</a>
-                </div>
-            </details>
+            <a href="{{ url_for('polls') }}" id="polls-nav-btn">Polls <span id="polls-badge" class="nav-badge" style="position:static;display:none;margin-left:4px;"></span></a>
+            <a href="{{ url_for('logout') }}">Log Out</a>
         </div>
         <form class="search-form" method="GET" action="{{ url_for('search') }}">
             <input type="text" name="q" placeholder="Find people..." maxlength="20" value="{{ request.args.get('q', '') }}">

@@ -1,0 +1,95 @@
+{# Inline edit panels — only included when is_owner on profile.html #}
+
+<details class="ms-edit-details" id="look">
+    <summary>🎨 Customize Look</summary>
+    <div class="ms-edit-body">
+        <form class="ms-form" method="POST" action="{{ url_for('profile_save_section', section='look') }}" enctype="multipart/form-data">
+            <label>Theme Preset</label>
+            <select name="theme_preset">
+                <option value="custom" {% if (user.profile_theme or '') == 'custom' or not user.profile_theme %}selected{% endif %}>Custom</option>
+                {% for key, preset in theme_presets.items() %}
+                <option value="{{ key }}" {% if user.profile_theme == key %}selected{% endif %}>{{ preset.label }}</option>
+                {% endfor %}
+            </select>
+            <div class="ms-color-row">
+                <label>Background <input type="color" name="bg_color" value="{{ user.bg_color or site_defaults.bg_color }}"></label>
+                <label>Accent <input type="color" name="theme_color" value="{{ user.theme_color or site_defaults.theme_color }}"></label>
+            </div>
+            <label>Font</label>
+            <select name="font_choice">
+                {% for font in ["Arial","Georgia","Verdana","Trebuchet MS","Courier New","Times New Roman"] %}
+                <option value="{{ font }}" {% if (user.font_choice or 'Arial') == font %}selected{% endif %}>{{ font }}</option>
+                {% endfor %}
+            </select>
+            <label>Background Image</label>
+            <input type="file" name="bg_image" accept="image/*">
+            <details class="ms-edit-nested">
+                <summary>Advanced CSS</summary>
+                <textarea name="custom_css" maxlength="8000" placeholder=".ms-profile-theme .ms-box { border-color: #ff00ff; }">{{ user.custom_css or '' }}</textarea>
+            </details>
+            <input class="btn-primary" type="submit" value="Save Look">
+        </form>
+    </div>
+</details>
+
+<details class="ms-edit-details" id="music">
+    <summary>🎵 Profile Song</summary>
+    <div class="ms-edit-body">
+        <form class="ms-form" method="POST" action="{{ url_for('profile_save_section', section='music') }}">
+            <input type="text" name="profile_song" value="{{ profile_music_link }}" placeholder="YouTube, Spotify, SoundCloud link…">
+            <label class="ms-check-label">
+                <input type="checkbox" name="song_autoplay" value="on" {% if user.song_autoplay %}checked{% endif %}>
+                Auto-play for visitors (starts muted)
+            </label>
+            <input class="btn-primary" type="submit" value="Save Song">
+        </form>
+    </div>
+</details>
+
+<details class="ms-edit-details" id="privacy">
+    <summary>🔒 Privacy &amp; Messages</summary>
+    <div class="ms-edit-body">
+        <form class="ms-form" method="POST" action="{{ url_for('profile_save_section', section='privacy') }}">
+            <label>Away Message</label>
+            <textarea name="away_message" maxlength="200" placeholder="Shown when you're Away…">{{ user.away_message or '' }}</textarea>
+            <label>Who can message me?</label>
+            <select name="msg_filter">
+                <option value="open" {% if (user.msg_filter or 'open') == 'open' %}selected{% endif %}>🌐 Anyone</option>
+                <option value="verified" {% if user.msg_filter == 'verified' %}selected{% endif %}>🔐 Verified (math check)</option>
+                <option value="crew" {% if user.msg_filter == 'crew' %}selected{% endif %}>👥 Crew only</option>
+            </select>
+            <label class="ms-check-label">
+                <input type="checkbox" name="polls_enabled" value="on" {% if user.polls_enabled %}checked{% endif %}>
+                Receive polls
+            </label>
+            <label class="ms-check-label">
+                <input type="checkbox" name="show_daily_quote" value="on" {% if user.show_daily_quote %}checked{% endif %}>
+                Show daily quote on my profile
+            </label>
+            <label class="ms-check-label">
+                <input type="checkbox" name="updates_opt_in" value="on" {% if user.updates_opt_in %}checked{% endif %}>
+                Email me about updates
+            </label>
+            <input class="btn-primary" type="submit" value="Save Privacy">
+        </form>
+    </div>
+</details>
+
+<details class="ms-edit-details" id="location">
+    <summary>📍 Location <span class="ms-edit-hint">(for Events Near Me)</span></summary>
+    <div class="ms-edit-body">
+        <form class="ms-form" method="POST" action="{{ url_for('profile_save_section', section='location') }}">
+            <div class="ms-location-row">
+                <input type="text" name="city" value="{{ user.city or '' }}" placeholder="City" maxlength="80">
+                <select name="state">
+                    <option value="">State</option>
+                    {% for code, name in us_states %}
+                    <option value="{{ code }}" {% if (user.state or '') == code %}selected{% endif %}>{{ code }}</option>
+                    {% endfor %}
+                </select>
+                <input type="text" name="zip_code" value="{{ user.zip_code or '' }}" placeholder="ZIP" maxlength="10">
+            </div>
+            <input class="btn-primary" type="submit" value="Save Location">
+        </form>
+    </div>
+</details>

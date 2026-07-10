@@ -29,6 +29,6 @@
     </div>
     {% endfor %}
 </div>
-{% elif montage_music_label == 'profile' or montage and montage.music_mode == 'profile' %}
-<p class="ms-montage-music-note none">No profile song set — <a href="{{ url_for('edit_profile') }}">add one in Edit Profile</a> or pick montage songs below.</p>
+{% elif is_owner and (montage_music_label == 'profile' or montage and montage.music_mode == 'profile') %}
+<p class="ms-montage-music-note none">No profile song set — <a href="{{ url_for('profile', username=user.username) }}#music">add one on your profile</a> or pick montage songs below.</p>
 {% endif %}

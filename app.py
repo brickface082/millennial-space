@@ -936,6 +936,137 @@ def parse_location_fields(city, state, zip_code):
     )
 
 
+PROFILE_VALID_FONTS = ["Arial", "Georgia", "Verdana", "Trebuchet MS", "Courier New", "Times New Roman"]
+
+
+def _apply_profile_about(user, form, _files):
+    user.bio = form.get("bio", "")
+    user.ideal_meet = form.get("ideal_meet", "")[:500]
+
+
+def _apply_profile_location(user, form, _files):
+    user.city, user.state, user.zip_code = parse_location_fields(
+        form.get("city", ""),
+        form.get("state", ""),
+        form.get("zip_code", ""),
+    )
+
+
+def _apply_profile_music(user, form, _files):
+    new_song = extract_url(form.get("profile_song", "")).strip()
+    if new_song != (user.profile_song or ""):
+        if _is_local_profile_song(user.profile_song):
+            delete_profile_song_file(user.profile_song)
+        user.profile_song = new_song
+        user.youtube_url = ""
+        user.spotify_url = ""
+    user.song_autoplay = form.get("song_autoplay") == "on"
+
+
+def _apply_profile_privacy(user, form, _files):
+    if "msg_filter" in form:
+        mf = form.get("msg_filter", "open")
+        user.msg_filter = mf if mf in ("open", "verified", "crew") else "open"
+    if "away_message" in form:
+        user.away_message = form.get("away_message", "")[:200]
+    if "polls_enabled" in form:
+        user.polls_enabled = form.get("polls_enabled") == "on"
+    if "show_daily_quote" in form:
+        user.show_daily_quote = form.get("show_daily_quote") == "on"
+    if "updates_opt_in" in form:
+        set_updates_opt_in(user, form.get("updates_opt_in") == "on")
+
+
+def _apply_profile_look(user, form, files):
+    if "theme_preset" in form:
+        preset_key = form.get("theme_preset", "").strip()
+        if preset_key in PROFILE_THEME_PRESETS:
+            preset = PROFILE_THEME_PRESETS[preset_key]
+            user.bg_color = preset["bg_color"]
+            user.theme_color = preset["theme_color"]
+            user.font_choice = preset["font_choice"]
+            user.dark_mode = preset["dark_mode"]
+            user.profile_theme = preset_key
+        elif preset_key == "custom":
+            user.profile_theme = "custom"
+    if "bg_color" in form:
+        user.bg_color = form.get("bg_color", SITE_DEFAULTS["bg_color"])
+    if "theme_color" in form:
+        tc = form.get("theme_color", SITE_DEFAULTS["theme_color"])
+        user.theme_color = tc if (len(tc) == 7 and tc.startswith("#")) else SITE_DEFAULTS["theme_color"]
+    if "font_choice" in form:
+        fc = form.get("font_choice", "Arial")
+        user.font_choice = fc if fc in PROFILE_VALID_FONTS else "Arial"
+    if "custom_css" in form:
+        user.custom_css = sanitize_profile_css(form.get("custom_css", ""))
+    if files.get("profile_pic"):
+        pic = files["profile_pic"]
+        if pic.filename != "":
+            try:
+                url, _ = upload_to_cloudinary(pic, "profile_pics", resize=(150, 150))
+                user.profile_pic = url
+            except Exception as exc:
+                raise RuntimeError("Profile pic upload failed. Try again.") from exc
+    if files.get("bg_image"):
+        bg = files["bg_image"]
+        if bg.filename != "":
+            try:
+                url, _ = upload_to_cloudinary(bg, "backgrounds")
+                user.bg_image = url
+            except Exception as exc:
+                raise RuntimeError("Background upload failed. Try again.") from exc
+
+
+def _apply_profile_full(user, form, files):
+    _apply_profile_about(user, form, files)
+    _apply_profile_location(user, form, files)
+    _apply_profile_music(user, form, files)
+    _apply_profile_privacy(user, form, files)
+    submitted_mood = form.get("mood", "")
+    user.mood = submitted_mood if submitted_mood in VALID_MOODS else ""
+    _apply_profile_look(user, form, files)
+
+
+PROFILE_SAVE_SECTIONS = {
+    "about": _apply_profile_about,
+    "location": _apply_profile_location,
+    "music": _apply_profile_music,
+    "privacy": _apply_profile_privacy,
+    "look": _apply_profile_look,
+}
+
+
+def save_profile_section(user, section, form=None, files=None):
+    """Apply one profile section or the legacy full form. Returns (ok, error_message)."""
+    form = form or request.form
+    files = files or request.files
+    if section == "full":
+        try:
+            _apply_profile_full(user, form, files)
+        except Exception as exc:
+            return False, str(exc)
+        return True, None
+    handler = PROFILE_SAVE_SECTIONS.get(section)
+    if not handler:
+        return False, "Unknown section"
+    try:
+        handler(user, form, files)
+    except Exception as exc:
+        return False, str(exc)
+    return True, None
+
+
+def _profile_save_redirect(section):
+    anchor = {
+        "about": "#about",
+        "location": "#location",
+        "music": "#music",
+        "privacy": "#privacy",
+        "look": "#look",
+    }.get(section, "")
+    return redirect(url_for("profile", username=current_user.username) + anchor)
+
+
 def user_location_label(user):
     if not user:
         return ""
@@ -1267,6 +1398,8 @@ def profile(username):
         daily_quote=quote_of_the_day() if user.show_daily_quote else None,
         suppress_profile_music=suppress_profile_music,
         profile_music_link=profile_music_link_value(user),
+        theme_presets=PROFILE_THEME_PRESETS if is_owner else {},
+        us_states=US_STATES if is_owner else [],
     )
 
 @app.route("/profile/<username>/comments")
@@ -1321,79 +1454,41 @@ def profile_updates(username):
         total_items=total_items,
     )
 
+@app.route("/profile/save/<section>", methods=["POST"])
+@login_required
+def profile_save_section(section):
+    ok, err = save_profile_section(current_user, section)
+    if not ok:
+        flash(err or "Could not save.", "danger")
+    else:
+        db.session.commit()
+        flash("Saved!", "success")
+    return _profile_save_redirect(section)
+
+
 @app.route("/edit", methods=["GET", "POST"])
 @login_required
 def edit_profile():
     if request.method == "POST":
-        current_user.bio = request.form.get("bio", "")
-        current_user.ideal_meet = request.form.get("ideal_meet", "")[:500]
-        current_user.city, current_user.state, current_user.zip_code = parse_location_fields(
-            request.form.get("city", ""),
-            request.form.get("state", ""),
-            request.form.get("zip_code", ""),
-        )
-        current_user.bg_color = request.form.get("bg_color", SITE_DEFAULTS["bg_color"])
-        new_song = extract_url(request.form.get("profile_song", "")).strip()
-        if new_song != (current_user.profile_song or ""):
-            if _is_local_profile_song(current_user.profile_song):
-                delete_profile_song_file(current_user.profile_song)
-            current_user.profile_song = new_song
-            current_user.youtube_url = ""
-            current_user.spotify_url = ""
-        mf = request.form.get("msg_filter", "open")
-        current_user.msg_filter = mf if mf in ("open", "verified", "crew") else "open"
-        current_user.away_message = request.form.get("away_message", "")[:200]
-        submitted_mood = request.form.get("mood", "")
-        current_user.mood = submitted_mood if submitted_mood in VALID_MOODS else ""
-        current_user.polls_enabled = request.form.get("polls_enabled") == "on"
-        current_user.show_daily_quote = request.form.get("show_daily_quote") == "on"
-        set_updates_opt_in(current_user, request.form.get("updates_opt_in") == "on")
-        current_user.song_autoplay = request.form.get("song_autoplay") == "on"
-        tc = request.form.get("theme_color", SITE_DEFAULTS["theme_color"])
-        current_user.theme_color = tc if (len(tc) == 7 and tc.startswith("#")) else SITE_DEFAULTS["theme_color"]
-        VALID_FONTS = ["Arial", "Georgia", "Verdana", "Trebuchet MS", "Courier New", "Times New Roman"]
-        fc = request.form.get("font_choice", "Arial")
-        current_user.font_choice = fc if fc in VALID_FONTS else "Arial"
-        preset_key = request.form.get("theme_preset", "").strip()
-        if preset_key in PROFILE_THEME_PRESETS:
-            preset = PROFILE_THEME_PRESETS[preset_key]
-            current_user.bg_color = preset["bg_color"]
-            current_user.theme_color = preset["theme_color"]
-            current_user.font_choice = preset["font_choice"]
-            current_user.dark_mode = preset["dark_mode"]
-            current_user.profile_theme = preset_key
-        else:
-            current_user.profile_theme = "custom" if preset_key == "custom" else (current_user.profile_theme or "")
-        raw_css = request.form.get("custom_css", "")
-        current_user.custom_css = sanitize_profile_css(raw_css)
-        if request.files.get("profile_pic"):
-            pic = request.files["profile_pic"]
-            if pic.filename != "":
-                try:
-                    url, _ = upload_to_cloudinary(pic, "profile_pics", resize=(150, 150))
-                    current_user.profile_pic = url
-                except Exception:
-                    flash("Profile pic upload failed. Try again.", "danger")
-        if request.files.get("bg_image"):
-            bg = request.files["bg_image"]
-            if bg.filename != "":
-                try:
-                    url, _ = upload_to_cloudinary(bg, "backgrounds")
-                    current_user.bg_image = url
-                except Exception:
-                    flash("Background upload failed. Try again.", "danger")
-        db.session.commit()
+        ok, err = save_profile_section(current_user, "full")
+        if not ok:
+            flash(err or "Could not save profile.", "danger")
+            return redirect(url_for("profile", username=current_user.username))
+        try:
+            db.session.commit()
+        except Exception:
+            flash("Profile pic or background upload failed. Try again.", "danger")
+            return redirect(url_for("profile", username=current_user.username))
         flash("Profile updated!", "success")
         return redirect(url_for("profile", username=current_user.username))
+    return redirect(url_for("settings"))
+
+
+@app.route("/settings")
+@login_required
+def settings():
     invites = Invite.query.filter_by(created_by=current_user.id).order_by(Invite.created_at.desc()).all()
-    return render_template(
-        "edit_profile.html",
-        mood_options=MOOD_OPTIONS,
-        invites=invites,
-        profile_music_link=profile_music_link_value(current_user),
-        theme_presets=PROFILE_THEME_PRESETS,
-        us_states=US_STATES,
-    )
+    return render_template("settings.html", invites=invites)
 
 def get_crew_status(current_user_id, profile_user_id):
     req = CrewRequest.query.filter(
@@ -3097,7 +3192,7 @@ def updates_unsubscribe(token):
     db.session.commit()
     flash(f"You've been unsubscribed from {SITE_NAME} update emails.", "info")
     if current_user.is_authenticated and current_user.id == user.id:
-        return redirect(url_for("edit_profile"))
+        return redirect(url_for("profile", username=current_user.username) + "#privacy")
     return redirect(url_for("login"))
 
 
@@ -3145,7 +3240,7 @@ def account_delete():
     confirm_username = request.form.get("confirm_username", "").strip()
     if confirm_username != current_user.username:
         flash("Username didn't match. Account was NOT deleted.", "danger")
-        return redirect(url_for("edit_profile"))
+        return redirect(url_for("settings"))
 
     uid = current_user.id
 

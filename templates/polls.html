@@ -27,7 +27,7 @@
             You're not receiving polls yet.<br>
             <span style="font-size:13px;color:#888;">Turn on polls in your profile settings to join in.</span>
         </p>
-        <a href="{{ url_for('edit_profile') }}" class="btn-primary">⚙️ Turn On Polls</a>
+        <a href="{{ url_for('profile', username=current_user.username) }}#privacy" class="btn-primary">⚙️ Turn On Polls</a>
     </div>
 
     {% else %}
@@ -109,7 +109,7 @@
     <hr class="divider">
     <p style="font-size:12px;color:#aaa;text-align:center;">
         Your message filter controls which polls reach you.
-        <a href="{{ url_for('edit_profile') }}" style="color:#0000cc;">Change settings</a>
+        <a href="{{ url_for('profile', username=current_user.username) }}#privacy" style="color:#0000cc;">Change settings</a>
     </p>
     {% endif %}
 
