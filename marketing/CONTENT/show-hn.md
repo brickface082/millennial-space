@@ -18,6 +18,6 @@ Features:
 
 Stack: Python/Flask, SQLAlchemy, PostgreSQL on Railway, Cloudinary.
 
-Invite-only signup (reusable invite links per user). Open to feedback on what made old social feel more personal.
+Open signup — anyone can join free. Optional invite links credit referrals. Open to feedback on what made old social feel more personal.
 
 GitHub: https://github.com/brickface082/millennial-space (private-ish but README is public)

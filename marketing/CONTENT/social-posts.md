@@ -17,4 +17,4 @@ Your profile can have a daily quote billboard, photo montage with music, and BBC
 Built a local Listing Space + Events board into the site ("The Spot") — geo-filtered, free casual posts, no Craigslist clone vibes.
 
 ## Post 5 — Call for crew
-Looking for early users who want to decorate a profile page like it's their teenage bedroom wall. Permanent accounts. Invite link when you join.
+Looking for early users who want to decorate a profile page like it's their teenage bedroom wall. Free open signup — permanent accounts.

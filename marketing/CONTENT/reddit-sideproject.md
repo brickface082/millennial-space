@@ -18,6 +18,6 @@ Stack: Flask, PostgreSQL on Railway, Cloudinary for media.
 
 **Live:** https://web-production-2e69f.up.railway.app/about
 
-It's invite-based right now (each member gets a permanent invite link). Happy to answer questions about the build or nostalgia UX choices.
+Open signup — free for anyone. Members can share optional invite links to bring friends. Happy to answer questions about the build or nostalgia UX choices.
 
 What feature from old social do you still wish existed?
